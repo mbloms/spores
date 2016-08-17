@@ -147,27 +147,27 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
   }
 
   def isPathValid(tree: Tree): (Boolean, Option[Tree]) = {
-    debug(s"checking isPathValid for $tree [${tree.symbol}]...")
-    debug(s"tree class: ${tree.getClass.getName}")
+    debug(s"Checking isPathValid for $tree [${tree.symbol}]...")
+    debug(s"Tree class: ${tree.getClass.getName}")
     if (tree.symbol != null && isSymbolValid(tree.symbol)) (true, None)
     else
       tree match {
         case Select(pre, sel) =>
-          debug(s"case 1: Select($pre, $sel)")
+          debug(s"Case 1: Select($pre, $sel)")
           isPathValid(pre)
         case Apply(Select(pre, _), _) =>
-          debug(s"case 2: Apply(Select, _)")
+          debug(s"Case 2: Apply(Select, _)")
           isPathValid(pre)
         case TypeApply(Select(pre, _), _) =>
-          debug("case 3: TypeApply(Select, _)")
+          debug("Case 3: TypeApply(Select, _)")
           isPathValid(pre)
         case TypeApply(fun, _) =>
-          debug("case 4: TypeApply")
+          debug("Case 4: TypeApply")
           isPathValid(fun)
         case Literal(Constant(_)) | New(_) => (true, None)
         case id: Ident => (isSymbolValid(id.symbol), None)
         case _ =>
-          debug("case 7: _")
+          debug("Case 7: _")
           (false, Some(tree))
       }
   }
