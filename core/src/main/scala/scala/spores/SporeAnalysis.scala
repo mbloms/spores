@@ -200,13 +200,14 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
         case id: Ident =>
           debug(s"Checking ident: $id")
           if (!isSymbolValid(id.symbol))
-            ctx.error(id.pos, "invalid reference to " + id.symbol)
+            ctx.error(id.pos, Feedback.InvalidReferenceTo(id.symbol.toString))
 
         case th: This =>
-          ctx.error(th.pos, "invalid reference to " + th.symbol)
+          ctx.error(th.pos, Feedback.InvalidReferenceTo(th.symbol.toString))
 
+        // TODO(jvican): Check this is correct
         case sp: Super =>
-          ctx.error(sp.pos, "invalid reference to " + sp.symbol)
+          ctx.error(sp.pos, Feedback.InvalidReferenceTo(sp.symbol.toString))
 
         // x.m().s
         case sel @ Select(app @ Apply(fun0, _), _) =>

@@ -55,7 +55,7 @@ class NegSpec {
 
   @Test
   def testInvalidReference(): Unit = {
-    expectError("invalid reference") {
+    expectError(Feedback.InvalidReferenceTo("value outer")) {
       """
         import scala.spores._
         val outer = "hello"
@@ -70,7 +70,7 @@ class NegSpec {
 
   @Test
   def testInvalidReference2(): Unit = {
-    expectError("invalid reference") {
+    expectError(Feedback.InvalidReferenceTo("class C")) {
       """
         import scala.spores._
         class C {
