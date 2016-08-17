@@ -30,67 +30,7 @@ private[spores] class MacroImpl[C <: whitebox.Context with Singleton](val c: C) 
     val checker = new SporeChecker[c.type](c)(sporeEnv, s, captured, declared)
 
     debug(s"Checking $sporeBody...")
-    // check the spore body, i.e., for each identifier, check that it is valid according to spore rules
-    // i.e., either declared locally or captured via a `capture` invocation
-    val traverser = new Traverser {
-      override def traverse(tree: Tree) {
-        tree match {
-          case id: Ident =>
-            debug("Checking ident " + id)
-            if (!checker.isSymbolValid(id.symbol))
-              c.error(tree.pos, "invalid reference to " + id.symbol)
-
-          case th: This =>
-            c.error(tree.pos, "invalid reference to " + th.symbol)
-
-          // x.m().s
-          case sel @ Select(app @ Apply(fun0, args0), _) =>
-            debug("checking select (app): " + sel)
-            if (app.symbol.isStatic) {
-              debug(s"OK, invocation of '$app' is static")
-            } else
-              fun0 match {
-                case Select(obj, _) =>
-                  if (funOpt.exists(
-                        f => checker.isOwner(obj.symbol, f.symbol)))
-                    debug(s"OK, selected on local object $obj")
-                  else {
-                    // the invocation is OK if `obj` is transitively selected from a top-level object
-                    debug(
-                      s"checking whether $obj is transitively selected from a top-level object...")
-                    val objIsStatic = obj.symbol.isStatic || checker
-                        .isStaticSelector(obj)
-                    debug(s"$obj.symbol.isStatic: $objIsStatic")
-                    if (!objIsStatic)
-                      c.error(sel.pos,
-                              s"the invocation of '$fun0' is not static")
-                  }
-
-                case _ =>
-                  c.error(sel.pos, s"the invocation of '$fun0' is not static")
-              }
-
-          case sel @ Select(pre, _) =>
-            debug("checking select " + sel)
-
-            checker.isPathValid(sel) match {
-              case (false, None) =>
-                c.error(tree.pos, "invalid reference to " + sel.symbol)
-              case (false, Some(subtree)) =>
-                traverse(subtree)
-              case (true, None) =>
-              // do nothing
-              case (true, Some(subtree)) =>
-              // do nothing
-            }
-
-          case _ =>
-            super.traverse(tree)
-        }
-      }
-    }
-
-    traverser.traverse(sporeBody)
+    checker.checkReferencesInBody(sporeBody)
     (vparams.map(_.symbol), sporeBody.tpe, sporeBody, sporeEnv)
   }
 
