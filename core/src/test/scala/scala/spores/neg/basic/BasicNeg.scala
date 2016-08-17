@@ -91,7 +91,7 @@ class NegSpec {
 
   @Test
   def testNonStaticInvocationNotAllowed(): Unit = {
-    expectError("the invocation of 'outerObject.m' is not static") {
+    expectError(Feedback.NonStaticInvocation("outerObject.m")) {
       """
         import scala.spores._
 

@@ -171,6 +171,7 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
           (false, Some(tree))
       }
   }
+
   private class ReferenceInspector extends Traverser {
     def checkStaticSelectOnObject(applySelector: Tree, outerSelect: Select) = {
       applySelector match {
@@ -178,18 +179,20 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
           if (isSymbolChildOfSpore(obj.symbol))
             debug(s"OK, selected on local object $obj")
           else {
-            // the invocation is OK if `obj` is transitively selected from a top-level object
             val objIsStatic = obj.symbol.isStatic || isStaticSelector(obj)
             debug(s"Is $obj transitively selected from a top-level object?")
             debug(s"$obj.symbol.isStatic: $objIsStatic")
-            if (!objIsStatic)
+
+            if (!objIsStatic) {
               ctx.error(outerSelect.pos,
-                        s"the invocation of '$applySelector' is not static")
+                        Feedback.NonStaticInvocation(applySelector.toString))
+            }
           }
 
         case _ =>
+          // TODO(jvican): Add test for this case
           ctx.error(outerSelect.pos,
-                    s"the invocation of '$applySelector' is not static")
+                    Feedback.NonStaticInvocation(applySelector.toString))
       }
     }
     override def traverse(tree: Tree) {
@@ -206,7 +209,7 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
           ctx.error(sp.pos, "invalid reference to " + sp.symbol)
 
         // x.m().s
-        case sel @ Select(app @ Apply(fun0, args0), _) =>
+        case sel @ Select(app @ Apply(fun0, _), _) =>
           debug(s"Checking select ($app): $sel")
           if (app.symbol.isStatic) {
             debug(s"OK, invocation of '$app' is static.")

@@ -12,4 +12,7 @@ protected object Feedback {
 
   val InvalidLazyMember =
     "The path of a captured variable inside a spore cannot contain lazy members."
+
+  def NonStaticInvocation(method: String) =
+    s"Spores cannot contain invocation of non-static methods: '$method'."
 }
