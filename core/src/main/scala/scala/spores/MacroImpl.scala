@@ -36,7 +36,7 @@ private[spores] class MacroImpl[C <: whitebox.Context with Singleton](val c: C) 
       override def traverse(tree: Tree) {
         tree match {
           case id: Ident =>
-            debug("checking ident " + id)
+            debug("Checking ident " + id)
             if (!checker.isSymbolValid(id.symbol))
               c.error(tree.pos, "invalid reference to " + id.symbol)
 

@@ -14,6 +14,16 @@ import scala.reflect.macros.whitebox.Context
 
 package object spores {
 
+  object logger {
+    def elem[T](es: sourcecode.Text[T]*)(implicit line: sourcecode.Line,
+                                         file: sourcecode.File): Unit = {
+      es.foreach { e =>
+        val filename = file.value.replaceAll(".*/", "")
+        println(s"$filename:${line.value} [${e.source}] ${e.value}")
+      }
+    }
+  }
+
   def capture[T](x: T): T = x
 
   /**
@@ -48,7 +58,7 @@ package object spores {
   private val isDebugEnabled =
     System.getProperty("spores.debug", "false").toBoolean
   private[spores] def debug(s: => String): Unit =
-    if (isDebugEnabled) println(s)
+    if (isDebugEnabled) logger.elem(s)
 
   def nullarySporeImpl[R: c.WeakTypeTag](c: Context)(
       fun: c.Expr[Function0[R]]): c.Expr[NullarySpore[R]] = {

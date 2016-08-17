@@ -13,8 +13,9 @@ object Dependencies {
   val junitIntf = "com.novocode" % "junit-interface" % "0.11" % "test"
 
   val scalaPickling = "org.scala-lang.modules" %% "scala-pickling" % "0.11.0-M2"
+  val sourcecode = "com.lihaoyi" %% "sourcecode" % "0.1.2"
 
-  val core = Seq(scalaReflect, scalaCompiler, junit, junitIntf)
+  val core = Seq(scalaReflect, scalaCompiler, junit, junitIntf, sourcecode)
 
   val pickling = core ++ Seq(scalaPickling)
 
