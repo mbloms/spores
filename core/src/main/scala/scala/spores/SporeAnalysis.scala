@@ -46,12 +46,12 @@ protected class SporeAnalysis[C <: whitebox.Context with Singleton](val ctx: C) 
     case _ => false
   }
 
-  private class SymbolCollector(funSymbol: Symbol) extends Traverser {
+  private class SymbolCollector extends Traverser {
     var capturedSymbols = List.empty[Symbol]
     override def traverse(tree: Tree): Unit = {
       tree match {
-        case app @ Apply(_, List(captured))
-            if funSymbol != NoSymbol && funSymbol == captureSym =>
+        case app @ Apply(fun, List(captured))
+            if fun.symbol == captureSym =>
           debug(s"Found capture: $app")
           if (!isPathWith(captured)(_.isStable))
             ctx.abort(captured.pos, Feedback.InvalidOuterReference)
@@ -64,10 +64,9 @@ protected class SporeAnalysis[C <: whitebox.Context with Singleton](val ctx: C) 
     }
   }
 
-  def collectCaptured(sporeBody: Tree, fun: Option[Function]): List[Symbol] = {
-    val funSymbol = fun.map(_.symbol).getOrElse(NoSymbol)
+  def collectCaptured(sporeBody: Tree): List[Symbol] = {
     debug("Collecting captured symbols...")
-    val collector = new SymbolCollector(funSymbol)
+    val collector = new SymbolCollector
     collector.traverse(sporeBody)
     collector.capturedSymbols
   }
@@ -170,10 +169,5 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
           (false, Some(tree))
       }
   }
-
 }
 
-object SporeAnalysis {
-  // TODO(jvican): Use for clarity
-  type Env = List[Symbol]
-}

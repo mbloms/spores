@@ -24,11 +24,10 @@ private[spores] class MacroImpl[C <: whitebox.Context with Singleton](val c: C) 
     sporeEnv foreach (sym => debug(s"Valid captured symbol: $sym"))
 
     val (funOpt, vparams, sporeBody) = analysis.readSporeFunDef(sporeFunDef)
-    val captured = analysis.collectCaptured(sporeBody, funOpt)
+    val s = funOpt.map(_.symbol)
+    val captured = analysis.collectCaptured(sporeBody)
     val declared = analysis.collectDeclared(sporeBody)
-    val symbol = funOpt.map(_.symbol)
-    val checker =
-      new SporeChecker[c.type](c)(sporeEnv, symbol, captured, declared)
+    val checker = new SporeChecker[c.type](c)(sporeEnv, s, captured, declared)
 
     debug(s"Checking $sporeBody...")
     // check the spore body, i.e., for each identifier, check that it is valid according to spore rules

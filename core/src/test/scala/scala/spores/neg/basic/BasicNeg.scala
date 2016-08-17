@@ -12,7 +12,7 @@ import util._
 class NegSpec {
   @Test
   def `wrong shape, incorrect val def list`() {
-    expectError("Only val defs allowed at this position") {
+    expectError(Feedback.IncorrectSporeHeader) {
       """
         import scala.spores._
         val v1 = 10
@@ -27,7 +27,7 @@ class NegSpec {
 
   @Test
   def `no lazy vals allowed`() {
-    expectError("A captured path cannot contain lazy members") {
+    expectError(Feedback.InvalidLazyMember) {
       """
         import scala.spores._
         lazy val v1 = 10
@@ -40,7 +40,7 @@ class NegSpec {
 
   @Test
   def `no lazy vals allowed in any path`() {
-    expectError("A captured path cannot contain lazy members") {
+    expectError(Feedback.InvalidLazyMember) {
       """
         object NoLazyValsObj {
           lazy val v1 = 10
@@ -118,7 +118,7 @@ class NegSpec {
 class StablePathNegSpec {
   @Test
   def `blocks aren't stable`() {
-    expectError("Only stable paths can be captured") {
+    expectError(Feedback.InvalidOuterReference) {
       """
         import scala.spores._
         val a = 12
@@ -131,7 +131,7 @@ class StablePathNegSpec {
 
   @Test
   def `only allowed to capture paths 1`() {
-    expectError("Only stable paths can be captured") {
+    expectError(Feedback.InvalidOuterReference) {
       """
         import scala.spores._
         def compute(x: Int): Int = x * 5
@@ -145,7 +145,7 @@ class StablePathNegSpec {
 
   @Test
   def `only allowed to capture paths 2`() {
-    expectError("Only stable paths can be captured") {
+    expectError(Feedback.InvalidOuterReference) {
       """
         import scala.spores._
         // this is a var:
@@ -160,7 +160,7 @@ class StablePathNegSpec {
 
   @Test
   def `1 isn't a stable path`() {
-    expectError("Only stable paths can be captured") {
+    expectError(Feedback.InvalidOuterReference) {
       """
         import scala.spores._
         val s: Spore[Int, String] = spore { (x: Int) =>
@@ -173,7 +173,7 @@ class StablePathNegSpec {
 
   @Test
   def `can't ascribe types in a stable path`() {
-    expectError("Only stable paths can be captured") {
+    expectError(Feedback.InvalidOuterReference) {
       """
         import scala.spores._
         val v = 10
