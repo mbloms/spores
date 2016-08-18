@@ -4,7 +4,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-import scala.spores.util._
+import scala.spores.TestUtil._
 
 @RunWith(classOf[JUnit4])
 class ExcludedNegSpec {

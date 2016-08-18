@@ -5,7 +5,7 @@ import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
 import scala.spores._
-import scala.spores.util._
+import scala.spores.TestUtil._
 
 @RunWith(classOf[JUnit4])
 class CaptureNegSpec {
@@ -107,6 +107,27 @@ class CaptureNegSpec {
           (x: Int) =>
             val s1 = outerObject.m(x).asInstanceOf[String]
             s1 + "!"
+        }
+      """
+    }
+  }
+
+  @Test
+  def `no references to 'this' allowed (super members)`(): Unit = {
+    expectError(Feedback.InvalidReferenceTo("object BigC")) {
+      """
+        import scala.spores._
+
+        class C {
+          val f = 1
+        }
+
+        object BigC extends C {
+          val s = spore {
+            (x: Int) =>
+              val s1 = f.toString
+              s1 + "!"
+          }
         }
       """
     }
