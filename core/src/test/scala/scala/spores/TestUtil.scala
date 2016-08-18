@@ -1,28 +1,24 @@
 package scala.spores
 
 import reflect._
+import scala.language.postfixOps
+import scala.util.Try
 import tools.reflect.{ToolBox, ToolBoxError}
 
-object util {
-  implicit class objectops(obj: Any) {
-    def mustBe(other: Any) = assert(obj == other, obj + " is not " + other)
-
-    def mustEqual(other: Any) = mustBe(other)
-  }
-
+package object spores {
   implicit class stringops(text: String) {
     def mustContain(substring: String) = assert(text contains substring, text)
   }
 
-  def intercept[T <: Throwable : ClassTag](body: => Any): T = {
-    try {
-      body
-      throw new Exception(s"Exception of type ${classTag[T]} was not thrown")
-    } catch {
+  def intercept[T <: Throwable : ClassTag](test: => Any): T = {
+    Try {
+      test
+      throw new Exception(s"Expected exception ${classTag[T]}")
+    } recover {
       case t: Throwable =>
         if (classTag[T].runtimeClass != t.getClass) throw t
         else t.asInstanceOf[T]
-    }
+    } get
   }
 
   def eval(code: String, compileOptions: String = ""): Any = {
@@ -34,14 +30,6 @@ object util {
     val m = scala.reflect.runtime.currentMirror
     import scala.tools.reflect.ToolBox
     m.mkToolBox(options = compileOptions)
-  }
-
-  def scalaBinaryVersion: String = {
-    val Pattern = """(\d+\.\d+)\..*""".r
-    scala.util.Properties.versionNumberString match {
-      case Pattern(v) => v
-      case _          => ""
-    }
   }
 
   def toolboxClasspath = {

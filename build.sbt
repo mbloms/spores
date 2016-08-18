@@ -106,7 +106,7 @@ lazy val core = project
   .settings(
     moduleName := "spores-core",
     resourceDirectory in Compile := baseDirectory.value / "resources",
-    compile in Compile <<= (compile in Compile) dependsOn (toolboxClasspath in Compile),
+    executeTests in Test <<= (executeTests in Test) dependsOn (toolboxClasspath in Test),
     libraryDependencies ++= Dependencies.core,
     parallelExecution in Test := false
   )
@@ -114,7 +114,7 @@ lazy val core = project
 /* Write all the compile-time dependencies of the spores macro to a file,
  * in order to read it from the created Toolbox to run the neg tests. */
 lazy val toolboxClasspath = taskKey[Unit]("Write Toolbox's classpath.")
-toolboxClasspath in Compile in core := {
+toolboxClasspath in Test in core := {
   val classpathAttributes = (dependencyClasspath in Compile in core).value
   val dependenciesClasspath =
     classpathAttributes.map(_.data.getAbsolutePath).mkString(":")
