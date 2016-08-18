@@ -4,8 +4,6 @@ import reflect._
 import tools.reflect.{ToolBox, ToolBoxError}
 
 object util {
-
-
   implicit class objectops(obj: Any) {
     def mustBe(other: Any) = assert(obj == other, obj + " is not " + other)
 
@@ -47,13 +45,14 @@ object util {
   }
 
   def toolboxClasspath = {
-    val f = new java.io.File(s"core/target/scala-${scalaBinaryVersion}/classes")
-    if (!f.exists) sys.error(s"output directory ${f.getAbsolutePath} does not exist.")
-    f.getAbsolutePath
+    val resource = getClass.getClassLoader.getResource("toolbox.classpath")
+    val classpathFile = scala.io.Source.fromFile(resource.toURI)
+    val completeSporesCoreClasspath = classpathFile.getLines.mkString
+    completeSporesCoreClasspath
   }
 
   def expectError(errorSnippet: String, compileOptions: String = "",
-                  baseCompileOptions: String = s"-cp ${toolboxClasspath}")(code: String) {
+                  baseCompileOptions: String = s"-cp $toolboxClasspath")(code: String) {
     intercept[ToolBoxError] {
       eval(code, compileOptions + " " + baseCompileOptions)
     }.getMessage mustContain errorSnippet

@@ -104,21 +104,28 @@ lazy val core = project
   .in(file("core"))
   .settings(allSettings)
   .settings(
-    toolboxClasspath in Compile := toolboxClasspath,
-    compile in Compile <<= (compile in Compile) dependsOn (toolboxClasspath in Compile),
-    resourceDirectory in Compile := baseDirectory.value / "resources",
     moduleName := "spores-core",
+    resourceDirectory in Compile := baseDirectory.value / "resources",
+    compile in Compile <<= (compile in Compile) dependsOn (toolboxClasspath in Compile),
     libraryDependencies ++= Dependencies.core,
     parallelExecution in Test := false
   )
 
-/* Write all the compile-time dependencies of the spores macro to a file, in order to
- * read it from the Toolbox created to run the neg tests (see `spores` package in `test/`). */
-lazy val toolboxClasspath = taskKey[Unit]("Write the project's classpath for the Toolbox.")
-toolboxClasspath := {
-  val classpath = (dependencyClasspath in Compile in core).value.mkString("\n")
-  val classpathFile = file(".classpath")
-    scala.tools.nsc.io.File(classpathFile.getAbsolutePath).writeAll(classpath)
+/* Write all the compile-time dependencies of the spores macro to a file,
+ * in order to read it from the created Toolbox to run the neg tests. */
+lazy val toolboxClasspath = taskKey[Unit]("Write Toolbox's classpath.")
+toolboxClasspath in Compile in core := {
+  val classpathAttributes = (dependencyClasspath in Compile in core).value
+  val dependenciesClasspath =
+    classpathAttributes.map(_.data.getAbsolutePath).mkString(":")
+  val scalaBinVersion = (scalaBinaryVersion in Compile in core).value
+  val targetDir = (target in Compile in core).value.getAbsolutePath
+  val compiledClassesDir = s"$targetDir/scala-$scalaBinVersion/classes"
+  val classpath = s"$compiledClassesDir:$dependenciesClasspath"
+  val resourcePath =
+    (resourceDirectory in Compile in core).value.getAbsolutePath
+  val classpathPath = s"$resourcePath/toolbox.classpath"
+  scala.tools.nsc.io.File(classpathPath).writeAll(classpath)
 }
 
 lazy val pickling = project
