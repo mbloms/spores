@@ -9,5 +9,4 @@ jdk:
   - oraclejdk7
 notifications:
   email:
-    - heather.miller@epfl.ch
-    - philipp.haller@a3.epfl.ch
+    - jorgevc@fastmail.es
