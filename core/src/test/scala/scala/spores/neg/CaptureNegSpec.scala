@@ -113,7 +113,7 @@ class CaptureNegSpec {
   }
 
   @Test
-  def `no references to 'this' allowed (super members)`(): Unit = {
+  def `no references to extended members allowed`(): Unit = {
     expectError(Feedback.InvalidReferenceTo("object BigC")) {
       """
         import scala.spores._
@@ -132,5 +132,99 @@ class CaptureNegSpec {
       """
     }
   }
-}
 
+  @Test
+  def `no references to extended members allowed in delayed`(): Unit = {
+    expectError(Feedback.InvalidReferenceTo("object BigC")) {
+      """
+        import scala.spores._
+
+        class C {
+          val f = 1
+        }
+
+        object BigC extends C {
+          val s = spore {
+            delayed {
+              val s1 = f.toString
+              s1 + "!"
+            }
+          }
+        }
+      """
+    }
+  }
+
+  @Test
+  def `no references to extended members allowed from a class`(): Unit = {
+    expectError(Feedback.InvalidReferenceTo("class D")) {
+      """
+        import scala.spores._
+
+        trait C {
+          val f = 1
+        }
+
+        class D extends C {
+          val s = spore {
+            (x: Int) =>
+              val s1 = f.toString
+              s1 + "!"
+          }
+        }
+      """
+    }
+  }
+
+  @Test
+  def `no references to extended members allowed from a class II`(): Unit = {
+    expectError(Feedback.InvalidReferenceTo("class D")) {
+      """
+        import scala.spores._
+
+        trait C {
+          val f = 1
+        }
+
+        class D extends C {
+          val s = spore {
+            delayed {
+              val s1 = f.toString
+              s1 + "!"
+            }
+          }
+        }
+      """
+    }
+  }
+
+  @Test
+  def `no references to extended members allowed within a method`(): Unit = {
+    expectError(Feedback.InvalidReferenceTo("class D")) {
+      """
+        import scala.spores._
+
+        trait B
+
+        trait C extends B {
+          val f = 1
+        }
+
+        class D extends C {
+          def caca: String => String = {
+            case "meh" =>
+              println("HA")
+              val s = spore {
+                delayed {
+                  println(f)
+                  this.toString + "!"
+                }
+              }
+              "SHOULD HAVE FAILED"
+            case _ => ""
+          }
+        }
+      """
+    }
+  }
+}

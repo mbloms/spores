@@ -56,7 +56,7 @@ package object spores {
 
   // TOGGLE DEBUGGING
   private val isDebugEnabled =
-    System.getProperty("spores.debug", "false").toBoolean
+    System.getProperty("spores.debug", "true").toBoolean
   private[spores] def debug(s: => String)(implicit line: sourcecode.Line,
                                           file: sourcecode.File): Unit =
     if (isDebugEnabled) logger.elem(s)
