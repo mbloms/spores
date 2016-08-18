@@ -122,8 +122,9 @@ toolboxClasspath in Compile in core := {
   val targetDir = (target in Compile in core).value.getAbsolutePath
   val compiledClassesDir = s"$targetDir/scala-$scalaBinVersion/classes"
   val classpath = s"$compiledClassesDir:$dependenciesClasspath"
-  val resourcePath =
-    (resourceDirectory in Compile in core).value.getAbsolutePath
+  val resourceDir = (resourceDirectory in Compile in core).value
+  resourceDir.mkdir() // In case it doesn't exist
+  val resourcePath = resourceDir.getAbsolutePath
   val classpathPath = s"$resourcePath/toolbox.classpath"
   scala.tools.nsc.io.File(classpathPath).writeAll(classpath)
 }
