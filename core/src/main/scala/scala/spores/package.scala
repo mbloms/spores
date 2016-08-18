@@ -57,7 +57,8 @@ package object spores {
   // TOGGLE DEBUGGING
   private val isDebugEnabled =
     System.getProperty("spores.debug", "false").toBoolean
-  private[spores] def debug(s: => String): Unit =
+  private[spores] def debug(s: => String)(implicit line: sourcecode.Line,
+                                          file: sourcecode.File): Unit =
     if (isDebugEnabled) logger.elem(s)
 
   def nullarySporeImpl[R: c.WeakTypeTag](c: Context)(
