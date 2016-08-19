@@ -109,7 +109,7 @@ lazy val core = project
     test in Test <<=
       (test in Test) dependsOn (toolboxClasspath in Test),
     libraryDependencies ++= Dependencies.core,
-    parallelExecution in Test := true
+    parallelExecution in Test := false
   )
 
 /* Write all the compile-time dependencies of the spores macro to a file,
