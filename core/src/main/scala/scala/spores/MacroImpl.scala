@@ -35,48 +35,13 @@ private[spores] class MacroImpl[C <: whitebox.Context with Singleton](val c: C) 
   }
 
   def check2(funTree: c.Tree, tpes: List[c.Type]): c.Tree = {
-    debug(s"SPORES: enter check2")
-
     val (paramSyms, retTpe, funBody, validEnv) = conforms(funTree)
-
-    val applyParamNames = for (i <- 0 until paramSyms.size)
-      yield c.freshName(TermName("x" + i))
-    val ids = for (name <- applyParamNames.toList) yield Ident(name)
-
-    val applyParamValDefs =
-      for ((applyParamName, paramSym) <- applyParamNames.zip(paramSyms))
-        yield
-          ValDef(Modifiers(Flag.PARAM),
-                 applyParamName,
-                 TypeTree(paramSym.typeSignature),
-                 EmptyTree)
-    val applyParamSymbols = for (applyParamValDef <- applyParamValDefs)
-      yield applyParamValDef.symbol
-
-    def mkApplyDefDef(body: Tree): DefDef = {
-      val applyVParamss = List(applyParamValDefs.toList)
-      DefDef(NoMods,
-             TermName("apply"),
-             Nil,
-             applyVParamss,
-             TypeTree(retTpe),
-             body)
-    }
-
-    val symtable = c.universe.asInstanceOf[scala.reflect.internal.SymbolTable]
-
-    def processFunctionBody(m: Map[c.Symbol, Tree], funBody: Tree): DefDef = {
-      val newFunBody = transformTypes(m)(funBody)
-      val nfBody = c.untypecheck(newFunBody.asInstanceOf[Tree])
-      mkApplyDefDef(nfBody)
-    }
+    val generator = new SporeGenerator[c.type](c)
 
     val sporeClassName = c.freshName(anonSporeName)
 
     if (validEnv.isEmpty) {
-      // replace references to paramSyms with references to applyParamSymbols
-      val m = paramSyms.zip(ids).toMap
-      val applyDefDef = processFunctionBody(m, funBody)
+      val applyDefDef = generator.createNewDefDef(paramSyms, funBody, retTpe)
 
       if (paramSyms.size == 2) {
         q"""
@@ -107,21 +72,19 @@ private[spores] class MacroImpl[C <: whitebox.Context with Singleton](val c: C) 
       val capturedTypes = validEnv.map(_.typeSignature).toArray
       debug(s"capturedTypes: ${capturedTypes.mkString(",")}")
 
-      val symsToReplace = paramSyms ::: validEnv
-      val newTrees =
-        if (validEnv.size == 1)
-          List(Select(Ident(TermName("self")), TermName("captured")))
-        else
-          (1 to validEnv.size)
-            .map(
-              i =>
-                Select(Select(Ident(TermName("self")), TermName("captured")),
-                       TermName(s"_$i")))
-            .toList
-
-      val treesToSubstitute = ids ::: newTrees
-      val m = symsToReplace.zip(treesToSubstitute).toMap
-      val applyDefDef = processFunctionBody(m, funBody)
+      val normalSelect = List(q"self.captured")
+      val tuples = validEnv.indices
+        .map(i => TermName((i + 1).toString))
+        .map(selector => q"self.captured.$selector")
+        .toList
+      val newRefs = if (validEnv.size == 1) normalSelect else tuples
+      val applyDefDef = generator.createNewDefDef(paramSyms,
+                                                  funBody,
+                                                  retTpe,
+                                                  environment = validEnv,
+                                                  capturedRefs = newRefs)
+      debug("APPLYDEFDEF:")
+      debug(showRaw(applyDefDef))
 
       val rhss = funTree match {
         case Block(stmts, expr) =>
@@ -135,8 +98,7 @@ private[spores] class MacroImpl[C <: whitebox.Context with Singleton](val c: C) 
 
       val constructorParams = List(List(toTuple(rhss)))
 
-      val builder = new SporeBuilder[c.type](c)
-      val capturedTypeDef = builder.createCapturedType(capturedTypes)
+      val capturedTypeDef = generator.createCapturedType(capturedTypes)
       val q"type $_ = $capturedType" = capturedTypeDef
 
       if (paramSyms.size == 2) {
@@ -175,6 +137,7 @@ private[spores] class MacroImpl[C <: whitebox.Context with Singleton](val c: C) 
     debug(s"SPORES: enter checkNullary")
 
     val (paramSyms, retTpe, funBody, validEnv) = conforms(funTree)
+    val generator = new SporeGenerator[c.type](c)
 
     val applyName = TermName("apply")
     val symtable = c.universe.asInstanceOf[scala.reflect.internal.SymbolTable]
@@ -215,7 +178,7 @@ private[spores] class MacroImpl[C <: whitebox.Context with Singleton](val c: C) 
             .toList
       val treesToSubstitute = newTrees
       val symsToTrees = symsToReplace.zip(treesToSubstitute).toMap
-      val newFunBody = transformTypes(symsToTrees)(funBody)
+      val newFunBody = generator.transformTypes(symsToTrees)(funBody)
 
       val nfBody = c.untypecheck(newFunBody.asInstanceOf[c.universe.Tree])
       val applyDefDef =
@@ -238,8 +201,7 @@ private[spores] class MacroImpl[C <: whitebox.Context with Singleton](val c: C) 
 
       val superclassName = TypeName("NullarySporeWithEnv")
 
-      val builder = new SporeBuilder[c.type](c)
-      val capturedTypeDef = builder.createCapturedType(capturedTypes.toArray)
+      val capturedTypeDef = generator.createCapturedType(capturedTypes.toArray)
       val q"type $_ = $capturedType" = capturedTypeDef
 
       q"""
@@ -252,107 +214,6 @@ private[spores] class MacroImpl[C <: whitebox.Context with Singleton](val c: C) 
         new $sporeClassName(...$constructorParams)
       """
     }
-  }
-
-  /**  Constructs a function that replaces all occurrences of symbols in m with trees in m and that changes the 'origin'
-    *  field to fix path-dependent types.
-    *  In some cases, PTT:s that start with captured variables or the spore parameters are not traversed fully.
-    *  The syntax tree part of these PTTs shows as "TypeTree()", but the ().tpe part has additional structure.
-    *  The 'TypeTree' case transforms these types by adding an "().original" field, that is a syntax tree.
-    *  The syntax tree is constructed by replacing all TypeName(s) occurances where s is the name of a captured
-    *  variable or a parameter into nameMap(s). E.g.
-    *  TypeRef(SingleType(SingleType(NoPrefix, TermName("param")), TypeName("R") --> Select(nameMap("param"), TypeName("R"))
-    */
-  def transformTypes(m: Map[c.universe.Symbol, Tree]): Tree => Tree = {
-    class TypeTransformer(
-        val m: Map[c.universe.Symbol, Tree] //,
-        //val nameMap: Map[c.universe.Symbol, Tree]
-    ) extends Transformer {
-      override def transform(tree: Tree): Tree = {
-
-        tree match {
-          case Ident(_) => m.getOrElse(tree.symbol, tree)
-          case tt: TypeTree if tt.original != null =>
-            super.transform(
-              c.universe.internal
-                .setOriginal(TypeTree(), super.transform(tt.original)))
-          case tt: TypeTree if tt.original == null =>
-            if (tt.children.isEmpty &&
-                m.keys.exists(key => tt.tpe.contains(key))) {
-              debug(s"${showRaw(tree)}")
-              debug(s"${showRaw(tree.tpe)}")
-              debug(s"${tree.tpe}")
-
-              /**
-                * Recursively construct a Tree from a Type
-                * @param tp
-                *           Any type, typically looks like this:
-                *           TypeRef(
-                *              SingleType(
-                *                 SingleType(NoPrefix, TermName("lit5_ui")),
-                *                 TermName("uref")),
-                *              TypeName("R"),
-                *              List())
-                * @return
-                *         A syntax tree constructed from the type. The example would return
-                *         Select(
-                *            Select(
-                *               Ident(TermName("lit5_ui")),
-                *               TermName("uref")),
-                *            TermName("R"))
-                *         Returns null if the param is not a path-dependent type
-                */
-              def constructOriginal(tp: c.Type): c.Tree = {
-                def matchTypeName(tn: c.Symbol): c.TypeName = {
-                  tn match {
-                    case TypeSymbolTag(ts) => {
-                      ts.name.toTypeName
-                    }
-                    case _ => null
-                  }
-                }
-                def matchTermNameNoPrefixCase(tn: c.Symbol): Tree =
-                  m.getOrElse(tn, null)
-
-                def matchTermName(tn: c.Symbol): TermName = {
-                  tn match {
-                    case TermSymbolTag(ts) => ts.name.toTermName
-                    case _ => null
-                  }
-                }
-                tp match {
-                  case TypeRef(tr, tns, List()) =>
-                    debug(s"tns = $tns,\nshowRaw(tns) = ${showRaw(tns)}")
-                    val tnsTypeName = matchTypeName(tns)
-                    if (tnsTypeName != null) {
-                      val tr_rec = constructOriginal(tr)
-                      if (tr_rec != null) Select(tr_rec, tnsTypeName)
-                      else null
-                    } else null
-                  case SingleType(NoPrefix, tns) =>
-                    matchTermNameNoPrefixCase(tns)
-                  case SingleType(pre, tns) =>
-                    val tnsTypeName = matchTermName(tns)
-                    val pre_rec = constructOriginal(pre)
-                    if (pre_rec != null) Select(pre_rec, tnsTypeName)
-                    else null
-                  case _ => null
-                }
-              }
-
-              val new_orig = constructOriginal(tree.tpe)
-              val res =
-                if (new_orig != null)
-                  c.universe.internal.setOriginal(TypeTree(), new_orig)
-                else
-                  tree
-              res
-            } else tree
-          case _ => super.transform(tree)
-        }
-      }
-    }
-    new TypeTransformer(m).transform(_: Tree)
   }
 
   def toTuple(lst: List[c.Tree]): c.Tree = {
@@ -381,6 +242,7 @@ private[spores] class MacroImpl[C <: whitebox.Context with Singleton](val c: C) 
     debug(s"SPORES: enter check, tree:\n$funTree")
 
     val (paramSyms, retTpe, funBody, validEnv) = conforms(funTree)
+    val generator = new SporeGenerator[c.type](c)
     val paramSym = paramSyms.head
     val oldName = paramSym.asInstanceOf[c.universe.TermSymbol].name
 
@@ -396,7 +258,7 @@ private[spores] class MacroImpl[C <: whitebox.Context with Singleton](val c: C) 
       val sporeClassName = c.freshName(anonSporeName)
 
       if (validEnv.isEmpty) {
-        val newFunBody = transformTypes(Map(paramSym -> id))(funBody)
+        val newFunBody = generator.transformTypes(Map(paramSym -> id))(funBody)
         val nfBody = c.untypecheck(newFunBody.asInstanceOf[c.universe.Tree])
 
         val applyDefDef: DefDef = {
@@ -440,7 +302,7 @@ private[spores] class MacroImpl[C <: whitebox.Context with Singleton](val c: C) 
         val symsToTrees = symsToReplace.zip(treesToSubstitute).toMap
         val namesToTrees =
           symsToReplace.map(_.name.toString).zip(treesToSubstitute).toMap
-        val newFunBody = transformTypes(symsToTrees)(funBody)
+        val newFunBody = generator.transformTypes(symsToTrees)(funBody)
 
         val nfBody = c.untypecheck(newFunBody.asInstanceOf[c.universe.Tree])
         val applyDefDef: DefDef = {
@@ -470,8 +332,8 @@ private[spores] class MacroImpl[C <: whitebox.Context with Singleton](val c: C) 
         val constructorParams = List(List(toTuple(rhss)))
         val superclassName = TypeName("SporeWithEnv")
 
-        val builder = new SporeBuilder[c.type](c)
-        val capturedTypeDef = builder.createCapturedType(capturedTypes.toArray)
+        val capturedTypeDef =
+          generator.createCapturedType(capturedTypes.toArray)
         val q"type $_ = $capturedType" = capturedTypeDef
 
         q"""
