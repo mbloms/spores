@@ -104,7 +104,7 @@ private[spores] class MacroImpl[C <: whitebox.Context with Singleton](val c: C) 
     } else { // validEnv.size > 1 (TODO: size == 1)
       // replace references to paramSyms with references to applyParamSymbols
       // and references to captured variables to new fields
-      val capturedTypes = validEnv.map(_.typeSignature)
+      val capturedTypes = validEnv.map(_.typeSignature).toArray
       debug(s"capturedTypes: ${capturedTypes.mkString(",")}")
 
       val symsToReplace = paramSyms ::: validEnv
@@ -135,36 +135,16 @@ private[spores] class MacroImpl[C <: whitebox.Context with Singleton](val c: C) 
 
       val constructorParams = List(List(toTuple(rhss)))
 
-      val captureTypeTreeDefinition =
-        (if (capturedTypes.size == 1) q"type Captured = ${capturedTypes(0)}"
-         else if (capturedTypes.size == 2)
-           q"type Captured = (${capturedTypes(0)}, ${capturedTypes(1)})"
-         else if (capturedTypes.size == 3)
-           q"type Captured = (${capturedTypes(0)}, ${capturedTypes(1)}, ${capturedTypes(2)})"
-         else if (capturedTypes.size == 4) q"type Captured = (${capturedTypes(
-           0)}, ${capturedTypes(1)}, ${capturedTypes(2)}, ${capturedTypes(3)})"
-         else if (capturedTypes.size == 5)
-           q"type Captured = (${capturedTypes(0)}, ${capturedTypes(1)}, ${capturedTypes(
-             2)}, ${capturedTypes(3)}, ${capturedTypes(4)})"
-         else if (capturedTypes.size == 6)
-           q"type Captured = (${capturedTypes(0)}, ${capturedTypes(1)}, ${capturedTypes(
-             2)}, ${capturedTypes(3)}, ${capturedTypes(4)}, ${capturedTypes(5)})"
-         else if (capturedTypes.size == 7)
-           q"type Captured = (${capturedTypes(0)}, ${capturedTypes(1)}, ${capturedTypes(2)}, ${capturedTypes(
-             3)}, ${capturedTypes(4)}, ${capturedTypes(5)}, ${capturedTypes(6)})"
-         else if (capturedTypes.size == 8) q"type Captured = (${capturedTypes(
-           0)}, ${capturedTypes(1)}, ${capturedTypes(2)}, ${capturedTypes(3)}, ${capturedTypes(
-           4)}, ${capturedTypes(5)}, ${capturedTypes(6)}, ${capturedTypes(7)})")
-          .asInstanceOf[c.Tree]
-
-      val q"type $_ = $captureTypeTree" = captureTypeTreeDefinition
+      val builder = new SporeBuilder[c.type](c)
+      val capturedTypeDef = builder.createCapturedType(capturedTypes)
+      val q"type $_ = $capturedType" = capturedTypeDef
 
       if (paramSyms.size == 2) {
         q"""
-            class $sporeClassName(val captured: $captureTypeTree) extends scala.spores.Spore2WithEnv[${tpes(
+            class $sporeClassName(val captured: $capturedType) extends scala.spores.Spore2WithEnv[${tpes(
           1)}, ${tpes(2)}, ${tpes(0)}] {
               self =>
-              $captureTypeTreeDefinition
+              $capturedTypeDef
               this._className = this.getClass.getName
               $applyDefDef
             }
@@ -172,10 +152,10 @@ private[spores] class MacroImpl[C <: whitebox.Context with Singleton](val c: C) 
           """
       } else if (paramSyms.size == 3) {
         q"""
-            class $sporeClassName(val captured: $captureTypeTree) extends scala.spores.Spore3WithEnv[${tpes(
+            class $sporeClassName(val captured: $capturedType) extends scala.spores.Spore3WithEnv[${tpes(
           1)}, ${tpes(2)}, ${tpes(3)}, ${tpes(0)}] {
               self =>
-              $captureTypeTreeDefinition
+              $capturedTypeDef
               this._className = this.getClass.getName
               $applyDefDef
             }
@@ -218,7 +198,7 @@ private[spores] class MacroImpl[C <: whitebox.Context with Singleton](val c: C) 
         new $sporeClassName
       """
     } else {
-      val capturedTypes = validEnv.map(_.typeSignature)
+      val capturedTypes = validEnv.map(_.typeSignature).toArray
       debug(s"capturedTypes: ${capturedTypes.mkString(",")}")
 
       // replace references to captured variables with references to new fields
@@ -258,34 +238,14 @@ private[spores] class MacroImpl[C <: whitebox.Context with Singleton](val c: C) 
 
       val superclassName = TypeName("NullarySporeWithEnv")
 
-      val captureTypeTreeDefinition =
-        (if (capturedTypes.size == 1) q"type Captured = ${capturedTypes(0)}"
-         else if (capturedTypes.size == 2)
-           q"type Captured = (${capturedTypes(0)}, ${capturedTypes(1)})"
-         else if (capturedTypes.size == 3)
-           q"type Captured = (${capturedTypes(0)}, ${capturedTypes(1)}, ${capturedTypes(2)})"
-         else if (capturedTypes.size == 4) q"type Captured = (${capturedTypes(
-           0)}, ${capturedTypes(1)}, ${capturedTypes(2)}, ${capturedTypes(3)})"
-         else if (capturedTypes.size == 5)
-           q"type Captured = (${capturedTypes(0)}, ${capturedTypes(1)}, ${capturedTypes(
-             2)}, ${capturedTypes(3)}, ${capturedTypes(4)})"
-         else if (capturedTypes.size == 6)
-           q"type Captured = (${capturedTypes(0)}, ${capturedTypes(1)}, ${capturedTypes(
-             2)}, ${capturedTypes(3)}, ${capturedTypes(4)}, ${capturedTypes(5)})"
-         else if (capturedTypes.size == 7)
-           q"type Captured = (${capturedTypes(0)}, ${capturedTypes(1)}, ${capturedTypes(2)}, ${capturedTypes(
-             3)}, ${capturedTypes(4)}, ${capturedTypes(5)}, ${capturedTypes(6)})"
-         else if (capturedTypes.size == 8) q"type Captured = (${capturedTypes(
-           0)}, ${capturedTypes(1)}, ${capturedTypes(2)}, ${capturedTypes(3)}, ${capturedTypes(
-           4)}, ${capturedTypes(5)}, ${capturedTypes(6)}, ${capturedTypes(7)})")
-          .asInstanceOf[c.Tree]
-
-      val q"type $_ = $captureTypeTree" = captureTypeTreeDefinition
+      val builder = new SporeBuilder[c.type](c)
+      val capturedTypeDef = builder.createCapturedType(capturedTypes.toArray)
+      val q"type $_ = $capturedType" = capturedTypeDef
 
       q"""
-        class $sporeClassName(val captured: $captureTypeTree) extends $superclassName[$rtpe] {
+        class $sporeClassName(val captured: $capturedType) extends $superclassName[$rtpe] {
           self =>
-          $captureTypeTreeDefinition
+          $capturedTypeDef
           this._className = this.getClass.getName
           $applyDefDef
         }
@@ -510,37 +470,14 @@ private[spores] class MacroImpl[C <: whitebox.Context with Singleton](val c: C) 
         val constructorParams = List(List(toTuple(rhss)))
         val superclassName = TypeName("SporeWithEnv")
 
-        val capturedTypeDefinition =
-          (if (capturedTypes.size == 1) q"type Captured = ${capturedTypes(0)}"
-           else if (capturedTypes.size == 2)
-             q"type Captured = (${capturedTypes(0)}, ${capturedTypes(1)})"
-           else if (capturedTypes.size == 3)
-             q"type Captured = (${capturedTypes(0)}, ${capturedTypes(1)}, ${capturedTypes(2)})"
-           else if (capturedTypes.size == 4)
-             q"type Captured = (${capturedTypes(0)}, ${capturedTypes(1)}, ${capturedTypes(
-               2)}, ${capturedTypes(3)})"
-           else if (capturedTypes.size == 5)
-             q"type Captured = (${capturedTypes(0)}, ${capturedTypes(1)}, ${capturedTypes(
-               2)}, ${capturedTypes(3)}, ${capturedTypes(4)})"
-           else if (capturedTypes.size == 6)
-             q"type Captured = (${capturedTypes(0)}, ${capturedTypes(1)}, ${capturedTypes(
-               2)}, ${capturedTypes(3)}, ${capturedTypes(4)}, ${capturedTypes(5)})"
-           else if (capturedTypes.size == 7)
-             q"type Captured = (${capturedTypes(0)}, ${capturedTypes(1)}, ${capturedTypes(
-               2)}, ${capturedTypes(3)}, ${capturedTypes(4)}, ${capturedTypes(
-               5)}, ${capturedTypes(6)})"
-           else if (capturedTypes.size == 8)
-             q"type Captured = (${capturedTypes(0)}, ${capturedTypes(1)}, ${capturedTypes(
-               2)}, ${capturedTypes(3)}, ${capturedTypes(4)}, ${capturedTypes(
-               5)}, ${capturedTypes(6)}, ${capturedTypes(7)})")
-            .asInstanceOf[c.Tree]
-
-        val q"type $_ = $capturedTypeTree" = capturedTypeDefinition
+        val builder = new SporeBuilder[c.type](c)
+        val capturedTypeDef = builder.createCapturedType(capturedTypes.toArray)
+        val q"type $_ = $capturedType" = capturedTypeDef
 
         q"""
-          class $sporeClassName(val captured : $capturedTypeTree) extends $superclassName[$ttpe, $rtpe] {
+          class $sporeClassName(val captured : $capturedType) extends $superclassName[$ttpe, $rtpe] {
             self =>
-            $capturedTypeDefinition
+            $capturedTypeDef
             this._className = this.getClass.getName
             $applyDefDef
           }
