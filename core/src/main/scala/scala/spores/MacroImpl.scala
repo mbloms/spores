@@ -85,16 +85,15 @@ private[spores] class MacroImpl[C <: whitebox.Context with Singleton](val c: C) 
                                                   capturedRefs = newRefs)
       val rhss = funTree match {
         case Block(stmts, expr) =>
-          stmts.toList flatMap {
-            case ValDef(_, _, _, rhs) => List(rhs)
+          (stmts flatMap {
+            case valDef: ValDef => List(valDef.rhs)
             case stmt =>
-              c.error(stmt.pos, "Only val defs allowed at this position")
-              List()
-          }
+              c.abort(stmt.pos, "Only val defs allowed at this position")
+          }).toArray
       }
+      assert(rhss.size == validEnv.size)
 
-      val constructorParams = List(List(toTuple(rhss)))
-
+      val constructorParams = List(List(generator.toTuple(rhss)))
       val capturedTypeDef = generator.createCapturedType(capturedTypes)
       val q"type $_ = $capturedType" = capturedTypeDef
 
@@ -166,19 +165,15 @@ private[spores] class MacroImpl[C <: whitebox.Context with Singleton](val c: C) 
 
       val rhss = funTree match {
         case Block(stmts, expr) =>
-          stmts.toList flatMap { stmt =>
-            stmt match {
-              case vd @ ValDef(mods, name, tpt, rhs) => List(rhs)
-              case _ =>
-                c.error(stmt.pos, "Only val defs allowed at this position")
-                List()
-            }
-          }
+          (stmts flatMap {
+            case valDef: ValDef => List(valDef.rhs)
+            case stmt =>
+              c.abort(stmt.pos, "Only val defs allowed at this position")
+          }).toArray
       }
       assert(rhss.size == validEnv.size)
 
-      val constructorParams = List(List(toTuple(rhss)))
-
+      val constructorParams = List(List(generator.toTuple(rhss)))
       val superclassName = TypeName("NullarySporeWithEnv")
 
       val capturedTypeDef = generator.createCapturedType(capturedTypes.toArray)
@@ -260,18 +255,15 @@ private[spores] class MacroImpl[C <: whitebox.Context with Singleton](val c: C) 
 
         val rhss = funTree match {
           case Block(stmts, expr) =>
-            stmts.toList flatMap { stmt =>
-              stmt match {
-                case vd @ ValDef(mods, name, tpt, rhs) => List(rhs)
-                case _ =>
-                  c.error(stmt.pos, "Only val defs allowed at this position")
-                  List()
-              }
-            }
+            (stmts flatMap {
+                case valDef: ValDef => List(valDef.rhs)
+                case stmt =>
+                  c.abort(stmt.pos, "Only val defs allowed at this position")
+            }).toArray
         }
         assert(rhss.size == validEnv.size)
 
-        val constructorParams = List(List(toTuple(rhss)))
+        val constructorParams = List(List(generator.toTuple(rhss)))
         val superclassName = TypeName("SporeWithEnv")
 
         val capturedTypeDef =
