@@ -217,7 +217,6 @@ class CaptureNegSpec {
               val s = spore {
                 delayed {
                   println(f)
-                  this.toString + "!"
                 }
               }
               "SHOULD HAVE FAILED"

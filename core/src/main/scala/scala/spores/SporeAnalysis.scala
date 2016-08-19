@@ -144,14 +144,14 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
     isSymbolChildOfSpore(s) ||
     declaredSymbols.contains(s) ||
     s == NoSymbol ||
-    s.isStatic ||
+    !s.isClass && s.isStatic ||
     s.owner == definitions.PredefModule
   }
 
   /** Check that a path is valid by inspecting all the referred symbols. */
   private def isPathValid(tree: Tree): (Boolean, Option[Tree]) = {
     debug(s"Checking isPathValid for $tree [${tree.symbol}]...")
-    debug(s"Tree class: ${tree.getClass.getName}")
+    debug(s" > Tree class: ${tree.getClass.getName}")
     if (tree.symbol != null && isSymbolValid(tree.symbol)) (true, None)
     else
       tree match {
@@ -159,13 +159,13 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
           debug(s"Case 1: Select($pre, $sel)")
           isPathValid(pre)
         case Apply(Select(pre, _), _) =>
-          debug(s"Case 2: Apply(Select, _)")
+          debug(s"Case 2: Apply(Select($pre, _), _)")
           isPathValid(pre)
         case TypeApply(Select(pre, _), _) =>
-          debug("Case 3: TypeApply(Select, _)")
+          debug(s"Case 3: TypeApply(Select($pre, _), _)")
           isPathValid(pre)
         case TypeApply(fun, _) =>
-          debug("Case 4: TypeApply")
+          debug(s"Case 4: TypeApply($fun, _)")
           isPathValid(fun)
         case Literal(Constant(_)) | New(_) => (true, None)
         case id: Ident => (isSymbolValid(id.symbol), None)
