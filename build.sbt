@@ -106,9 +106,10 @@ lazy val core = project
   .settings(
     moduleName := "spores-core",
     resourceDirectory in Compile := baseDirectory.value / "resources",
-    executeTests in Test <<= (executeTests in Test) dependsOn (toolboxClasspath in Test),
+    test in Test <<=
+      (test in Test) dependsOn (toolboxClasspath in Test),
     libraryDependencies ++= Dependencies.core,
-    parallelExecution in Test := false
+    parallelExecution in Test := true
   )
 
 /* Write all the compile-time dependencies of the spores macro to a file,
