@@ -83,9 +83,6 @@ private[spores] class MacroImpl[C <: whitebox.Context with Singleton](val c: C) 
                                                   retTpe,
                                                   environment = validEnv,
                                                   capturedRefs = newRefs)
-      debug("APPLYDEFDEF:")
-      debug(showRaw(applyDefDef))
-
       val rhss = funTree match {
         case Block(stmts, expr) =>
           stmts.toList flatMap {
@@ -139,19 +136,10 @@ private[spores] class MacroImpl[C <: whitebox.Context with Singleton](val c: C) 
     val (paramSyms, retTpe, funBody, validEnv) = conforms(funTree)
     val generator = new SporeGenerator[c.type](c)
 
-    val applyName = TermName("apply")
-    val symtable = c.universe.asInstanceOf[scala.reflect.internal.SymbolTable]
     val sporeClassName = c.freshName(anonSporeName)
 
     if (validEnv.isEmpty) {
-      val newFunBody = c.untypecheck(funBody)
-      val applyDefDef = DefDef(NoMods,
-                               applyName,
-                               Nil,
-                               List(List()),
-                               TypeTree(retTpe),
-                               newFunBody)
-
+      val applyDefDef = generator.createNewDefDef(paramSyms, funBody, retTpe)
       q"""
         class $sporeClassName extends scala.spores.NullarySpore[$rtpe] {
           type Captured = Nothing
@@ -164,25 +152,17 @@ private[spores] class MacroImpl[C <: whitebox.Context with Singleton](val c: C) 
       val capturedTypes = validEnv.map(_.typeSignature).toArray
       debug(s"capturedTypes: ${capturedTypes.mkString(",")}")
 
-      // replace references to captured variables with references to new fields
-      val symsToReplace = validEnv
-      val newTrees =
-        if (validEnv.size == 1)
-          List(Select(Ident(TermName("self")), TermName("captured")))
-        else
-          (1 to validEnv.size)
-            .map(
-              i =>
-                Select(Select(Ident(TermName("self")), TermName("captured")),
-                       TermName(s"_$i")))
-            .toList
-      val treesToSubstitute = newTrees
-      val symsToTrees = symsToReplace.zip(treesToSubstitute).toMap
-      val newFunBody = generator.transformTypes(symsToTrees)(funBody)
-
-      val nfBody = c.untypecheck(newFunBody.asInstanceOf[c.universe.Tree])
-      val applyDefDef =
-        DefDef(NoMods, applyName, Nil, List(List()), TypeTree(retTpe), nfBody)
+      val normalSelect = List(q"self.captured")
+      val tuples = validEnv.indices
+        .map(i => TermName((i + 1).toString))
+        .map(selector => q"self.captured.$selector")
+        .toList
+      val newRefs = if (validEnv.size == 1) normalSelect else tuples
+      val applyDefDef = generator.createNewDefDef(paramSyms,
+                                                  funBody,
+                                                  retTpe,
+                                                  environment = validEnv,
+                                                  capturedRefs = newRefs)
 
       val rhss = funTree match {
         case Block(stmts, expr) =>
@@ -244,32 +224,12 @@ private[spores] class MacroImpl[C <: whitebox.Context with Singleton](val c: C) 
     val (paramSyms, retTpe, funBody, validEnv) = conforms(funTree)
     val generator = new SporeGenerator[c.type](c)
     val paramSym = paramSyms.head
-    val oldName = paramSym.asInstanceOf[c.universe.TermSymbol].name
 
     if (paramSym != null) {
-      val applyParamName = c.freshName(TermName("x"))
-      val id = Ident(applyParamName)
-      val applyName = TermName("apply")
-
-      val applyParamValDef = ValDef(Modifiers(Flag.PARAM),
-                                    applyParamName,
-                                    TypeTree(paramSym.typeSignature),
-                                    EmptyTree)
       val sporeClassName = c.freshName(anonSporeName)
 
       if (validEnv.isEmpty) {
-        val newFunBody = generator.transformTypes(Map(paramSym -> id))(funBody)
-        val nfBody = c.untypecheck(newFunBody.asInstanceOf[c.universe.Tree])
-
-        val applyDefDef: DefDef = {
-          val applyVParamss = List(List(applyParamValDef))
-          DefDef(NoMods,
-                 applyName,
-                 Nil,
-                 applyVParamss,
-                 TypeTree(retTpe),
-                 nfBody)
-        }
+        val applyDefDef = generator.createNewDefDef(paramSyms, funBody, retTpe)
 
         q"""
           class $sporeClassName extends scala.spores.Spore[$ttpe, $rtpe] {
@@ -286,34 +246,17 @@ private[spores] class MacroImpl[C <: whitebox.Context with Singleton](val c: C) 
         val capturedTypes = validEnv.map(_.typeSignature)
         debug(s"capturedTypes: ${capturedTypes.mkString(",")}")
 
-        val symsToReplace = paramSym :: validEnv
-        val newTrees =
-          if (validEnv.size == 1)
-            List(Select(Ident(TermName("self")), TermName("captured")))
-          else
-            (1 to validEnv.size)
-              .map(
-                i =>
-                  Select(Select(Ident(TermName("self")), TermName("captured")),
-                         TermName(s"_$i")))
-              .toList
-
-        val treesToSubstitute = id :: newTrees
-        val symsToTrees = symsToReplace.zip(treesToSubstitute).toMap
-        val namesToTrees =
-          symsToReplace.map(_.name.toString).zip(treesToSubstitute).toMap
-        val newFunBody = generator.transformTypes(symsToTrees)(funBody)
-
-        val nfBody = c.untypecheck(newFunBody.asInstanceOf[c.universe.Tree])
-        val applyDefDef: DefDef = {
-          val applyVParamss = List(List(applyParamValDef))
-          DefDef(NoMods,
-                 applyName,
-                 Nil,
-                 applyVParamss,
-                 TypeTree(retTpe),
-                 nfBody)
-        }
+        val normalSelect = List(q"self.captured")
+        val tuples = validEnv.indices
+          .map(i => TermName((i + 1).toString))
+          .map(selector => q"self.captured.$selector")
+          .toList
+        val newRefs = if (validEnv.size == 1) normalSelect else tuples
+        val applyDefDef = generator.createNewDefDef(paramSyms,
+                                                    funBody,
+                                                    retTpe,
+                                                    environment = validEnv,
+                                                    capturedRefs = newRefs)
 
         val rhss = funTree match {
           case Block(stmts, expr) =>
@@ -328,7 +271,6 @@ private[spores] class MacroImpl[C <: whitebox.Context with Singleton](val c: C) 
         }
         assert(rhss.size == validEnv.size)
 
-        val initializerName = c.freshName(TermName("initialize"))
         val constructorParams = List(List(toTuple(rhss)))
         val superclassName = TypeName("SporeWithEnv")
 
