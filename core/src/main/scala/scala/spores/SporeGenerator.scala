@@ -113,8 +113,8 @@ protected class SporeGenerator[C <: whitebox.Context](val ctx: C) {
                 "You cannot construct a tuple of more than 22 elements.")
   }
 
-  /** Create a type alias for `Captured` given the captured types in the spore header. */
-  def createCapturedType(capturedTypes: Array[Type]): Tree = {
+  /** Create a type body for the `Captured` alias given the types in the spore header. */
+  def toTypeTuple(capturedTypes: Array[Type]): Tree = {
     if (capturedTypes.length == 1) tq"${capturedTypes(0)}"
     else if (capturedTypes.length == 2)
       tq"(${capturedTypes(0)}, ${capturedTypes(1)})"

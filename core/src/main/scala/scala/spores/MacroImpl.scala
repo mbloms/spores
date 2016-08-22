@@ -8,7 +8,6 @@
 
 package scala.spores
 
-// TODO(jvican): Can we just use blackbox?
 import scala.reflect.macros.whitebox
 
 private[spores] class MacroImpl[C <: whitebox.Context](val c: C) {
@@ -70,7 +69,7 @@ private[spores] class MacroImpl[C <: whitebox.Context](val c: C) {
                                                 capturedRefs = newRefs)
       val valDefRhss = valDefEnv.map(_.rhs).toArray
       val constructorParams = List(generator.toTuple(valDefRhss))
-      val capturedType = generator.createCapturedType(capturedTypes)
+      val capturedType = generator.toTypeTuple(capturedTypes)
 
       val sporeType =
         if (paramSyms.isEmpty)
