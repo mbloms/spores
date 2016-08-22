@@ -8,136 +8,53 @@
 
 package scala.spores
 
-trait NullarySpore[+R] extends Function0[R] {
+sealed trait SporeBase {
 
-  /** The type of captured variables.
+  /** Represent the type of the captured variables.
     *
-    *  If this Spore captures multiple variables, this is
-    *  a tuple type.
+    * For more than one captured variable, the type is a tuple of types.
     */
   type Captured
 
-  /** Enables creating an instance of a Spore subclass via reflection.
-    */
-  def className: String =
-    _className
-
-  protected[this] var _className: String =
-    null
-}
-
-trait NullarySporeWithEnv[+R] extends NullarySpore[R] {
-
-  /** Stores the environment of the Spore.
-    *
-    *  If the Spore captures multiple variables, this field
-    *  stores a tuple.
-    */
-  val captured: Captured //= _
-
-}
-
-trait Spore[-T, +R] extends Function1[T, R] {
-
-  /** The type of captured variables.
-    *
-    *  If this Spore captures multiple variables, this is
-    *  a tuple type.
-    */
-  type Captured
-
-  /** Enables creating an instance of a Spore subclass via reflection.
-    */
-  def className: String =
-    _className
-
+  /** Enable the creation of spores via reflection. */
+  def className: String = _className
   protected[this] var _className: String = null
 }
 
+trait NullarySpore[+R] extends Function0[R] with SporeBase
+
+trait NullarySporeWithEnv[+R] extends NullarySpore[R] {
+
+  /** Store the environment of the Spore. */
+  val captured: Captured
+}
+
+trait Spore[-T, +R] extends Function1[T, R] with SporeBase
+
 trait SporeWithEnv[-T, +R] extends Spore[T, R] {
 
-  /** Stores the environment of the Spore.
-    *
-    *  If the Spore captures multiple variables, this field
-    *  stores a tuple.
-    */
-  val captured: Captured // = _
-
+  /** Store the environment of the Spore. */
+  val captured: Captured
 }
 
-trait Spore2[-T1, -T2, +R] extends Function2[T1, T2, R] {
-
-  /** The type of captured variables.
-    *
-    *  If this Spore captures multiple variables, this is
-    *  a tuple type.
-    */
-  type Captured
-
-  /** Enables creating an instance of a Spore subclass via reflection.
-    */
-  def className: String =
-    _className
-
-  protected[this] var _className: String =
-    null
-}
+trait Spore2[-T1, -T2, +R] extends Function2[T1, T2, R] with SporeBase
 
 trait Spore2WithEnv[-T1, -T2, +R] extends Spore2[T1, T2, R] {
 
-  /** Stores the environment of the Spore.
-    *
-    *  If the Spore captures multiple variables, this field
-    *  stores a tuple.
-    */
-  val captured: Captured // = _
-
+  /** Store the environment of the Spore. */
+  val captured: Captured
 }
 
-trait Spore3[-T1, -T2, -T3, +R] extends Function3[T1, T2, T3, R] {
-
-  /** The type of captured variables.
-    *
-    *  If this Spore captures multiple variables, this is
-    *  a tuple type.
-    */
-  type Captured
-
-  /** Enables creating an instance of a Spore subclass via reflection.
-    */
-  def className: String =
-    _className
-
-  protected[this] var _className: String =
-    null
-}
+trait Spore3[-T1, -T2, -T3, +R] extends Function3[T1, T2, T3, R] with SporeBase
 
 trait Spore3WithEnv[-T1, -T2, -T3, +R] extends Spore3[T1, T2, T3, R] {
 
-  /** Stores the environment of the Spore.
-    *
-    *  If the Spore captures multiple variables, this field
-    *  stores a tuple.
-    */
-  val captured: Captured // = _
-
+  /** Store the environment of the Spore. */
+  val captured: Captured
 }
 
-class NullarySporeImpl[+R](val f: () => R) extends NullarySpore[R] {
+class NullarySporeImpl[+R](val f: () => R)
+    extends NullarySpore[R]
+    with SporeBase {
   def apply(): R = f()
-}
-
-class SporeImpl[-T, +R](val f: T => R) extends Spore[T, R] {
-  def apply(x: T): R = f(x)
-  override def className = "SporeImpl"
-}
-
-class Spore2Impl[-T1, -T2, +R](val f: (T1, T2) => R)
-    extends Spore2[T1, T2, R] {
-  def apply(x1: T1, x2: T2): R = f(x1, x2)
-}
-
-class Spore3Impl[-T1, -T2, -T3, +R](val f: (T1, T2, T3) => R)
-    extends Spore3[T1, T2, T3, R] {
-  def apply(x1: T1, x2: T2, x3: T3): R = f(x1, x2, x3)
 }
