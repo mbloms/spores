@@ -25,8 +25,6 @@ trait NullarySpore[+R] extends Function0[R] with SporeBase
 
 trait NullarySporeWithEnv[+R] extends NullarySpore[R] {
 
-  /** Store the environment of the Spore. */
-  val captured: Captured
 }
 
 trait Spore[-T, +R] extends Function1[T, R] with SporeBase
