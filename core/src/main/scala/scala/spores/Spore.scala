@@ -53,8 +53,3 @@ trait Spore3WithEnv[-T1, -T2, -T3, +R] extends Spore3[T1, T2, T3, R] {
   val captured: Captured
 }
 
-class NullarySporeImpl[+R](val f: () => R)
-    extends NullarySpore[R]
-    with SporeBase {
-  def apply(): R = f()
-}
