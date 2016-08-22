@@ -45,33 +45,17 @@ private[spores] class MacroImpl[C <: whitebox.Context](val c: C) {
     val validEnv = valDefEnv.map(_.symbol)
     val generator = new SporeGenerator[c.type](c)
 
-    val sporeClassName = c.freshName(anonSporeName)
+    val sporeName = c.freshName(anonSporeName)
+    val targs = tpes.tail ::: List(tpes.head)
 
     if (validEnv.isEmpty) {
-      val applyDefDef = generator.createNewDefDef(paramSyms, funBody, retTpe)
-
+      val sporeBody = generator.createNewDefDef(paramSyms, funBody, retTpe)
       if (paramSyms.size == 2) {
-        q"""
-          class $sporeClassName extends scala.spores.Spore2[${tpes(1)}, ${tpes(
-          2)}, ${tpes(0)}] {
-            self =>
-            type Captured = scala.Nothing
-            this._className = this.getClass.getName
-            $applyDefDef
-          }
-          new $sporeClassName
-        """
+        val sporeType = tq"$sporesPath.Spore2[..$targs]"
+        generator.generateSpore(sporeName, sporeType, Nil, sporeBody)
       } else if (paramSyms.size == 3) {
-        q"""
-          class $sporeClassName extends scala.spores.Spore3[${tpes(1)}, ${tpes(
-          2)}, ${tpes(3)}, ${tpes(0)}] {
-            self =>
-            type Captured = scala.Nothing
-            this._className = this.getClass.getName
-            $applyDefDef
-          }
-          new $sporeClassName
-        """
+        val sporeType = tq"$sporesPath.Spore3[..$targs]"
+        generator.generateSpore(sporeName, sporeType, Nil, sporeBody)
       } else ???
     } else { // validEnv.size > 1 (TODO: size == 1)
       // replace references to paramSyms with references to applyParamSymbols
@@ -80,37 +64,29 @@ private[spores] class MacroImpl[C <: whitebox.Context](val c: C) {
       debug(s"Captured types: ${capturedTypes.mkString(",")}")
 
       val newRefs = generator.generateCapturedReferences(validEnv)
-      val applyDefDef = generator.createNewDefDef(paramSyms,
-                                                  funBody,
-                                                  retTpe,
-                                                  environment = validEnv,
-                                                  capturedRefs = newRefs)
+      val sporeBody = generator.createNewDefDef(paramSyms,
+                                                funBody,
+                                                retTpe,
+                                                environment = validEnv,
+                                                capturedRefs = newRefs)
       val valDefRhss = valDefEnv.map(_.rhs).toArray
-      val constructorParams = List(List(generator.toTuple(valDefRhss)))
+      val constructorParams = List(generator.toTuple(valDefRhss))
       val capturedType = generator.createCapturedType(capturedTypes)
 
       if (paramSyms.size == 2) {
-        q"""
-            class $sporeClassName(val captured: $capturedType) extends scala.spores.Spore2WithEnv[${tpes(
-          1)}, ${tpes(2)}, ${tpes(0)}] {
-              self =>
-              type Captured = $capturedType
-              this._className = this.getClass.getName
-              $applyDefDef
-            }
-            new $sporeClassName(...$constructorParams)
-          """
+        val sporeType = tq"$sporesPath.Spore2WithEnv[..$targs]"
+        generator.generateSpore(sporeName,
+                                sporeType,
+                                List(capturedType),
+                                sporeBody,
+                                constructorParams)
       } else if (paramSyms.size == 3) {
-        q"""
-            class $sporeClassName(val captured: $capturedType) extends scala.spores.Spore3WithEnv[${tpes(
-          1)}, ${tpes(2)}, ${tpes(3)}, ${tpes(0)}] {
-              self =>
-              type Captured = $capturedType
-              this._className = this.getClass.getName
-              $applyDefDef
-            }
-            new $sporeClassName(...$constructorParams)
-          """
+        val sporeType = tq"$sporesPath.Spore2WithEnv[..$targs]"
+        generator.generateSpore(sporeName,
+                                sporeType,
+                                List(capturedType),
+                                sporeBody,
+                                constructorParams)
       } else ???
     }
   }
