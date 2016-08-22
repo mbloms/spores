@@ -66,7 +66,7 @@ package object spores {
   def nullarySporeImpl[R: ctx.WeakTypeTag](ctx: whitebox.Context)(
       fun: ctx.Expr[() => R]): ctx.Expr[NullarySpore[R]] = {
     import ctx.universe._
-    val impl = new MacroImpl[ctx.type](ctx)
+    val impl = new SporeImplModule[ctx.type](ctx)
     val targs = List(weakTypeOf[R])
     val tree = impl.createSpore(fun.tree, targs)
     ctx.Expr[NullarySpore[R]](tree)
@@ -75,7 +75,7 @@ package object spores {
   def sporeImpl[T: ctx.WeakTypeTag, R: ctx.WeakTypeTag](ctx: whitebox.Context)(
       fun: ctx.Expr[T => R]): ctx.Expr[Spore[T, R]] = {
     import ctx.universe._
-    val impl = new MacroImpl[ctx.type](ctx)
+    val impl = new SporeImplModule[ctx.type](ctx)
     val targs = List(weakTypeOf[T], weakTypeOf[R])
     val tree = impl.createSpore(fun.tree, targs)
     ctx.Expr[Spore[T, R]](tree)
@@ -87,7 +87,7 @@ package object spores {
     import ctx.universe._
 
     // check Spore constraints
-    val impl = new MacroImpl[ctx.type](ctx)
+    val impl = new SporeImplModule[ctx.type](ctx)
     val targs = List(weakTypeOf[T1], weakTypeOf[T2], weakTypeOf[R])
     val tree = impl.createSpore(fun.tree, targs)
     ctx.Expr[Spore2[T1, T2, R]](tree)
@@ -101,7 +101,7 @@ package object spores {
     import ctx.universe._
 
     // check Spore constraints
-    val impl = new MacroImpl[ctx.type](ctx)
+    val impl = new SporeImplModule[ctx.type](ctx)
     val targs =
       List(weakTypeOf[T1], weakTypeOf[T2], weakTypeOf[T3], weakTypeOf[R])
     val tree = impl.createSpore(fun.tree, targs)

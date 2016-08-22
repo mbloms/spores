@@ -10,7 +10,7 @@ package scala.spores
 
 import scala.reflect.macros.whitebox
 
-private[spores] class MacroImpl[C <: whitebox.Context](val c: C) {
+private[spores] class SporeImplModule[C <: whitebox.Context](val c: C) {
   import c.universe._
 
   /* Don't change this name since it's used
