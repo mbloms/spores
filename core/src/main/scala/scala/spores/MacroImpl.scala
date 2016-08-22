@@ -18,16 +18,20 @@ private[spores] class MacroImpl[C <: whitebox.Context](val c: C) {
    * to check if a class is indeed a spore */
   val anonSporeName = TypeName("anonspore")
 
-  def conforms(funTree: c.Tree): (List[Symbol], Type, Tree, List[Symbol]) = {
+  def conforms(funTree: c.Tree): (List[Symbol], Type, Tree, List[ValDef]) = {
     val analysis = new SporeAnalysis[c.type](c)
     val (sporeEnv, sporeFunDef) = analysis.stripSporeStructure(funTree)
-    sporeEnv foreach (sym => debug(s"Valid captured symbol: $sym"))
+    sporeEnv foreach (sym => debug(s"Captured symbol: $sym"))
 
     val (funOpt, vparams, sporeBody) = analysis.readSporeFunDef(sporeFunDef)
-    val s = funOpt.map(_.symbol)
+    val functionSymbol = funOpt.map(_.symbol)
     val captured = analysis.collectCaptured(sporeBody)
     val declared = analysis.collectDeclared(sporeBody)
-    val checker = new SporeChecker[c.type](c)(sporeEnv, s, captured, declared)
+    val symbolsEnv = sporeEnv.map(_.symbol)
+    val checker = new SporeChecker[c.type](c)(symbolsEnv,
+                                              functionSymbol,
+                                              captured,
+                                              declared)
 
     debug(s"Checking $sporeBody...")
     checker.checkReferencesInBody(sporeBody)
@@ -35,7 +39,8 @@ private[spores] class MacroImpl[C <: whitebox.Context](val c: C) {
   }
 
   def check2(funTree: c.Tree, tpes: List[c.Type]): c.Tree = {
-    val (paramSyms, retTpe, funBody, validEnv) = conforms(funTree)
+    val (paramSyms, retTpe, funBody, valDefEnv) = conforms(funTree)
+    val validEnv = valDefEnv.map(_.symbol)
     val generator = new SporeGenerator[c.type](c)
 
     val sporeClassName = c.freshName(anonSporeName)
@@ -78,17 +83,8 @@ private[spores] class MacroImpl[C <: whitebox.Context](val c: C) {
                                                   retTpe,
                                                   environment = validEnv,
                                                   capturedRefs = newRefs)
-      val rhss = funTree match {
-        case Block(stmts, expr) =>
-          (stmts flatMap {
-            case valDef: ValDef => List(valDef.rhs)
-            case stmt =>
-              c.abort(stmt.pos, "Only val defs allowed at this position")
-          }).toArray
-      }
-      assert(rhss.size == validEnv.size)
-
-      val constructorParams = List(List(generator.toTuple(rhss)))
+      val valDefRhss = valDefEnv.map(_.rhs).toArray
+      val constructorParams = List(List(generator.toTuple(valDefRhss)))
       val capturedTypeDef = generator.createCapturedType(capturedTypes)
       val q"type $_ = $capturedType" = capturedTypeDef
 
@@ -127,7 +123,8 @@ private[spores] class MacroImpl[C <: whitebox.Context](val c: C) {
   def checkNullary(funTree: c.Tree, rtpe: c.Type): c.Tree = {
     debug(s"SPORES: enter checkNullary")
 
-    val (paramSyms, retTpe, funBody, validEnv) = conforms(funTree)
+    val (paramSyms, retTpe, funBody, valDefEnv) = conforms(funTree)
+    val validEnv = valDefEnv.map(_.symbol)
     val generator = new SporeGenerator[c.type](c)
 
     val sporeClassName = c.freshName(anonSporeName)
@@ -153,17 +150,8 @@ private[spores] class MacroImpl[C <: whitebox.Context](val c: C) {
                                                   environment = validEnv,
                                                   capturedRefs = newRefs)
 
-      val rhss = funTree match {
-        case Block(stmts, expr) =>
-          (stmts flatMap {
-            case valDef: ValDef => List(valDef.rhs)
-            case stmt =>
-              c.abort(stmt.pos, "Only val defs allowed at this position")
-          }).toArray
-      }
-      assert(rhss.size == validEnv.size)
-
-      val constructorParams = List(List(generator.toTuple(rhss)))
+      val valDefRhss = valDefEnv.map(_.rhs).toArray
+      val constructorParams = List(List(generator.toTuple(valDefRhss)))
       val superclassName = TypeName("NullarySporeWithEnv")
 
       val capturedTypeDef = generator.createCapturedType(capturedTypes.toArray)
@@ -206,7 +194,8 @@ private[spores] class MacroImpl[C <: whitebox.Context](val c: C) {
   def check(funTree: c.Tree, ttpe: c.Type, rtpe: c.Type): c.Tree = {
     debug(s"SPORES: enter check, tree:\n$funTree")
 
-    val (paramSyms, retTpe, funBody, validEnv) = conforms(funTree)
+    val (paramSyms, retTpe, funBody, valDefEnv) = conforms(funTree)
+    val validEnv = valDefEnv.map(_.symbol)
     val generator = new SporeGenerator[c.type](c)
     val paramSym = paramSyms.head
 
@@ -238,17 +227,8 @@ private[spores] class MacroImpl[C <: whitebox.Context](val c: C) {
                                                     environment = validEnv,
                                                     capturedRefs = newRefs)
 
-        val rhss = funTree match {
-          case Block(stmts, expr) =>
-            (stmts flatMap {
-                case valDef: ValDef => List(valDef.rhs)
-                case stmt =>
-                  c.abort(stmt.pos, "Only val defs allowed at this position")
-            }).toArray
-        }
-        assert(rhss.size == validEnv.size)
-
-        val constructorParams = List(List(generator.toTuple(rhss)))
+        val valDefRhss = valDefEnv.map(_.rhs).toArray
+        val constructorParams = List(List(generator.toTuple(valDefRhss)))
         val superclassName = TypeName("SporeWithEnv")
 
         val capturedTypeDef =

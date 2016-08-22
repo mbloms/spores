@@ -2,8 +2,7 @@ package scala.spores
 
 import scala.reflect.macros.whitebox
 
-protected class SporeGenerator[C <: whitebox.Context](
-    val ctx: C) {
+protected class SporeGenerator[C <: whitebox.Context](val ctx: C) {
   import ctx.universe._
 
   /** Create a tuple from trees. Note that signature is different than `createCapturedType`. */
@@ -240,7 +239,7 @@ protected class SporeGenerator[C <: whitebox.Context](
     val (newParamDefs, newParamRefs) = generateNewParameters(oldParamSymbols)
     val oldSymbols = oldParamSymbols ::: environment
     val mapping = oldSymbols.zip(newParamRefs ::: capturedRefs).toMap
-    val body = ctx.untypecheck(transformTypesFrom(mapping)(oldBody))
+    val body = ctx.untypecheck(typeTransformerFrom(mapping)(oldBody))
     q"def apply(..$newParamDefs): $returnType = $body".asInstanceOf[DefDef]
   }
 
@@ -342,7 +341,6 @@ protected class SporeGenerator[C <: whitebox.Context](
     }
   }
 
-  def transformTypesFrom(m: Map[Symbol, Tree]): Tree => Tree = {
+  private def typeTransformerFrom(m: Map[Symbol, Tree]): Tree => Tree =
     new TypeTransformer(m).transform(_: Tree)
-  }
 }

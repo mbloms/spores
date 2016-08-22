@@ -8,13 +8,13 @@ protected class SporeAnalysis[C <: whitebox.Context with Singleton](val ctx: C) 
   import ctx.universe.Flag._
 
   /** Strip the header and the body of a spore iff they are valid. */
-  def stripSporeStructure(tree: Tree): (List[Symbol], Tree) = {
+  def stripSporeStructure(tree: Tree): (List[ValDef], Tree) = {
     def isCorrectHeader(valDef: ValDef) = !valDef.mods.hasFlag(MUTABLE)
 
     tree match {
       case Block(stmts, expr) =>
         (stmts flatMap {
-          case vd: ValDef if isCorrectHeader(vd) => List(vd.symbol)
+          case vd: ValDef if isCorrectHeader(vd) => List(vd)
           case stmt => ctx.abort(stmt.pos, Feedback.IncorrectSporeHeader)
         }) -> expr
       case expr => (List.empty, expr)
