@@ -11,7 +11,7 @@ package scala.spores
 // TODO(jvican): Can we just use blackbox?
 import scala.reflect.macros.whitebox
 
-private[spores] class MacroImpl[C <: whitebox.Context with Singleton](val c: C) {
+private[spores] class MacroImpl[C <: whitebox.Context](val c: C) {
   import c.universe._
 
   /* Don't change this name since it's used

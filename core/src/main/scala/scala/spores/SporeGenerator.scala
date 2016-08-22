@@ -2,7 +2,7 @@ package scala.spores
 
 import scala.reflect.macros.whitebox
 
-protected class SporeGenerator[C <: whitebox.Context with Singleton](
+protected class SporeGenerator[C <: whitebox.Context](
     val ctx: C) {
   import ctx.universe._
 
