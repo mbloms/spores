@@ -10,7 +10,7 @@ package scala
 
 import scala.language.experimental.macros
 import scala.language.implicitConversions
-import scala.reflect.macros.whitebox.Context
+import scala.reflect.macros.whitebox
 
 package object spores {
 
@@ -24,19 +24,30 @@ package object spores {
     }
   }
 
+  // Change the default value to enable the macro debugging
+  val defaultDebugProperty = System.getProperty("spores.debug", "true")
+  private val isDebugEnabled = defaultDebugProperty.toBoolean
+  private[spores] def debug(s: => String)(implicit line: sourcecode.Line,
+                                          file: sourcecode.File): Unit = {
+    if (isDebugEnabled) logger.elem(s)
+  }
+
+  /** Capture a variable and return it. */
   def capture[T](x: T): T = x
 
-  /**
-    *  Usage:
+  /** Converts a block of statements and an anonymous function to a spore,
+    * checking the captured paths and ensuring the spore semantics.
     *
-    *  spore {
-    *    val x = outerX
-    *    val y = outerY
-    *    (p: T) => <body>
-    *  }
+    * The following spore will be returned if the body of the anonymous
+    * function only accesses local variables or stable paths.
     *
-    *  Check that body only accesses x, y, p, and variables local to (owned by) the
-    *  closure.
+    * {{{
+    * spore {
+    *   val x = outerX
+    *   val y = outerY
+    *   (p: T) => <body>
+    * }
+    * }}}
     */
   def spore[T, R](fun: T => R): Spore[T, R] = macro sporeImpl[T, R]
 
@@ -46,163 +57,51 @@ package object spores {
   def spore[T1, T2, T3, R](fun: (T1, T2, T3) => R): Spore3[T1, T2, T3, R] =
     macro spore3Impl[T1, T2, T3, R]
 
-  def spore[R](fun: Function0[R]): NullarySpore[R] = macro nullarySporeImpl[R]
+  def spore[R](fun: () => R): NullarySpore[R] = macro nullarySporeImpl[R]
 
-  implicit def mkSpore[T, R](fun: T => R): Spore[T, R] = macro sporeImpl[T, R]
+  implicit def toSpore[T, R](fun: T => R): Spore[T, R] = macro sporeImpl[T, R]
 
-  def delayed[T](body: T): Function0[T] = new Function0[T] {
-    def apply(): T = body
+  def delayed[T](body: T): () => T = () => body
+
+  def nullarySporeImpl[R: ctx.WeakTypeTag](ctx: whitebox.Context)(
+      fun: ctx.Expr[() => R]): ctx.Expr[NullarySpore[R]] = {
+    val impl = new MacroImpl[ctx.type](ctx)
+    val tree = impl.checkNullary(fun.tree, ctx.universe.weakTypeOf[R])
+    ctx.Expr[NullarySpore[R]](tree)
   }
 
-  // TOGGLE DEBUGGING
-  private val isDebugEnabled =
-    System.getProperty("spores.debug", "true").toBoolean
-  private[spores] def debug(s: => String)(implicit line: sourcecode.Line,
-                                          file: sourcecode.File): Unit =
-    if (isDebugEnabled) logger.elem(s)
-
-  def nullarySporeImpl[R: c.WeakTypeTag](c: Context)(
-      fun: c.Expr[Function0[R]]): c.Expr[NullarySpore[R]] = {
-    val impl = new MacroImpl[c.type](c)
-    val tree = impl.checkNullary(fun.tree, c.universe.weakTypeOf[R])
-    c.Expr[NullarySpore[R]](tree)
-  }
-
-  def sporeImpl[T: c.WeakTypeTag, R: c.WeakTypeTag](c: Context)(
-      fun: c.Expr[T => R]): c.Expr[Spore[T, R]] = {
-    import c.universe._
-
-    // check Spore constraints
-    // TODO: the last 2 arguments could be passed implicitly
-    val impl = new MacroImpl[c.type](c)
+  def sporeImpl[T: ctx.WeakTypeTag, R: ctx.WeakTypeTag](ctx: whitebox.Context)(
+      fun: ctx.Expr[T => R]): ctx.Expr[Spore[T, R]] = {
+    import ctx.universe._
+    val impl = new MacroImpl[ctx.type](ctx)
     val tree = impl.check(fun.tree, weakTypeOf[T], weakTypeOf[R])
-
-    c.Expr[Spore[T, R]](tree)
+    ctx.Expr[Spore[T, R]](tree)
   }
 
-  def spore2Impl[T1: c.WeakTypeTag, T2: c.WeakTypeTag, R: c.WeakTypeTag](
-      c: Context)(fun: c.Expr[(T1, T2) => R]): c.Expr[Spore2[T1, T2, R]] = {
-    import c.universe._
+  def spore2Impl[T1: ctx.WeakTypeTag, T2: ctx.WeakTypeTag, R: ctx.WeakTypeTag](
+      ctx: whitebox.Context)(
+      fun: ctx.Expr[(T1, T2) => R]): ctx.Expr[Spore2[T1, T2, R]] = {
+    import ctx.universe._
 
     // check Spore constraints
-    val impl = new MacroImpl[c.type](c)
-    val tree = impl
-      .check2(fun.tree, List(weakTypeOf[R], weakTypeOf[T1], weakTypeOf[T2]))
-
-    c.Expr[Spore2[T1, T2, R]](tree)
+    val impl = new MacroImpl[ctx.type](ctx)
+    val targs = List(weakTypeOf[R], weakTypeOf[T1], weakTypeOf[T2])
+    val tree = impl.check2(fun.tree, targs)
+    ctx.Expr[Spore2[T1, T2, R]](tree)
   }
 
-  def spore3Impl[T1: c.WeakTypeTag,
-                 T2: c.WeakTypeTag,
-                 T3: c.WeakTypeTag,
-                 R: c.WeakTypeTag](c: Context)(
-      fun: c.Expr[(T1, T2, T3) => R]): c.Expr[Spore3[T1, T2, T3, R]] = {
-    import c.universe._
+  def spore3Impl[T1: ctx.WeakTypeTag,
+                 T2: ctx.WeakTypeTag,
+                 T3: ctx.WeakTypeTag,
+                 R: ctx.WeakTypeTag](ctx: whitebox.Context)(
+      fun: ctx.Expr[(T1, T2, T3) => R]): ctx.Expr[Spore3[T1, T2, T3, R]] = {
+    import ctx.universe._
 
     // check Spore constraints
-    val impl = new MacroImpl[c.type](c)
-    val tree = impl.check2(
-      fun.tree,
-      List(weakTypeOf[R], weakTypeOf[T1], weakTypeOf[T2], weakTypeOf[T3]))
-
-    c.Expr[Spore3[T1, T2, T3, R]](tree)
+    val impl = new MacroImpl[ctx.type](ctx)
+    val targs =
+      List(weakTypeOf[R], weakTypeOf[T1], weakTypeOf[T2], weakTypeOf[T3])
+    val tree = impl.check2(fun.tree, targs)
+    ctx.Expr[Spore3[T1, T2, T3, R]](tree)
   }
-
-  // type constraint checking idea
-  private def checkTc(c: Context)(funTree: c.Tree): List[c.Type] = {
-    import c.universe._
-
-    // traverse body of `fun` and check that the free vars access only allowed things
-    val (validEnv, funLiteral) = funTree match {
-      case Block(stmts, expr) =>
-        val validVarSyms: List[(Symbol, Type)] = stmts.toList flatMap { stmt =>
-          stmt match {
-            case vd @ ValDef(mods, name, tpt, rhs) =>
-              List(vd.symbol -> tpt.tpe)
-            case td @ TypeDef(mods, name, tparams, rhs) =>
-              debug(s"found type def $name with rhs: $rhs")
-              if (name.toString == "Constraint") {
-                rhs match {
-                  case tpt @ TypeTree() =>
-                    debug(s"found TypeTree, tpe: ${tpt.tpe}")
-                  case _ =>
-                    debug(s"rhs is something else: ${rhs.getClass}")
-                }
-              }
-              List()
-            case _ =>
-              c.error(stmt.pos, "Only val defs allowed at this position")
-              List()
-          }
-        }
-        validVarSyms foreach { p =>
-          debug("valid: " + p)
-        }
-        (validVarSyms, expr)
-
-      case expr =>
-        (List(), expr)
-    }
-
-    funLiteral match {
-      case fun @ Function(vparams, body) =>
-        def isSymbolValid(s: Symbol): Boolean =
-          validEnv.map(_._1).contains(s) ||
-            s.owner == fun.symbol ||
-            s.isStatic || {
-            c.error(s.pos, "invalid reference to " + s)
-            false
-          }
-
-        debug(s"checking $body...")
-        val traverser = new Traverser {
-          override def traverse(tree: Tree) {
-            tree match {
-              case id: Ident =>
-                debug("checking ident " + id)
-                isSymbolValid(id.symbol)
-
-              case sel @ Select(app: Apply, _) =>
-                debug("checking select (app)" + sel)
-                if (app.symbol.isStatic) {
-                  debug("OK, fun static")
-                } else c.error(sel.pos, "the fun is not static")
-
-              case sel @ Select(pre, _) =>
-                debug("checking select " + sel)
-                isSymbolValid(sel.symbol)
-
-              case _ =>
-                super.traverse(tree)
-            }
-          }
-        }
-
-        traverser.traverse(body)
-      case _ =>
-        c.error(funLiteral.pos, "Function literal expected")
-    }
-
-    validEnv map { _._2 }
-  }
-
-  // sketch involved with type constraints, probably unneeded
-  def sporeWith[T, R](fun: T => R): Spore[T, R] = macro sporeTcImpl[T, R]
-
-  def sporeTcImpl[T: c.WeakTypeTag, R: c.WeakTypeTag](c: Context)(
-      fun: c.Expr[T => R]): c.Expr[Spore[T, R]] = {
-    import c.universe._
-
-    // check Spore constraints
-    val tpes = checkTc(c)(fun.tree)
-    debug("captured types: " + tpes)
-
-    reify {
-      val f = fun.splice
-      new Spore[T, R] {
-        def apply(x: T): R = f(x)
-      }
-    }
-  }
-
 }
