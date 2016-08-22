@@ -117,7 +117,7 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
   private def isStaticSelector(member: Tree): Boolean = member match {
     case Select(selector, member0) =>
       val selStatic = selector.symbol.isStatic
-      debug(s"checking whether $selector is static...$selStatic")
+      debug(s"Checking whether $selector is static...$selStatic")
       selStatic || isStaticSelector(selector)
     case _ => false
   }

@@ -72,12 +72,7 @@ private[spores] class MacroImpl[C <: whitebox.Context with Singleton](val c: C) 
       val capturedTypes = validEnv.map(_.typeSignature).toArray
       debug(s"capturedTypes: ${capturedTypes.mkString(",")}")
 
-      val normalSelect = List(q"self.captured")
-      val tuples = validEnv.indices
-        .map(i => TermName((i + 1).toString))
-        .map(selector => q"self.captured.$selector")
-        .toList
-      val newRefs = if (validEnv.size == 1) normalSelect else tuples
+      val newRefs = generator.generateCapturedReferences(validEnv)
       val applyDefDef = generator.createNewDefDef(paramSyms,
                                                   funBody,
                                                   retTpe,
@@ -151,12 +146,7 @@ private[spores] class MacroImpl[C <: whitebox.Context with Singleton](val c: C) 
       val capturedTypes = validEnv.map(_.typeSignature).toArray
       debug(s"capturedTypes: ${capturedTypes.mkString(",")}")
 
-      val normalSelect = List(q"self.captured")
-      val tuples = validEnv.indices
-        .map(i => TermName((i + 1).toString))
-        .map(selector => q"self.captured.$selector")
-        .toList
-      val newRefs = if (validEnv.size == 1) normalSelect else tuples
+      val newRefs = generator.generateCapturedReferences(validEnv)
       val applyDefDef = generator.createNewDefDef(paramSyms,
                                                   funBody,
                                                   retTpe,
@@ -241,12 +231,7 @@ private[spores] class MacroImpl[C <: whitebox.Context with Singleton](val c: C) 
         val capturedTypes = validEnv.map(_.typeSignature)
         debug(s"capturedTypes: ${capturedTypes.mkString(",")}")
 
-        val normalSelect = List(q"self.captured")
-        val tuples = validEnv.indices
-          .map(i => TermName((i + 1).toString))
-          .map(selector => q"self.captured.$selector")
-          .toList
-        val newRefs = if (validEnv.size == 1) normalSelect else tuples
+        val newRefs = generator.generateCapturedReferences(validEnv)
         val applyDefDef = generator.createNewDefDef(paramSyms,
                                                     funBody,
                                                     retTpe,

@@ -211,6 +211,16 @@ protected class SporeGenerator[C <: whitebox.Context with Singleton](
                 "You cannot construct a tuple of more than 22 elements.")
   }
 
+  private val selectorForNoTuple = q"self.captured"
+  def generateCapturedReferences(env: List[Symbol]): List[Tree] = {
+    if (env.size == 1) List(selectorForNoTuple)
+    else
+      env.indices
+        .map(i => TermName(s"_${i + 1}"))
+        .map(selector => q"$selectorForNoTuple.$selector")
+        .toList
+  }
+
   private val paramMods = Modifiers(Flag.PARAM)
   private val paramTermName = TermName("x")
   private def generateNewParameters(syms: List[Symbol]) = {
