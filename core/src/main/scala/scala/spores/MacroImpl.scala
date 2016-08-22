@@ -40,29 +40,28 @@ private[spores] class MacroImpl[C <: whitebox.Context](val c: C) {
     (vparams.map(_.symbol), sporeBody.tpe, sporeBody, sporeEnv)
   }
 
-  def check2(funTree: c.Tree, tpes: List[c.Type]): c.Tree = {
+  def createSpore(funTree: c.Tree, targs: List[c.Type]): c.Tree = {
     val (paramSyms, retTpe, funBody, valDefEnv) = conforms(funTree)
     val validEnv = valDefEnv.map(_.symbol)
     val generator = new SporeGenerator[c.type](c)
-
     val sporeName = c.freshName(anonSporeName)
-    val targs = tpes.tail ::: List(tpes.head)
 
     if (validEnv.isEmpty) {
       val sporeBody = generator.createNewDefDef(paramSyms, funBody, retTpe)
-      if (paramSyms.size == 2) {
-        val sporeType = tq"$sporesPath.Spore2[..$targs]"
-        generator.generateSpore(sporeName, sporeType, Nil, sporeBody)
-      } else if (paramSyms.size == 3) {
-        val sporeType = tq"$sporesPath.Spore3[..$targs]"
-        generator.generateSpore(sporeName, sporeType, Nil, sporeBody)
-      } else ???
-    } else { // validEnv.size > 1 (TODO: size == 1)
-      // replace references to paramSyms with references to applyParamSymbols
-      // and references to captured variables to new fields
+      val sporeType =
+        if (paramSyms.isEmpty)
+          tq"$sporesPath.NullarySpore[..$targs]"
+        else if (paramSyms.size == 1)
+          tq"$sporesPath.Spore[..$targs]"
+        else if (paramSyms.size == 2)
+          tq"$sporesPath.Spore2[..$targs]"
+        else if (paramSyms.size == 3)
+          tq"$sporesPath.Spore3[..$targs]"
+        else ???
+      generator.generateSpore(sporeName, sporeType, Nil, sporeBody)
+    } else {
       val capturedTypes = validEnv.map(_.typeSignature).toArray
       debug(s"Captured types: ${capturedTypes.mkString(",")}")
-
       val newRefs = generator.generateCapturedReferences(validEnv)
       val sporeBody = generator.createNewDefDef(paramSyms,
                                                 funBody,
@@ -73,57 +72,16 @@ private[spores] class MacroImpl[C <: whitebox.Context](val c: C) {
       val constructorParams = List(generator.toTuple(valDefRhss))
       val capturedType = generator.createCapturedType(capturedTypes)
 
-      if (paramSyms.size == 2) {
-        val sporeType = tq"$sporesPath.Spore2WithEnv[..$targs]"
-        generator.generateSpore(sporeName,
-                                sporeType,
-                                List(capturedType),
-                                sporeBody,
-                                constructorParams)
-      } else if (paramSyms.size == 3) {
-        val sporeType = tq"$sporesPath.Spore2WithEnv[..$targs]"
-        generator.generateSpore(sporeName,
-                                sporeType,
-                                List(capturedType),
-                                sporeBody,
-                                constructorParams)
-      } else ???
-    }
-  }
-
-  /** Ensure that a parameterless function is a spore. Expecting:
-    * {{{
-    * spore {
-    *   val x = outer
-    *   `delayed { ... }` or `() => { ... }`
-    * }
-    * }}}
-    */
-  def checkNullary(funTree: c.Tree, rtpe: c.Type): c.Tree = {
-    debug(s"Received following nullary spore:\n$funTree")
-    val (paramSyms, retTpe, funBody, valDefEnv) = conforms(funTree)
-    val validEnv = valDefEnv.map(_.symbol)
-    val generator = new SporeGenerator[c.type](c)
-    val sporeName = c.freshName(anonSporeName)
-
-    val targs = Seq(rtpe)
-    if (validEnv.isEmpty) {
-      val sporeType = tq"$sporesPath.NullarySpore[..$targs]"
-      val sporeBody = generator.createNewDefDef(paramSyms, funBody, retTpe)
-      generator.generateSpore(sporeName, sporeType, Nil, sporeBody)
-    } else {
-      val sporeType = tq"$sporesPath.NullarySporeWithEnv[..$targs]"
-      val capturedTypes = validEnv.map(_.typeSignature).toArray
-      debug(s"Captured types: ${capturedTypes.mkString(",")}")
-      val newRefs = generator.generateCapturedReferences(validEnv)
-      val sporeBody = generator.createNewDefDef(paramSyms,
-                                                funBody,
-                                                retTpe,
-                                                environment = validEnv,
-                                                capturedRefs = newRefs)
-      val valDefRhss = valDefEnv.map(_.rhs).toArray
-      val constructorParams = List(generator.toTuple(valDefRhss))
-      val capturedType = generator.createCapturedType(capturedTypes.toArray)
+      val sporeType =
+        if (paramSyms.isEmpty)
+          tq"$sporesPath.NullarySporeWithEnv[..$targs]"
+        else if (paramSyms.size == 1)
+          tq"$sporesPath.SporeWithEnv[..$targs]"
+        else if (paramSyms.size == 2)
+          tq"$sporesPath.Spore2WithEnv[..$targs]"
+        else if (paramSyms.size == 3)
+          tq"$sporesPath.Spore3WithEnv[..$targs]"
+        else ???
       generator.generateSpore(sporeName,
                               sporeType,
                               List(capturedType),
@@ -131,52 +89,4 @@ private[spores] class MacroImpl[C <: whitebox.Context](val c: C) {
                               constructorParams)
     }
   }
-
-  /**
-     spore {
-       val x = outer
-       (y: T) => { ... }
-     }
-    */
-  def check(funTree: c.Tree, ttpe: c.Type, rtpe: c.Type): c.Tree = {
-    debug(s"Received following spore:\n$funTree")
-
-    val (paramSyms, retTpe, funBody, valDefEnv) = conforms(funTree)
-    val validEnv = valDefEnv.map(_.symbol)
-    val generator = new SporeGenerator[c.type](c)
-    val paramSym = paramSyms.head
-
-    if (paramSym != null) {
-      val sporeName = c.freshName(anonSporeName)
-      val targs = List(ttpe, rtpe)
-      if (validEnv.isEmpty) {
-        val sporeType = tq"Spore[..$targs]"
-        debug(s"Generated spore type is: $sporeType")
-        val sporeBody = generator.createNewDefDef(paramSyms, funBody, retTpe)
-        generator.generateSpore(sporeName, sporeType, Nil, sporeBody)
-      } else {
-        val sporeType = tq"SporeWithEnv[..$targs]"
-        debug(s"Generated spore type is: $sporeType")
-        val capturedTypes = validEnv.map(_.typeSignature)
-        debug(s"Captured types: ${capturedTypes.mkString(",")}")
-        val newRefs = generator.generateCapturedReferences(validEnv)
-        val sporeBody = generator.createNewDefDef(paramSyms,
-                                                  funBody,
-                                                  retTpe,
-                                                  environment = validEnv,
-                                                  capturedRefs = newRefs)
-        val valDefRhss = valDefEnv.map(_.rhs).toArray
-        val constructorParams = List(generator.toTuple(valDefRhss))
-        val capturedType = generator.createCapturedType(capturedTypes.toArray)
-        generator.generateSpore(sporeName,
-                                sporeType,
-                                List(capturedType),
-                                sporeBody,
-                                constructorParams)
-      }
-    } else {
-      ???
-    }
-  }
-
 }
