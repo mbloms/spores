@@ -75,7 +75,7 @@ private[spores] class MacroImpl[C <: whitebox.Context](val c: C) {
       // replace references to paramSyms with references to applyParamSymbols
       // and references to captured variables to new fields
       val capturedTypes = validEnv.map(_.typeSignature).toArray
-      debug(s"capturedTypes: ${capturedTypes.mkString(",")}")
+      debug(s"Captured types: ${capturedTypes.mkString(",")}")
 
       val newRefs = generator.generateCapturedReferences(validEnv)
       val applyDefDef = generator.createNewDefDef(paramSyms,
@@ -114,14 +114,16 @@ private[spores] class MacroImpl[C <: whitebox.Context](val c: C) {
     }
   }
 
-  /**
-     spore {
-       val x = outer
-       delayed { ... }
-     }
+  /** Ensure that a parameterless function is a spore. Expecting:
+    * {{{
+    * spore {
+    *   val x = outer
+    *   `delayed { ... }` or `() => { ... }`
+    * }
+    * }}}
     */
   def checkNullary(funTree: c.Tree, rtpe: c.Type): c.Tree = {
-    debug(s"SPORES: enter checkNullary")
+    debug(s"Received following nullary spore:\n$funTree")
 
     val (paramSyms, retTpe, funBody, valDefEnv) = conforms(funTree)
     val validEnv = valDefEnv.map(_.symbol)
@@ -141,7 +143,7 @@ private[spores] class MacroImpl[C <: whitebox.Context](val c: C) {
       """
     } else {
       val capturedTypes = validEnv.map(_.typeSignature).toArray
-      debug(s"capturedTypes: ${capturedTypes.mkString(",")}")
+      debug(s"Captured types: ${capturedTypes.mkString(",")}")
 
       val newRefs = generator.generateCapturedReferences(validEnv)
       val applyDefDef = generator.createNewDefDef(paramSyms,
@@ -169,22 +171,6 @@ private[spores] class MacroImpl[C <: whitebox.Context](val c: C) {
     }
   }
 
-  def toTuple(lst: List[c.Tree]): c.Tree = {
-    if (lst.size == 1) lst(0)
-    else if (lst.size == 2) q"(${lst(0)}, ${lst(1)})"
-    else if (lst.size == 3) q"(${lst(0)}, ${lst(1)}, ${lst(2)})"
-    else if (lst.size == 4) q"(${lst(0)}, ${lst(1)}, ${lst(2)}, ${lst(3)})"
-    else if (lst.size == 5)
-      q"(${lst(0)}, ${lst(1)}, ${lst(2)}, ${lst(3)}, ${lst(4)})"
-    else if (lst.size == 6)
-      q"(${lst(0)}, ${lst(1)}, ${lst(2)}, ${lst(3)}, ${lst(4)}, ${lst(5)})"
-    else if (lst.size == 7)
-      q"(${lst(0)}, ${lst(1)}, ${lst(2)}, ${lst(3)}, ${lst(4)}, ${lst(5)}, ${lst(6)})"
-    else if (lst.size == 8) q"(${lst(0)}, ${lst(1)}, ${lst(2)}, ${lst(3)}, ${lst(
-      4)}, ${lst(5)}, ${lst(6)}, ${lst(7)})"
-    else ???
-  }
-
   /**
      spore {
        val x = outer
@@ -192,7 +178,7 @@ private[spores] class MacroImpl[C <: whitebox.Context](val c: C) {
      }
     */
   def check(funTree: c.Tree, ttpe: c.Type, rtpe: c.Type): c.Tree = {
-    debug(s"SPORES: enter check, tree:\n$funTree")
+    debug(s"Received following spore:\n$funTree")
 
     val (paramSyms, retTpe, funBody, valDefEnv) = conforms(funTree)
     val validEnv = valDefEnv.map(_.symbol)
@@ -215,10 +201,8 @@ private[spores] class MacroImpl[C <: whitebox.Context](val c: C) {
           new $sporeClassName
         """
       } else {
-        // replace reference to paramSym with reference to applyParamSymbol
-        // and references to captured variables with references to new fields
         val capturedTypes = validEnv.map(_.typeSignature)
-        debug(s"capturedTypes: ${capturedTypes.mkString(",")}")
+        debug(s"Captured types: ${capturedTypes.mkString(",")}")
 
         val newRefs = generator.generateCapturedReferences(validEnv)
         val applyDefDef = generator.createNewDefDef(paramSyms,
