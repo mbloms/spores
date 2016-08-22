@@ -18,6 +18,8 @@ private[spores] class MacroImpl[C <: whitebox.Context](val c: C) {
    * to check if a class is indeed a spore */
   val anonSporeName = TypeName("anonspore")
 
+  private val sporesPath = q"scala.spores"
+
   def conforms(funTree: c.Tree): (List[Symbol], Type, Tree, List[ValDef]) = {
     val analysis = new SporeAnalysis[c.type](c)
     val (sporeEnv, sporeFunDef) = analysis.stripSporeStructure(funTree)
@@ -85,15 +87,14 @@ private[spores] class MacroImpl[C <: whitebox.Context](val c: C) {
                                                   capturedRefs = newRefs)
       val valDefRhss = valDefEnv.map(_.rhs).toArray
       val constructorParams = List(List(generator.toTuple(valDefRhss)))
-      val capturedTypeDef = generator.createCapturedType(capturedTypes)
-      val q"type $_ = $capturedType" = capturedTypeDef
+      val capturedType = generator.createCapturedType(capturedTypes)
 
       if (paramSyms.size == 2) {
         q"""
             class $sporeClassName(val captured: $capturedType) extends scala.spores.Spore2WithEnv[${tpes(
           1)}, ${tpes(2)}, ${tpes(0)}] {
               self =>
-              $capturedTypeDef
+              type Captured = $capturedType
               this._className = this.getClass.getName
               $applyDefDef
             }
@@ -104,7 +105,7 @@ private[spores] class MacroImpl[C <: whitebox.Context](val c: C) {
             class $sporeClassName(val captured: $capturedType) extends scala.spores.Spore3WithEnv[${tpes(
           1)}, ${tpes(2)}, ${tpes(3)}, ${tpes(0)}] {
               self =>
-              $capturedTypeDef
+              type Captured = $capturedType
               this._className = this.getClass.getName
               $applyDefDef
             }
@@ -155,14 +156,12 @@ private[spores] class MacroImpl[C <: whitebox.Context](val c: C) {
       val valDefRhss = valDefEnv.map(_.rhs).toArray
       val constructorParams = List(List(generator.toTuple(valDefRhss)))
       val superclassName = TypeName("NullarySporeWithEnv")
-
-      val capturedTypeDef = generator.createCapturedType(capturedTypes.toArray)
-      val q"type $_ = $capturedType" = capturedTypeDef
+      val capturedType = generator.createCapturedType(capturedTypes.toArray)
 
       q"""
         class $sporeClassName(val captured: $capturedType) extends $superclassName[$rtpe] {
           self =>
-          $capturedTypeDef
+          type Captured = $capturedType
           this._className = this.getClass.getName
           $applyDefDef
         }
@@ -186,48 +185,32 @@ private[spores] class MacroImpl[C <: whitebox.Context](val c: C) {
     val paramSym = paramSyms.head
 
     if (paramSym != null) {
-      val sporeClassName = c.freshName(anonSporeName)
-
+      val sporeName = c.freshName(anonSporeName)
+      val targs = List(ttpe, rtpe)
       if (validEnv.isEmpty) {
-        val applyDefDef = generator.createNewDefDef(paramSyms, funBody, retTpe)
-
-        q"""
-          class $sporeClassName extends scala.spores.Spore[$ttpe, $rtpe] {
-            self =>
-            type Captured = scala.Nothing
-            this._className = this.getClass.getName
-            $applyDefDef
-          }
-          new $sporeClassName
-        """
+        val sporeType = tq"Spore[..$targs]"
+        debug(s"Generated spore type is: $sporeType")
+        val sporeBody = generator.createNewDefDef(paramSyms, funBody, retTpe)
+        generator.generateSpore(sporeName, sporeType, Nil, sporeBody)
       } else {
+        val sporeType = tq"SporeWithEnv[..$targs]"
+        debug(s"Generated spore type is: $sporeType")
         val capturedTypes = validEnv.map(_.typeSignature)
         debug(s"Captured types: ${capturedTypes.mkString(",")}")
-
         val newRefs = generator.generateCapturedReferences(validEnv)
-        val applyDefDef = generator.createNewDefDef(paramSyms,
-                                                    funBody,
-                                                    retTpe,
-                                                    environment = validEnv,
-                                                    capturedRefs = newRefs)
-
+        val sporeBody = generator.createNewDefDef(paramSyms,
+                                                  funBody,
+                                                  retTpe,
+                                                  environment = validEnv,
+                                                  capturedRefs = newRefs)
         val valDefRhss = valDefEnv.map(_.rhs).toArray
-        val constructorParams = List(List(generator.toTuple(valDefRhss)))
-        val superclassName = TypeName("SporeWithEnv")
-
-        val capturedTypeDef =
-          generator.createCapturedType(capturedTypes.toArray)
-        val q"type $_ = $capturedType" = capturedTypeDef
-
-        q"""
-          class $sporeClassName(val captured : $capturedType) extends $superclassName[$ttpe, $rtpe] {
-            self =>
-            $capturedTypeDef
-            this._className = this.getClass.getName
-            $applyDefDef
-          }
-          new $sporeClassName(...$constructorParams)
-        """
+        val constructorParams = List(generator.toTuple(valDefRhss))
+        val capturedType = generator.createCapturedType(capturedTypes.toArray)
+        generator.generateSpore(sporeName,
+                                sporeType,
+                                List(capturedType),
+                                sporeBody,
+                                constructorParams)
       }
     } else {
       ???
