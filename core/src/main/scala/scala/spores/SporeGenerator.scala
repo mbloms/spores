@@ -240,108 +240,109 @@ protected class SporeGenerator[C <: whitebox.Context with Singleton](
     val (newParamDefs, newParamRefs) = generateNewParameters(oldParamSymbols)
     val oldSymbols = oldParamSymbols ::: environment
     val mapping = oldSymbols.zip(newParamRefs ::: capturedRefs).toMap
-    val body = ctx.untypecheck(transformTypes(mapping)(oldBody))
+    val body = ctx.untypecheck(transformTypesFrom(mapping)(oldBody))
     q"def apply(..$newParamDefs): $returnType = $body".asInstanceOf[DefDef]
   }
 
-  /**  Constructs a function that replaces all occurrences of symbols in m with trees in m and that changes the 'origin'
-    *  field to fix path-dependent types.
-    *  In some cases, PTT:s that start with captured variables or the spore parameters are not traversed fully.
-    *  The syntax tree part of these PTTs shows as "TypeTree()", but the ().tpe part has additional structure.
-    *  The 'TypeTree' case transforms these types by adding an "().original" field, that is a syntax tree.
-    *  The syntax tree is constructed by replacing all TypeName(s) occurances where s is the name of a captured
-    *  variable or a parameter into nameMap(s). E.g.
-    *  TypeRef(SingleType(SingleType(NoPrefix, TermName("param")), TypeName("R") --> Select(nameMap("param"), TypeName("R"))
+  /**  Replace all occurrences of symbols in `m` with trees in `m`, also changing the
+    * 'origin' type field to fix path-dependent types.
+    *
+    *  Some PTT's starting with captured variables or spore parameters are not fully
+    *  traversed. Their AST shows as `TypeTree`, but the ().tpe part has additional
+    *  structure. Therefore, this transform adds an `().original` field. This AST is
+    *  constructed by replacing `TypeName` occurrences into `nameMap(s)` where `s`
+    *  is the name of the captured variable or spore parameter. For instance:
+    *
+    *  TypeRef(
+    *    SingleType(
+    *      SingleType(NoPrefix, TermName("param")),
+    *      TypeName("R") --> Select(nameMap("param"), TypeName("R"))
+    *    )
+    *  )
     */
-  def transformTypes(m: Map[Symbol, Tree]): Tree => Tree = {
-    class TypeTransformer(
-        val m: Map[Symbol, Tree] //,
-        //val nameMap: Map[c.universe.Symbol, Tree]
-    ) extends Transformer {
-      override def transform(tree: Tree): Tree = {
+  private class TypeTransformer(val m: Map[Symbol, Tree]) extends Transformer {
 
-        tree match {
-          case Ident(_) => m.getOrElse(tree.symbol, tree)
-          case tt: TypeTree if tt.original != null =>
-            super.transform(
-              internal.setOriginal(TypeTree(), super.transform(tt.original)))
-          case tt: TypeTree if tt.original == null =>
-            if (tt.children.isEmpty &&
-                m.keys.exists(key => tt.tpe.contains(key))) {
-              debug(s"${showRaw(tree)}")
-              debug(s"${showRaw(tree.tpe)}")
-              debug(s"${tree.tpe}")
-
-              /**
-                * Recursively construct a Tree from a Type
-                * @param tp
-                *           Any type, typically looks like this:
-                *           TypeRef(
-                *              SingleType(
-                *                 SingleType(NoPrefix, TermName("lit5_ui")),
-                *                 TermName("uref")),
-                *              TypeName("R"),
-                *              List())
-                * @return
-                *         A syntax tree constructed from the type. The example would return
-                *         Select(
-                *            Select(
-                *               Ident(TermName("lit5_ui")),
-                *               TermName("uref")),
-                *            TermName("R"))
-                *         Returns null if the param is not a path-dependent type
-                */
-              def constructOriginal(tp: Type): Tree = {
-                def matchTypeName(tn: Symbol): TypeName = {
-                  tn match {
-                    case TypeSymbolTag(ts) => {
-                      ts.name.toTypeName
-                    }
-                    case _ => null
-                  }
-                }
-                def matchTermNameNoPrefixCase(tn: Symbol): Tree =
-                  m.getOrElse(tn, null)
-
-                def matchTermName(tn: Symbol): TermName = {
-                  tn match {
-                    case TermSymbolTag(ts) => ts.name.toTermName
-                    case _ => null
-                  }
-                }
-                tp match {
-                  case TypeRef(tr, tns, List()) =>
-                    debug(s"tns = $tns,\nshowRaw(tns) = ${showRaw(tns)}")
-                    val tnsTypeName = matchTypeName(tns)
-                    if (tnsTypeName != null) {
-                      val tr_rec = constructOriginal(tr)
-                      if (tr_rec != null) Select(tr_rec, tnsTypeName)
-                      else null
-                    } else null
-                  case SingleType(NoPrefix, tns) =>
-                    matchTermNameNoPrefixCase(tns)
-                  case SingleType(pre, tns) =>
-                    val tnsTypeName = matchTermName(tns)
-                    val pre_rec = constructOriginal(pre)
-                    if (pre_rec != null) Select(pre_rec, tnsTypeName)
-                    else null
-                  case _ => null
-                }
-              }
-
-              val new_orig = constructOriginal(tree.tpe)
-              val res =
-                if (new_orig != null)
-                  internal.setOriginal(TypeTree(), new_orig)
-                else
-                  tree
-              res
-            } else tree
-          case _ => super.transform(tree)
-        }
+    /** Extract the type name from a type symbol. */
+    def matchTypeName(tn: Symbol): Option[TypeName] = {
+      tn match {
+        case TypeSymbolTag(ts) => Some(ts.name.toTypeName)
+        case _ => None
       }
     }
-    new TypeTransformer(m).transform(_: Tree)
+
+    /** Extract the term name from a type symbol (PDT). */
+    def matchTermName(tn: Symbol): Option[TermName] = {
+      tn match {
+        case TermSymbolTag(ts) => Some(ts.name.toTermName)
+        case _ => None
+      }
+    }
+
+    /** Set the original type of a `TypeTree`. */
+    def setOriginal(original: Tree): TypeTree =
+      internal.setOriginal(TypeTree(), original)
+
+    /** Recursively construct the original Tree from a path-dependent type.
+      *
+      * @param tp Any type, typically looks like:
+      *           TypeRef(
+      *             SingleType(
+      *               SingleType(NoPrefix, TermName("lit5_ui")),
+      *               TermName("uref")),
+      *             TypeName("R"),
+      *             List()
+      *           )
+      * @return An AST like (null if param is not PDT):
+      *         Select(
+      *           Select(
+      *             Ident(TermName("lit5_ui")),
+      *             TermName("uref")),
+      *           TermName("R")
+      *         )
+      */
+    def constructOriginal(tp: Type): Option[Tree] = {
+      tp match {
+        case TypeRef(pre, typeSymbol, List()) =>
+          debug(s"Found `TypeRef` to ${showRaw(typeSymbol)}")
+          for {
+            typeName <- matchTypeName(typeSymbol)
+            transformedPre <- constructOriginal(pre)
+          } yield Select(transformedPre, typeName)
+        case SingleType(NoPrefix, typeSymbol) =>
+          debug(s"Found `SingleType` to ${showRaw(typeSymbol)}")
+          m.get(typeSymbol)
+        case SingleType(pre, typeSymbol) =>
+          debug(s"Found `SingleType` to ${showRaw(typeSymbol)}")
+          for {
+            typeName <- matchTermName(typeSymbol)
+            transformedPre <- constructOriginal(pre)
+          } yield Select(transformedPre, typeName)
+        case _ => None
+      }
+    }
+
+    override def transform(tree: Tree): Tree = {
+      tree match {
+        case Ident(_) => m.getOrElse(tree.symbol, tree)
+
+        case tt: TypeTree if tt.original != null =>
+          val transformedOriginal = super.transform(tt.original)
+          super.transform(setOriginal(transformedOriginal))
+
+        case tt: TypeTree if tt.original == null =>
+          if (tt.children.isEmpty && m.keys.exists(k => tt.tpe.contains(k))) {
+            debug(s"Found `TypeTree` with null original: ${showRaw(tree)}")
+            debug(s" > Type: ${showRaw(tree.tpe)}")
+            val transformed = constructOriginal(tree.tpe).map(setOriginal)
+            transformed.getOrElse(tree)
+          } else tree
+
+        case _ => super.transform(tree)
+      }
+    }
   }
 
+  def transformTypesFrom(m: Map[Symbol, Tree]): Tree => Tree = {
+    new TypeTransformer(m).transform(_: Tree)
+  }
 }
