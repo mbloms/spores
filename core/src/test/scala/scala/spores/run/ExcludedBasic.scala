@@ -1,20 +1,19 @@
-package scala.spores
-package run
-package basic
+package scala.spores.run
+
+import scala.spores._
 
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
-import scala.spores.ExcludedSporeConversions._
-
 
 @RunWith(classOf[JUnit4])
 class ExcludedBasic {
 
   @Test
   def spore2Avoidance(): Unit = {
-    val s: Spore2[Int, Unit, Unit] {type Excluded = String} = spore {
-      (_: Int, _: Unit) => {}
+    val s: Spore2[Int, Unit, Unit] { type Excluded = String } = spore {
+      (_: Int, _: Unit) =>
+        {}
     }
   }
 
@@ -23,11 +22,12 @@ class ExcludedBasic {
     class A {
       type R
     }
-    val sA = spore {
-      (a: A) => {
-        val s: Spore2[Int, Unit, Unit] {type Excluded = a.R} = spore {
+    val sA = spore { (a: A) =>
+      {
+        val s: Spore2[Int, Unit, Unit] { type Excluded = a.R } = spore {
           val y = 0.5
-          (_: Int, _: Unit) => {}
+          (_: Int, _: Unit) =>
+            {}
         }
       }
     }
@@ -38,10 +38,11 @@ class ExcludedBasic {
     class A {
       type R
     }
-    val sA = spore {
-      (a: A) => {
-        val s: Spore2[Int, Unit, Unit] {type Excluded = a.R} = spore {
-          (_: Int, _: Unit) => {}
+    val sA = spore { (a: A) =>
+      {
+        val s: Spore2[Int, Unit, Unit] { type Excluded = a.R } = spore {
+          (_: Int, _: Unit) =>
+            {}
         }
       }
     }
@@ -49,16 +50,16 @@ class ExcludedBasic {
 
   @Test
   def spore2AvoidanceCapture(): Unit = {
-    val s: Spore2[Int, Unit, Unit] {type Excluded = String} = spore {
+    val s: Spore2[Int, Unit, Unit] { type Excluded = String } = spore {
       val y = 0.5
-      (_: Int, _: Unit) => {}
+      (_: Int, _: Unit) =>
+        {}
     }
   }
 
-
   @Test
   def nullaryAvoidance(): Unit = {
-    val s: NullarySpore[Unit] {type Excluded = String} = spore {
+    val s: NullarySpore[Unit] { type Excluded = String } = spore {
       delayed {
         ()
       }
@@ -67,7 +68,7 @@ class ExcludedBasic {
 
   @Test
   def nullaryAvoidanceCapture(): Unit = {
-    val s: NullarySpore[Unit] {type Excluded = String} = spore {
+    val s: NullarySpore[Unit] { type Excluded = String } = spore {
       val y = 10
       delayed {
         ()
@@ -77,7 +78,7 @@ class ExcludedBasic {
 
   @Test
   def nullaryAvoidanceCapture2(): Unit = {
-    val s: NullarySpore[Unit] {type Excluded = String} = spore {
+    val s: NullarySpore[Unit] { type Excluded = String } = spore {
       val y = 10
       val z = 20
       delayed {
@@ -97,56 +98,61 @@ class ExcludedBasic {
     */
   @Test
   def selfCaptureTypesTest(): Unit = {
-    class A{type B}
+    class A { type B }
     val s = spore { // spore with captured : (A)
-      val ca = new A{ type B = Int}
-      (_: Unit) => {
-        val s2 : Spore[Unit, Unit] {type Excluded = ca.B} = spore { // spore with captured : (Unit, Unit)
-          val c1 = ()
-          val c2 = ()
-          (_: Unit) => {}
+      val ca = new A { type B = Int }
+      (_: Unit) =>
+        {
+          val s2: Spore[Unit, Unit] { type Excluded = ca.B } =
+            spore { // spore with captured : (Unit, Unit)
+              val c1 = ()
+              val c2 = ()
+              (_: Unit) =>
+                {}
+            }
         }
-      }
     }
   }
-
 
   // This is to test that path-dependent types in which captured arguments are part of the path are
   // transformed correctly.
   @Test
   def avoidanceTest(): Unit = {
-    class A {type B}
+    class A { type B }
     val z: Int = 10
-    val s2 : Spore[A, Unit] {type Excluded = String} =  spore {
+    val s2: Spore[A, Unit] { type Excluded = String } = spore {
       val cap_z = z
-      (a: A) => {
-        val x = 10
-      }
+      (a: A) =>
+        {
+          val x = 10
+        }
     }
   }
 
   @Test
   def functionArgumentTest(): Unit = {
-    class A {type B}
+    class A { type B }
     val z: Int = 10
-    def funk(s: Spore[A, Unit] {type Excluded = String}) : Unit = {}
+    def funk(s: Spore[A, Unit] { type Excluded = String }): Unit = {}
     funk(spore {
       val cap_z = z
-      (a: A) => {
-        val x = 10
-      }
+      (a: A) =>
+        {
+          val x = 10
+        }
     })
   }
 
   @Test
   def avoidanceTestImplicit(): Unit = {
-    class A {type B}
+    class A { type B }
     val z: Int = 10
-    val s2 : Spore[A, Unit] {type Excluded = String} = spore {
+    val s2: Spore[A, Unit] { type Excluded = String } = spore {
       val cap_z = z
-      (a: A) => {
-        val x = 10
-      }
+      (a: A) =>
+        {
+          val x = 10
+        }
     }
   }
 
@@ -158,15 +164,17 @@ class ExcludedBasic {
     val z: Int = 10
     val s3 = spore {
       val cap_z = z
-      (a: A) => {
-        val s2: Spore[A, Unit] {type Excluded = a.B} = spore {
-          val cap_cap_z = cap_z
-          (a: A) => {
-            val x = 10
+      (a: A) =>
+        {
+          val s2: Spore[A, Unit] { type Excluded = a.B } = spore {
+            val cap_cap_z = cap_z
+            (a: A) =>
+              {
+                val x = 10
+              }
           }
+          print("hello, world!")
         }
-        print("hello, world!")
-      }
     }
   }
 }

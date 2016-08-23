@@ -1,4 +1,4 @@
-package scala.spores.run.basic
+package scala.spores.run
 
 import scala.spores._
 

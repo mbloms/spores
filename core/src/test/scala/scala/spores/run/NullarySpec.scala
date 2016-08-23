@@ -1,10 +1,12 @@
-package scala.spores
-package run
-package basic
+package scala.spores.run
 
+import scala.spores._
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
+
+import scala.spores.run.somepackage.nested
+import scala.spores.run.somepackage.nested.TopLevelObject
 
 @RunWith(classOf[JUnit4])
 class NullarySpec {
@@ -34,7 +36,7 @@ class NullarySpec {
   def testInvocationTopLevelObject1(): Unit = {
     val s = spore {
       delayed {
-        val s1 = somepackage.nested.TopLevelObject.f.m(0).asInstanceOf[String]
+        val s1 = TopLevelObject.f.m(0).asInstanceOf[String]
         s1 + "!"
       }
     }
@@ -45,7 +47,7 @@ class NullarySpec {
   def testInvocationTopLevelObject2(): Unit = {
     val s = spore {
       delayed {
-        val s1 = somepackage.nested.TopLevelObject.g.m(0).asInstanceOf[String]
+        val s1 = nested.TopLevelObject.g.m(0).asInstanceOf[String]
         s1 + "!"
       }
     }

@@ -1,6 +1,6 @@
-package scala.spores
-package run
-package basic
+package scala.spores.run
+
+import scala.spores._
 
 import org.junit.Test
 import org.junit.runner.RunWith
