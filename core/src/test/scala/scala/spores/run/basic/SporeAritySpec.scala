@@ -21,7 +21,7 @@ class SporeAritySpec {
   @Test
   def spore1(): Unit = {
     val s = spore { (i: Int) =>
-      42 + i
+      i + 42
     }
     assert(s(1) == 43)
   }
@@ -34,7 +34,7 @@ class SporeAritySpec {
     assert(s(1, 1) == 44)
   }
 
-  @Test
+/*  @Test
   def spore3(): Unit = {
     val s = spore { (i: Int, i2: Int, i3: Int) =>
       42 + i + i2 + i3
@@ -73,5 +73,5 @@ class SporeAritySpec {
         42 + i + i2 + i3 + i4 + i5 + i6 + i7
     }
     assert(s(1, 1, 1, 1, 1, 1, 1) == 49)
-  }
+  }*/
 }

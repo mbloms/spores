@@ -180,23 +180,24 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
     * non-captured symbols or external expressions like lazy vals.
     */
   private class ReferenceInspector extends Traverser {
-    def checkStaticSelectOnObject(applySelector: Tree, outerSelect: Select) = {
-      applySelector match {
-        case Select(obj, _) =>
-          if (isSymbolChildOfSpore(obj.symbol)) {
-            debug(s"OK, selected on local object $obj")
+    def checkStaticSelectOnObject(innerFun: Tree, outerSelect: Select) = {
+      innerFun match {
+        case Select(qual: SymTree, _) =>
+          if (isSymbolChildOfSpore(qual.symbol)) {
+            debug(s"OK, selected on local object $qual")
           } else {
-            val objIsStatic = obj.symbol.isStatic || isStaticSelector(obj)
-            debug(s"Is $obj transitively selected from a top-level object?")
-            debug(s"$obj.symbol.isStatic: $objIsStatic")
+            debug(s"Is $qual transitively selected from a top-level object?")
+            val objIsStatic = qual.symbol.isStatic || isStaticSelector(qual)
+            debug(s"$qual.symbol.isStatic: $objIsStatic")
             if (!objIsStatic) {
               ctx.abort(outerSelect.pos,
-                        Feedback.NonStaticInvocation(applySelector.toString))
+                        Feedback.NonStaticInvocation(innerFun.toString))
             }
           }
+        case s: Select => () // Selector doesn't have a `Symbol`
         case _ => // TODO(jvican): Add test for this case
           ctx.abort(outerSelect.pos,
-                    Feedback.NonStaticInvocation(applySelector.toString))
+                    Feedback.NonStaticInvocation(innerFun.toString))
       }
     }
 
