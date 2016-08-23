@@ -306,17 +306,6 @@ class StablePathSpec extends SuperTest {
     assert(s(42) == "12")
   }
 
-  // we can't seem to have a super in paths because of S-1938, pity
-  // https://issues.scala-lang.org/browse/SI-1938
-  // @Test
-  // def `can capture super in a stable path`() {
-  //   val s: Spore[Int, String] = spore {
-  //     (x: Int) => s"arg: $x, c1: ${capture(super.name)}"
-  //   }
-
-  //   assert(s(20) == "arg: 20, c1: super test")
-  // }
-
   @Test
   def `can capture an innocuous simple stable path`(): Unit = {
     object Innocuous {

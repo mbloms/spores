@@ -34,7 +34,7 @@ private[spores] class SporeImplModule[C <: whitebox.Context](val c: C) {
                                               captured,
                                               declared)
 
-    debug(s"Checking $sporeBody...")
+    debug(s"Checking conformance of ${showRaw(sporeBody)}...")
     checker.checkReferencesInBody(sporeBody)
     (vparams.map(_.symbol), sporeBody.tpe, sporeBody, sporeEnv)
   }

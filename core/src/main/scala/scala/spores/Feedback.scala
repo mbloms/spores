@@ -2,7 +2,7 @@ package scala.spores
 
 protected object Feedback {
   val MissingSporeClassDef =
-    "Expected spore class definition. The generated format of a spore has changed"
+    "Expected spore class definition. The generated format of a spore has changed."
 
   val UnsupportedAritySpore =
     "The arity of this support is not yet supported, please file an issue."
@@ -23,8 +23,8 @@ protected object Feedback {
     s"Spore contains invocation of a non-static method: '$method'."
 
   def InvalidReferenceTo(symbol: String) =
-    s"Spore contains references to an invalid symbol: $symbol"
+    s"Spore contains references to an invalid symbol: $symbol."
 
   def InvalidReferenceToExcludedType(tpe: String) =
-    s"Unexpected expression with type '$tpe', but type '$tpe' is Excluded"
+    s"Unexpected expression with type '$tpe', but type '$tpe' is Excluded."
 }
