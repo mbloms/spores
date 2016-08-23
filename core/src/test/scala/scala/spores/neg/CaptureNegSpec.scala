@@ -261,4 +261,38 @@ class CaptureNegSpec {
       """.stripMargin
     }
   }
+
+  @Test
+  def `cannot capture super from a trait in a path with capture`(): Unit = {
+    expectError(Feedback.InvalidOuterReference) {
+      """
+         import scala.spores._
+
+         trait Foo { val bar = "1" }
+
+         class A extends Foo {
+           val s: Spore[Int, String] = spore { (x: Int) =>
+             s"arg: $x, c1: ${capture(super.bar)}"
+           }
+         }
+      """.stripMargin
+    }
+  }
+
+  @Test
+  def `cannot capture super from a trait in a path`(): Unit = {
+    expectError(Feedback.InvalidReferenceTo("class A")) {
+      """
+         import scala.spores._
+
+         trait Foo { val bar = "1" }
+
+         class A extends Foo {
+           val s: Spore[Int, String] = spore { (x: Int) =>
+             s"arg: $x, c1: ${super.bar}"
+           }
+         }
+      """.stripMargin
+    }
+  }
 }
