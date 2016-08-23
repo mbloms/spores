@@ -1,6 +1,7 @@
 package scala.spores.run
 
 import scala.spores._
+import ExcludedSporeConversions._
 
 import org.junit.Test
 import org.junit.runner.RunWith
