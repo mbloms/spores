@@ -26,7 +26,7 @@ class CaptureNegSpec {
 
   @Test
   def `no lazy vals allowed`() {
-    expectError(Feedback.InvalidLazyMember) {
+    expectError(Feedback.InvalidLazyMember("v1")) {
       """
         import scala.spores._
         lazy val v1 = 10
@@ -39,7 +39,7 @@ class CaptureNegSpec {
 
   @Test
   def `no lazy vals allowed in any path`() {
-    expectError(Feedback.InvalidLazyMember) {
+    expectError(Feedback.InvalidLazyMember("NoLazyValsObj.v1")) {
       """
         object NoLazyValsObj {
           lazy val v1 = 10
@@ -230,7 +230,7 @@ class CaptureNegSpec {
   /* No `Super` in paths because of https://issues.scala-lang.org/browse/SI-1938 */
   @Test
   def `cannot capture super in a path with capture`(): Unit = {
-    expectError(Feedback.InvalidOuterReference) {
+    expectError(Feedback.InvalidOuterReference("A.super.bar")) {
       """
          import scala.spores._
 
@@ -264,7 +264,7 @@ class CaptureNegSpec {
 
   @Test
   def `cannot capture super from a trait in a path with capture`(): Unit = {
-    expectError(Feedback.InvalidOuterReference) {
+    expectError(Feedback.InvalidOuterReference("A.super.bar")) {
       """
          import scala.spores._
 

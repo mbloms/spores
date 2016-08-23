@@ -54,10 +54,11 @@ protected class SporeAnalysis[C <: whitebox.Context with Singleton](val ctx: C) 
       tree match {
         case app @ Apply(fun, List(captured)) if fun.symbol == captureSym =>
           debug(s"Found capture: $app")
+          val culprit = captured.toString
           if (!isPathWith(captured)(_.isStable))
-            ctx.abort(captured.pos, Feedback.InvalidOuterReference)
+            ctx.abort(captured.pos, Feedback.InvalidOuterReference(culprit))
           else if (!isPathWith(captured)(!_.isLazy))
-            ctx.abort(captured.pos, Feedback.InvalidLazyMember)
+            ctx.abort(captured.pos, Feedback.InvalidLazyMember(culprit))
           else capturedSymbols ::= captured.symbol
 
         case _ => super.traverse(tree)

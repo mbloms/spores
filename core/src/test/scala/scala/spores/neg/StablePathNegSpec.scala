@@ -11,7 +11,12 @@ import scala.spores.TestUtil._
 class StablePathNegSpec {
   @Test
   def `blocks aren't stable`() {
-    expectError(Feedback.InvalidOuterReference) {
+    val errorMsg =
+      """{
+        |  def x: Nothing = scala.this.Predef.???;
+        |  a
+        |}""".stripMargin
+    expectError(Feedback.InvalidOuterReference(errorMsg)) {
       """
         import scala.spores._
         val a = 12
@@ -24,7 +29,7 @@ class StablePathNegSpec {
 
   @Test
   def `only allowed to capture paths 1`() {
-    expectError(Feedback.InvalidOuterReference) {
+    expectError(Feedback.InvalidOuterReference("compute(2)")) {
       """
         import scala.spores._
         def compute(x: Int): Int = x * 5
@@ -38,7 +43,7 @@ class StablePathNegSpec {
 
   @Test
   def `only allowed to capture paths 2`() {
-    expectError(Feedback.InvalidOuterReference) {
+    expectError(Feedback.InvalidOuterReference("v1")) {
       """
         import scala.spores._
         // this is a var:
@@ -52,8 +57,9 @@ class StablePathNegSpec {
   }
 
   @Test
+  // TODO(jvican): Fix in order to allow capturing literals
   def `1 isn't a stable path`() {
-    expectError(Feedback.InvalidOuterReference) {
+    expectError(Feedback.InvalidOuterReference("1")) {
       """
         import scala.spores._
         val s: Spore[Int, String] = spore { (x: Int) =>
@@ -66,7 +72,7 @@ class StablePathNegSpec {
 
   @Test
   def `can't ascribe types in a stable path`() {
-    expectError(Feedback.InvalidOuterReference) {
+    expectError(Feedback.InvalidOuterReference("(v: Any)")) {
       """
         import scala.spores._
         val v = 10
