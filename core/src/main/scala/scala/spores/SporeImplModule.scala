@@ -56,7 +56,16 @@ private[spores] class SporeImplModule[C <: whitebox.Context](val c: C) {
           tq"$sporesPath.Spore2[..$targs]"
         else if (paramSyms.size == 3)
           tq"$sporesPath.Spore3[..$targs]"
-        else ???
+        else if (paramSyms.size == 4)
+          tq"$sporesPath.Spore4[..$targs]"
+        else if (paramSyms.size == 5)
+          tq"$sporesPath.Spore5[..$targs]"
+        else if (paramSyms.size == 6)
+          tq"$sporesPath.Spore6[..$targs]"
+        else if (paramSyms.size == 7)
+          tq"$sporesPath.Spore7[..$targs]"
+        else c.abort(funTree.pos, Feedback.UnsupportedAritySpore)
+
       generator.generateSpore(sporeName, sporeType, Nil, sporeBody)
     } else {
       val capturedTypes = validEnv.map(_.typeSignature).toArray
@@ -80,6 +89,12 @@ private[spores] class SporeImplModule[C <: whitebox.Context](val c: C) {
           tq"$sporesPath.Spore2WithEnv[..$targs]"
         else if (paramSyms.size == 3)
           tq"$sporesPath.Spore3WithEnv[..$targs]"
+        else if (paramSyms.size == 4)
+          tq"$sporesPath.Spore4WithEnv[..$targs]"
+        else if (paramSyms.size == 5)
+          tq"$sporesPath.Spore5WithEnv[..$targs]"
+        else if (paramSyms.size == 6)
+          tq"$sporesPath.Spore6WithEnv[..$targs]"
         else ???
       generator.generateSpore(sporeName,
                               sporeType,

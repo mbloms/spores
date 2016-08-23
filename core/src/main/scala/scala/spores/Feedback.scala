@@ -1,6 +1,9 @@
 package scala.spores
 
 protected object Feedback {
+  val UnsupportedAritySpore =
+    "The arity of this support is not yet supported, please file an issue."
+
   val IncorrectSporeHeader =
     "Incorrect spore header: Only val defs allowed at this position."
 
