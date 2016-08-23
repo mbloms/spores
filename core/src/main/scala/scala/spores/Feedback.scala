@@ -1,6 +1,9 @@
 package scala.spores
 
 protected object Feedback {
+  val MissingSporeClassDef =
+    "Expected spore class definition. The generated format of a spore has changed"
+
   val UnsupportedAritySpore =
     "The arity of this support is not yet supported, please file an issue."
 

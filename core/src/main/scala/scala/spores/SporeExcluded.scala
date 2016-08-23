@@ -6,6 +6,7 @@ import scala.reflect.macros.whitebox
 
 /** Implicit conversion between spores and spores with excluded types. */
 object ExcludedSporeConversions {
+  // TODO(jvican): Consider importing all this into the spores package
   implicit def toExcluded[T, R, A](s: Spore[T, R]): Spore[T, R] {
     type Excluded = A
   } = macro SporeTranslator.toExcludedSpore[T, R, A]
@@ -125,27 +126,26 @@ object SporeTranslator {
 
     /* Divide the spore into pieces that are put together
      * to create a Spore[...] {type Excluded = ...} */
-    val Block(l, newInstance) = s
-    // TODO(jvican): Remove unnecessary var
-    var classDef: Tree = null
-    l.foreach((t: Tree) =>
-      t match {
-        case ClassDef(_, _, _, _) =>
-          classDef = t
-        case _ =>
-    })
+    val Block(stmts, newInstance) = s
+    val correctFormat = stmts.headOption.exists {
+      case sporeDef: ClassDef => true
+      case _ => false
+    }
 
-    require(classDef != null)
-    val q"new ${ _ }(...$class_constructor_args)" = newInstance
-    val classSym = classDef.symbol
-    val excludedSporeInstantiation =
-      q"""
-        $classDef
-        new $classSym(...$class_constructor_args) {type Excluded = $atpe}
+    if (!correctFormat) c.abort(s.pos, Feedback.MissingSporeClassDef)
+    else {
+      val sporeDef = stmts.head
+      val sporeSym = sporeDef.symbol
+      val q"new ${ _ }(...$constructorArgs)" = newInstance
+      val excludedSporeInstantiation =
+        q"""
+        $sporeDef
+        new $sporeSym(...$constructorArgs) {type Excluded = $atpe}
       """
 
-    debug(s"Excluded transformed spore:\n$excludedSporeInstantiation")
-    excludedSporeInstantiation
+      debug(s"Excluded transformed spore:\n$excludedSporeInstantiation")
+      excludedSporeInstantiation
+    }
   }
 
   def toExcludedNullary[R: c.WeakTypeTag, A: c.WeakTypeTag](
