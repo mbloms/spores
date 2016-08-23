@@ -57,7 +57,7 @@ object ExcludedSporeConversions {
                                                         R] {
     type Excluded = A
   } =
-    macro SporeTranslator.toExcludedSpore6[T1, T2, T3, T4, T5, T6, T7, R, A]
+    macro SporeTranslator.toExcludedSpore7[T1, T2, T3, T4, T5, T6, T7, R, A]
 }
 
 object SporeTranslator {
