@@ -21,4 +21,7 @@ protected object Feedback {
 
   def InvalidReferenceTo(symbol: String) =
     s"Spore contains references to an invalid symbol: $symbol"
+
+  def InvalidReferenceToExcludedType(tpe: String) =
+    s"Unexpected expression with type '$tpe', but type '$tpe' is Excluded"
 }

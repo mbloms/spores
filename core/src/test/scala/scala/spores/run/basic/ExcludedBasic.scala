@@ -5,7 +5,7 @@ package basic
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
-import scala.spores.SporeConv._
+import scala.spores.ExcludedSporeConversions._
 
 
 @RunWith(classOf[JUnit4])
