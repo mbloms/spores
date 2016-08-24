@@ -1,7 +1,7 @@
 @import Main._
 @import scala.spores._
 @import scala.spores.readme.Readme._
-@sect("Spores", "0.3.0-b1")
+@sect("Spores", scala.spores.version)
 
     @div
       @p
@@ -10,19 +10,30 @@
           <a href="https://gitter.im/heathermiller/spores?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/382ebf95f5b4df9275ac203229928db8c8fd5c50/68747470733a2f2f6261646765732e6769747465722e696d2f6f6c6166757270672f7363616c61666d742e737667" alt="Join the chat at https://gitter.im/olafurpg/scalafmt" data-canonical-src="https://badges.gitter.im/olafurpg/scalafmt.svg" style="max-width:100%;"></a>
 
       @p
-        @lnk("Spores", repo) enables safer use of closures in concurrent and distributed
-        environments by controlling the environment that a spore can capture. This usually
-        translates to making serialization of functions easier to get right, although spores
-        have broader use cases in any functional program.
+        @lnk("Spores", repo) enable a safer use of closures in concurrent and distributed
+        environments. They provide a fine-grained control over their captured environment, allowing
+        users to constrain captured variables and exclude the use of certain types within a closure. Spores are useful when
+        developers want to guarantee certain properties of a function at compile-time. Common
+        uses cases range from serialization to specific function contracts. Check the complete
+        motivation in the original proposal
+        @a(href := "http://docs.scala-lang.org/sips/pending/spores.html")("SIP-21").
 
+    @sect("How to use")
+      @p
+        The new production-ready version of spores is still experimental. If you want to try it out,
+        add it to your sbt dependencies:
+        @hl.scala
+            libraryDependencies += "org.scala-lang.modules" %% "spores-core" % "0.3.0"
+
+    @sect("Getting started")
       @p
         A spore has the following structure:
 
       @statement
         spore {
-           val pi = 3.1415926535897932384626
+           val insider = 3.1415926535897932384626
            val outsider = foo // defined outside the scope
-           () => println(s"I captured $pi and $outsider")
+           () => println(s"I captured $insider and $outsider")
         }
 
       @p
@@ -36,10 +47,20 @@
         the spore header, you can try the alternative simpler syntax:
 
       @statement
-        val pi = 3.1415926535897932384626
         spore {
-           () => println(s"I captured ${capture(pi)} and ${capture(outsider)}")
+           () => println(s"I captured ${capture(insider)} and ${capture(outsider)}")
         }
+
+       @note The insider variable is now defined in the enclosing scope.
 
 @raw
     <a href="https://github.com/jvican/spores"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/652c5b9acfaddf3a9c326fa6bde407b87f7be0f4/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6f72616e67655f6666373630302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_orange_ff7600.png"></a>
+
+    <script>
+        // NOTE: Disables the sidebar because we don't really have anything to show there yet.
+        // Gonna re-enable it back by deleting this <script/> block once we have something interesting.
+        (function() {
+          controller = scalatex.scrollspy.Controller();
+          controller.main = function(config) {}
+        })()
+    </script>

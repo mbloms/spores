@@ -14,6 +14,8 @@ import scala.reflect.macros.whitebox
 
 package object spores {
 
+  val version = "0.3.0-b1"
+
   object logger {
     def elem[T](es: sourcecode.Text[T]*)(implicit line: sourcecode.Line,
                                          file: sourcecode.File): Unit = {
