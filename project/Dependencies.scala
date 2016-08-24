@@ -14,8 +14,11 @@ object Dependencies {
 
   val scalaPickling = "org.scala-lang.modules" %% "scala-pickling" % "0.11.0-M2"
   val sourcecode = "com.lihaoyi" %% "sourcecode" % "0.1.2"
+  val scalafmt = "com.geirsson" %% "scalafmt" % "0.3.1"
+  val twitterUtil = "com.twitter" %% "util-eval" % "6.35.0"
+  val docDependencies = Seq(scalafmt, twitterUtil)
 
-  val core = Seq(scalaReflect, scalaCompiler, junit, junitIntf, sourcecode)
+  val core = Seq(scalaReflect, scalaCompiler, junit, junitIntf, sourcecode) ++ docDependencies
 
   val pickling = core ++ Seq(scalaPickling)
 

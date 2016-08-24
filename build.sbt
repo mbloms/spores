@@ -140,3 +140,17 @@ lazy val pickling = project
     // scalacOptions in Test ++= Seq("-Xlog-implicits")
   )
   .dependsOn(core)
+
+lazy val readme = scalatex
+  .ScalatexReadme(
+    projectId = "readme",
+    wd = file(""),
+    url = "https://github.com/jvican/spores/tree/master",
+    source = "Readme"
+  )
+  .dependsOn(core)
+  .settings(noPublish)
+  .settings(
+    dependencyOverrides += "com.lihaoyi" %% "scalaparse" % "0.3.1"
+  )
+
