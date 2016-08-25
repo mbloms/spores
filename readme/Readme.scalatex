@@ -13,7 +13,7 @@
         @lnk("Spores", repo) enable a safer use of closures in concurrent and distributed
         environments. They provide users fine-grained control over a function's
         environment, from constraining captured variables to excluding the use of certain
-        types within a closure at compile-time. This turns to be useful when library authors
+        types at compile-time. This turns to be useful when library authors
         want to guarantee properties of a function, e.g. serializable closures.
         For a full motivation, check
         @a(href := "http://docs.scala-lang.org/sips/pending/spores.html")("SIP-21").
