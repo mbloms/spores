@@ -7,35 +7,39 @@ import scala.reflect.macros.whitebox
 /** Implicit conversion between spores and spores with excluded types. */
 object Conversions {
   // TODO(jvican): Consider importing all this into the spores package
-  implicit def toExcluded[T, R, A](s: Spore[T, R]): Spore[T, R] {
-    type Excluded = A
-  } = macro SporeTranslator.toExcludedSpore[T, R, A]
+  implicit def toExcluded[R, E, C](s: NullarySpore[R]): NullarySpore[R] {
+    type Excluded = E; type Captured = C
+  } = macro SporeTranslator.toExcludedNullary[R, E, C]
 
-  implicit def toExcluded[R, A](s: NullarySpore[R]): NullarySpore[R] {
-    type Excluded = A
-  } = macro SporeTranslator.toExcludedNullary[R, A]
+  implicit def toExcluded[T, R, E, C](s: Spore[T, R]): Spore[T, R] {
+    type Excluded = E; type Captured = C
+  } = macro SporeTranslator.toExcludedSpore[T, R, E, C]
 
-  implicit def toExcluded[T1, T2, R, A](
-      s: Spore2[T1, T2, R]): Spore2[T1, T2, R] { type Excluded = A } =
-    macro SporeTranslator.toExcludedSpore2[T1, T2, R, A]
+  implicit def toExcluded[T1, T2, R, E, C](
+      s: Spore2[T1, T2, R]): Spore2[T1, T2, R] {
+    type Excluded = E; type Captured = C
+  } =
+    macro SporeTranslator.toExcludedSpore2[T1, T2, R, E, C]
 
-  implicit def toExcluded[T1, T2, T3, R, A](
-      s: Spore3[T1, T2, T3, R]): Spore3[T1, T2, T3, R] { type Excluded = A } =
-    macro SporeTranslator.toExcludedSpore3[T1, T2, T3, R, A]
+  implicit def toExcluded[T1, T2, T3, R, E, C](
+      s: Spore3[T1, T2, T3, R]): Spore3[T1, T2, T3, R] {
+    type Excluded = E; type Captured = C
+  } =
+    macro SporeTranslator.toExcludedSpore3[T1, T2, T3, R, E, C]
 
-  implicit def toExcluded[T1, T2, T3, T4, R, A](
+  implicit def toExcluded[T1, T2, T3, T4, R, E, C](
       s: Spore4[T1, T2, T3, T4, R]): Spore4[T1, T2, T3, T4, R] {
-    type Excluded = A
+    type Excluded = E; type Captured = C
   } =
-    macro SporeTranslator.toExcludedSpore4[T1, T2, T3, T4, R, A]
+    macro SporeTranslator.toExcludedSpore4[T1, T2, T3, T4, R, E, C]
 
-  implicit def toExcluded[T1, T2, T3, T4, T5, R, A](
+  implicit def toExcluded[T1, T2, T3, T4, T5, R, E, C](
       s: Spore5[T1, T2, T3, T4, T5, R]): Spore5[T1, T2, T3, T4, T5, R] {
-    type Excluded = A
+    type Excluded = E; type Captured = C
   } =
-    macro SporeTranslator.toExcludedSpore5[T1, T2, T3, T4, T5, R, A]
+    macro SporeTranslator.toExcludedSpore5[T1, T2, T3, T4, T5, R, E, C]
 
-  implicit def toExcluded[T1, T2, T3, T4, T5, T6, R, A](s: Spore6[
+  implicit def toExcluded[T1, T2, T3, T4, T5, T6, R, E, C](s: Spore6[
     T1,
     T2,
     T3,
@@ -43,11 +47,11 @@ object Conversions {
     T5,
     T6,
     R]): Spore6[T1, T2, T3, T4, T5, T6, R] {
-    type Excluded = A
+    type Excluded = E; type Captured = C
   } =
-    macro SporeTranslator.toExcludedSpore6[T1, T2, T3, T4, T5, T6, R, A]
+    macro SporeTranslator.toExcludedSpore6[T1, T2, T3, T4, T5, T6, R, E, C]
 
-  implicit def toExcluded[T1, T2, T3, T4, T5, T6, T7, R, A](
+  implicit def toExcluded[T1, T2, T3, T4, T5, T6, T7, R, E, C](
       s: Spore7[T1, T2, T3, T4, T5, T6, T7, R]): Spore7[T1,
                                                         T2,
                                                         T3,
@@ -56,9 +60,9 @@ object Conversions {
                                                         T6,
                                                         T7,
                                                         R] {
-    type Excluded = A
+    type Excluded = E; type Captured = C
   } =
-    macro SporeTranslator.toExcludedSpore7[T1, T2, T3, T4, T5, T6, T7, R, A]
+    macro SporeTranslator.toExcludedSpore7[T1, T2, T3, T4, T5, T6, T7, R, E, C]
 }
 
 object SporeTranslator {
@@ -82,7 +86,7 @@ object SporeTranslator {
     *          }
     *          }}}
     */
-  def constructTree[A: c.WeakTypeTag](c: whitebox.Context)(
+  def constructTree[A: c.WeakTypeTag, E: c.WeakTypeTag](c: whitebox.Context)(
       s: c.Tree): c.universe.Tree = {
     import c.universe._
     val atpe = weakTypeOf[A]
@@ -150,37 +154,49 @@ object SporeTranslator {
     }
   }
 
-  def toExcludedNullary[R: c.WeakTypeTag, A: c.WeakTypeTag](
-      c: whitebox.Context)(s: c.Expr[NullarySpore[R]])
-    : c.Expr[NullarySpore[R] { type Excluded = A }] = {
-    c.Expr[NullarySpore[R] { type Excluded = A }](constructTree[A](c)(s.tree))
+  def toExcludedNullary[R: c.WeakTypeTag, E: c.WeakTypeTag, C: c.WeakTypeTag](
+      c: whitebox.Context)(
+      s: c.Expr[NullarySpore[R]]): c.Expr[NullarySpore[R] {
+    type Excluded = E; type Captured = C
+  }] = {
+    c.Expr[NullarySpore[R] { type Excluded = E; type Captured = C }](
+      constructTree[E, C](c)(s.tree))
   }
 
-  def toExcludedSpore[T: c.WeakTypeTag, R: c.WeakTypeTag, A: c.WeakTypeTag](
-      c: whitebox.Context)(
-      s: c.Expr[Spore[T, R]]): c.Expr[Spore[T, R] { type Excluded = A }] = {
-    c.Expr[Spore[T, R] { type Excluded = A }](constructTree[A](c)(s.tree))
+  def toExcludedSpore[T: c.WeakTypeTag,
+                      R: c.WeakTypeTag,
+                      E: c.WeakTypeTag,
+                      C: c.WeakTypeTag](c: whitebox.Context)(
+      s: c.Expr[Spore[T, R]])
+    : c.Expr[Spore[T, R] { type Excluded = E; type Captured = C }] = {
+    c.Expr[Spore[T, R] { type Excluded = E; type Captured = C }](
+      constructTree[E, C](c)(s.tree))
   }
 
   def toExcludedSpore2[T1: c.WeakTypeTag,
                        T2: c.WeakTypeTag,
                        R: c.WeakTypeTag,
-                       A: c.WeakTypeTag](c: whitebox.Context)(
-      s: c.Expr[Spore2[T1, T2, R]])
-    : c.Expr[Spore2[T1, T2, R] { type Excluded = A }] = {
-    c.Expr[Spore2[T1, T2, R] { type Excluded = A }](
-      constructTree[A](c)(s.tree))
+                       E: c.WeakTypeTag,
+                       C: c.WeakTypeTag](c: whitebox.Context)(
+      s: c.Expr[Spore2[T1, T2, R]]): c.Expr[Spore2[T1, T2, R] {
+    type Excluded = E; type Captured = C
+  }] = {
+    c.Expr[Spore2[T1, T2, R] { type Excluded = E; type Captured = C }](
+      constructTree[E, C](c)(s.tree))
   }
 
   def toExcludedSpore3[T1: c.WeakTypeTag,
                        T2: c.WeakTypeTag,
                        T3: c.WeakTypeTag,
                        R: c.WeakTypeTag,
-                       A: c.WeakTypeTag](c: whitebox.Context)(
-      s: c.Expr[Spore3[T1, T2, T3, R]])
-    : c.Expr[Spore3[T1, T2, T3, R] { type Excluded = A }] = {
-    c.Expr[Spore3[T1, T2, T3, R] { type Excluded = A }](
-      constructTree[A](c)(s.tree))
+                       E: c.WeakTypeTag,
+                       C: c.WeakTypeTag](c: whitebox.Context)(
+      s: c.Expr[Spore3[T1, T2, T3, R]]): c.Expr[Spore3[T1, T2, T3, R] {
+    type Excluded = E; type Captured = C
+  }] = {
+    c.Expr[Spore3[T1, T2, T3, R] {
+      type Excluded = E; type Captured = C
+    }](constructTree[E, C](c)(s.tree))
   }
 
   def toExcludedSpore4[T1: c.WeakTypeTag,
@@ -188,11 +204,14 @@ object SporeTranslator {
                        T3: c.WeakTypeTag,
                        T4: c.WeakTypeTag,
                        R: c.WeakTypeTag,
-                       A: c.WeakTypeTag](c: whitebox.Context)(
-      s: c.Expr[Spore4[T1, T2, T3, T4, R]])
-    : c.Expr[Spore4[T1, T2, T3, T4, R] { type Excluded = A }] = {
-    c.Expr[Spore4[T1, T2, T3, T4, R] { type Excluded = A }](
-      constructTree[A](c)(s.tree))
+                       E: c.WeakTypeTag,
+                       C: c.WeakTypeTag](c: whitebox.Context)(
+      s: c.Expr[Spore4[T1, T2, T3, T4, R]]): c.Expr[Spore4[T1, T2, T3, T4, R] {
+    type Excluded = E; type Captured = C
+  }] = {
+    c.Expr[Spore4[T1, T2, T3, T4, R] {
+      type Excluded = E; type Captured = C
+    }](constructTree[E, C](c)(s.tree))
   }
 
   def toExcludedSpore5[T1: c.WeakTypeTag,
@@ -201,11 +220,15 @@ object SporeTranslator {
                        T4: c.WeakTypeTag,
                        T5: c.WeakTypeTag,
                        R: c.WeakTypeTag,
-                       A: c.WeakTypeTag](c: whitebox.Context)(
+                       E: c.WeakTypeTag,
+                       C: c.WeakTypeTag](c: whitebox.Context)(
       s: c.Expr[Spore5[T1, T2, T3, T4, T5, R]])
-    : c.Expr[Spore5[T1, T2, T3, T4, T5, R] { type Excluded = A }] = {
-    c.Expr[Spore5[T1, T2, T3, T4, T5, R] { type Excluded = A }](
-      constructTree[A](c)(s.tree))
+    : c.Expr[Spore5[T1, T2, T3, T4, T5, R] {
+      type Excluded = E; type Captured = C
+    }] = {
+    c.Expr[Spore5[T1, T2, T3, T4, T5, R] {
+      type Excluded = E; type Captured = C
+    }](constructTree[E, C](c)(s.tree))
   }
 
   def toExcludedSpore6[T1: c.WeakTypeTag,
@@ -215,11 +238,15 @@ object SporeTranslator {
                        T5: c.WeakTypeTag,
                        T6: c.WeakTypeTag,
                        R: c.WeakTypeTag,
-                       A: c.WeakTypeTag](c: whitebox.Context)(
+                       E: c.WeakTypeTag,
+                       C: c.WeakTypeTag](c: whitebox.Context)(
       s: c.Expr[Spore6[T1, T2, T3, T4, T5, T6, R]])
-    : c.Expr[Spore6[T1, T2, T3, T4, T5, T6, R] { type Excluded = A }] = {
-    c.Expr[Spore6[T1, T2, T3, T4, T5, T6, R] { type Excluded = A }](
-      constructTree[A](c)(s.tree))
+    : c.Expr[Spore6[T1, T2, T3, T4, T5, T6, R] {
+      type Excluded = E; type Captured = C
+    }] = {
+    c.Expr[Spore6[T1, T2, T3, T4, T5, T6, R] {
+      type Excluded = E; type Captured = C
+    }](constructTree[E, C](c)(s.tree))
   }
 
   def toExcludedSpore7[T1: c.WeakTypeTag,
@@ -230,10 +257,14 @@ object SporeTranslator {
                        T6: c.WeakTypeTag,
                        T7: c.WeakTypeTag,
                        R: c.WeakTypeTag,
-                       A: c.WeakTypeTag](c: whitebox.Context)(
+                       E: c.WeakTypeTag,
+                       C: c.WeakTypeTag](c: whitebox.Context)(
       s: c.Expr[Spore7[T1, T2, T3, T4, T5, T6, T7, R]])
-    : c.Expr[Spore7[T1, T2, T3, T4, T5, T6, T7, R] { type Excluded = A }] = {
-    c.Expr[Spore7[T1, T2, T3, T4, T5, T6, T7, R] { type Excluded = A }](
-      constructTree[A](c)(s.tree))
+    : c.Expr[Spore7[T1, T2, T3, T4, T5, T6, T7, R] {
+      type Excluded = E; type Captured = C
+    }] = {
+    c.Expr[Spore7[T1, T2, T3, T4, T5, T6, T7, R] {
+      type Excluded = E; type Captured = C
+    }](constructTree[E, C](c)(s.tree))
   }
 }

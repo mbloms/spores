@@ -45,7 +45,7 @@ private[spores] class MacroModule[C <: whitebox.Context](val c: C) {
 
   def createSpore(funTree: c.Tree, targs: List[c.Type]): c.Tree = {
     val (paramSyms, retTpe, funBody, fullSporeEnv) = conforms(funTree)
-    val (symbolsEnv, explicitRhsEnv) = fullSporeEnv.unzip
+    val (symbolsEnv, refsEnv) = fullSporeEnv.unzip
     val generator = new SporeGenerator[c.type](c)
     val sporeName = c.freshName(anonSporeName)
 
@@ -70,7 +70,9 @@ private[spores] class MacroModule[C <: whitebox.Context](val c: C) {
           tq"$sporesPath.Spore7[..$targs]"
         else c.abort(funTree.pos, Feedback.UnsupportedAritySpore)
 
-      generator.generateSpore(sporeName, sporeType, Nil, sporeBody)
+      val s = generator.generateSpore(sporeName, sporeType, Nil, sporeBody)
+      debug(s"Generated: $s")
+      s
     } else {
       val capturedTypes = symbolsEnv.map(_.typeSignature).toArray
       debug(s"Captured types: ${capturedTypes.mkString(",")}")
@@ -80,10 +82,8 @@ private[spores] class MacroModule[C <: whitebox.Context](val c: C) {
                                                 retTpe,
                                                 environment = symbolsEnv,
                                                 capturedRefs = newRefs)
-      val envRefs = explicitRhsEnv.toArray
-      val constructorParams = List(generator.toTuple(envRefs))
+      val constructorParams = List(generator.toTuple(refsEnv.toArray))
       val capturedType = generator.toTypeTuple(capturedTypes)
-
       val sporeType =
         if (paramSyms.isEmpty)
           tq"$sporesPath.NullarySporeWithEnv[..$targs]"
@@ -101,7 +101,8 @@ private[spores] class MacroModule[C <: whitebox.Context](val c: C) {
           tq"$sporesPath.Spore6WithEnv[..$targs]"
         else if (paramSyms.size == 7)
           tq"$sporesPath.Spore7WithEnv[..$targs]"
-        else ???
+        else c.abort(funTree.pos, Feedback.UnsupportedAritySpore)
+
       generator.generateSpore(sporeName,
                               sporeType,
                               List(capturedType),
