@@ -5,7 +5,7 @@ import scala.language.experimental.macros
 import scala.reflect.macros.whitebox
 
 /** Implicit conversion between spores and spores with excluded types. */
-object ExcludedSporeConversions {
+object Conversions {
   // TODO(jvican): Consider importing all this into the spores package
   implicit def toExcluded[T, R, A](s: Spore[T, R]): Spore[T, R] {
     type Excluded = A
