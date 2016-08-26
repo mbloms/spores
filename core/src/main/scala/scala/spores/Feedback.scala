@@ -13,6 +13,9 @@ protected object Feedback {
   val IncorrectSporeBody =
     "Incorrect spore body: expected function literal or `delayed`."
 
+  val TupleFormatError =
+    "You cannot construct a tuple of zero or more than 22 elements."
+
   def InvalidOuterReference(captured: String) =
     s"Only stable paths can be captured inside a spore. Found: `$captured`."
 

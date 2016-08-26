@@ -108,9 +108,7 @@ protected class SporeGenerator[C <: whitebox.Context](val ctx: C) {
         11)}, ${capturedTypes(12)}, ${capturedTypes(13)}, ${capturedTypes(14)}, ${capturedTypes(
         15)}, ${capturedTypes(16)}, ${capturedTypes(17)}, ${capturedTypes(18)}, ${capturedTypes(
         19)}, ${capturedTypes(20)}, ${capturedTypes(21)})"
-    else
-      ctx.abort(ctx.enclosingPosition,
-                "You cannot construct a tuple of more than 22 elements.")
+    else ctx.abort(ctx.enclosingPosition, Feedback.TupleFormatError)
   }
 
   /** Create a type body for the `Captured` alias given the types in the spore header. */
