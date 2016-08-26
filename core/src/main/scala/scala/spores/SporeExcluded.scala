@@ -106,6 +106,8 @@ object SporeTranslator {
       }
     }
     traverser.traverse(s)
+    debug(s"${showCode(s)}")
+    debug(s"Traversed: ${traverser.mentionedTypes}")
 
     val NothingType = typeOf[Nothing]
     /* Check that btm is indeed the

@@ -21,7 +21,9 @@ package object spores {
                                          file: sourcecode.File): Unit = {
       es.foreach { e =>
         val filename = file.value.replaceAll(".*/", "")
-        println(s"$filename:${line.value} [${e.source}] ${e.value}")
+        val header = Console.GREEN + s"$filename:${line.value}"
+        val source = Console.MAGENTA + s"[${e.source}]"
+        println(s"$header $source ${Console.RESET}${e.value}")
       }
     }
   }
@@ -85,7 +87,7 @@ package object spores {
   def nullarySporeImpl[R: ctx.WeakTypeTag](ctx: whitebox.Context)(
       fun: ctx.Expr[() => R]): ctx.Expr[NullarySpore[R]] = {
     import ctx.universe._
-    val impl = new SporeImplModule[ctx.type](ctx)
+    val impl = new MacroModule[ctx.type](ctx)
     val targs = List(weakTypeOf[R])
     val tree = impl.createSpore(fun.tree, targs)
     ctx.Expr[NullarySpore[R]](tree)
@@ -94,7 +96,7 @@ package object spores {
   def sporeImpl[T: ctx.WeakTypeTag, R: ctx.WeakTypeTag](ctx: whitebox.Context)(
       fun: ctx.Expr[T => R]): ctx.Expr[Spore[T, R]] = {
     import ctx.universe._
-    val impl = new SporeImplModule[ctx.type](ctx)
+    val impl = new MacroModule[ctx.type](ctx)
     val targs = List(weakTypeOf[T], weakTypeOf[R])
     val tree = impl.createSpore(fun.tree, targs)
     ctx.Expr[Spore[T, R]](tree)
@@ -106,7 +108,7 @@ package object spores {
     import ctx.universe._
 
     // check Spore constraints
-    val impl = new SporeImplModule[ctx.type](ctx)
+    val impl = new MacroModule[ctx.type](ctx)
     val targs = List(weakTypeOf[T1], weakTypeOf[T2], weakTypeOf[R])
     val tree = impl.createSpore(fun.tree, targs)
     ctx.Expr[Spore2[T1, T2, R]](tree)
@@ -120,7 +122,7 @@ package object spores {
     import ctx.universe._
 
     // check Spore constraints
-    val impl = new SporeImplModule[ctx.type](ctx)
+    val impl = new MacroModule[ctx.type](ctx)
     val targs =
       List(weakTypeOf[T1], weakTypeOf[T2], weakTypeOf[T3], weakTypeOf[R])
     val tree = impl.createSpore(fun.tree, targs)
@@ -137,7 +139,7 @@ package object spores {
     import ctx.universe._
 
     // check Spore constraints
-    val impl = new SporeImplModule[ctx.type](ctx)
+    val impl = new MacroModule[ctx.type](ctx)
     val targs =
       List(weakTypeOf[T1],
            weakTypeOf[T2],
@@ -159,7 +161,7 @@ package object spores {
     import ctx.universe._
 
     // check Spore constraints
-    val impl = new SporeImplModule[ctx.type](ctx)
+    val impl = new MacroModule[ctx.type](ctx)
     val targs =
       List(weakTypeOf[T1],
            weakTypeOf[T2],
@@ -183,7 +185,7 @@ package object spores {
     import ctx.universe._
 
     // check Spore constraints
-    val impl = new SporeImplModule[ctx.type](ctx)
+    val impl = new MacroModule[ctx.type](ctx)
     val targs =
       List(weakTypeOf[T1],
            weakTypeOf[T2],
@@ -209,7 +211,7 @@ package object spores {
     import ctx.universe._
 
     // check Spore constraints
-    val impl = new SporeImplModule[ctx.type](ctx)
+    val impl = new MacroModule[ctx.type](ctx)
     val targs =
       List(weakTypeOf[T1],
            weakTypeOf[T2],

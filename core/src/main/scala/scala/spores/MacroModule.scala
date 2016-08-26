@@ -10,7 +10,7 @@ package scala.spores
 
 import scala.reflect.macros.whitebox
 
-private[spores] class SporeImplModule[C <: whitebox.Context](val c: C) {
+private[spores] class MacroModule[C <: whitebox.Context](val c: C) {
   import c.universe._
 
   /* Don't change this name since it's used
@@ -19,16 +19,18 @@ private[spores] class SporeImplModule[C <: whitebox.Context](val c: C) {
 
   private val sporesPath = q"scala.spores"
 
-  def conforms(funTree: c.Tree): (List[Symbol], Type, Tree, List[ValDef]) = {
+  type Env = List[(Symbol, Tree)]
+  def conforms(funTree: c.Tree): (List[Symbol], Type, Tree, Env) = {
     val analysis = new SporeAnalysis[c.type](c)
-    val (sporeEnv, sporeFunDef) = analysis.stripSporeStructure(funTree)
-    sporeEnv foreach (sym => debug(s"Captured symbol: $sym"))
+    val (explicitSporeEnv, sporeFunDef) = analysis.stripSporeStructure(funTree)
+    explicitSporeEnv foreach (s => debug(s"Explicitly captured symbol: $s"))
 
     val (funOpt, vparams, sporeBody) = analysis.readSporeFunDef(sporeFunDef)
     val functionSymbol = funOpt.map(_.symbol)
-    val captured = analysis.collectCaptured(sporeBody)
+    val nonExplicitEnv = analysis.collectCaptured(sporeBody)
+    val captured = nonExplicitEnv.map(_._1)
     val declared = analysis.collectDeclared(sporeBody)
-    val symbolsEnv = sporeEnv.map(_.symbol)
+    val symbolsEnv = explicitSporeEnv.map(_.symbol)
     val checker = new SporeChecker[c.type](c)(symbolsEnv,
                                               functionSymbol,
                                               captured,
@@ -36,16 +38,18 @@ private[spores] class SporeImplModule[C <: whitebox.Context](val c: C) {
 
     debug(s"Checking conformance of ${showRaw(sporeBody)}...")
     checker.checkReferencesInBody(sporeBody)
-    (vparams.map(_.symbol), sporeBody.tpe, sporeBody, sporeEnv)
+    val explicitEnv = explicitSporeEnv.map(vd => vd.symbol -> vd.rhs)
+    val fullSporeEnv = nonExplicitEnv ++ explicitEnv
+    (vparams.map(_.symbol), sporeBody.tpe, sporeBody, fullSporeEnv)
   }
 
   def createSpore(funTree: c.Tree, targs: List[c.Type]): c.Tree = {
-    val (paramSyms, retTpe, funBody, valDefEnv) = conforms(funTree)
-    val validEnv = valDefEnv.map(_.symbol)
+    val (paramSyms, retTpe, funBody, fullSporeEnv) = conforms(funTree)
+    val (symbolsEnv, explicitRhsEnv) = fullSporeEnv.unzip
     val generator = new SporeGenerator[c.type](c)
     val sporeName = c.freshName(anonSporeName)
 
-    if (validEnv.isEmpty) {
+    if (symbolsEnv.isEmpty) {
       val sporeBody = generator.createNewDefDef(paramSyms, funBody, retTpe)
       val sporeType =
         if (paramSyms.isEmpty)
@@ -68,16 +72,16 @@ private[spores] class SporeImplModule[C <: whitebox.Context](val c: C) {
 
       generator.generateSpore(sporeName, sporeType, Nil, sporeBody)
     } else {
-      val capturedTypes = validEnv.map(_.typeSignature).toArray
+      val capturedTypes = symbolsEnv.map(_.typeSignature).toArray
       debug(s"Captured types: ${capturedTypes.mkString(",")}")
-      val newRefs = generator.generateCapturedReferences(validEnv)
+      val newRefs = generator.generateCapturedReferences(symbolsEnv)
       val sporeBody = generator.createNewDefDef(paramSyms,
                                                 funBody,
                                                 retTpe,
-                                                environment = validEnv,
+                                                environment = symbolsEnv,
                                                 capturedRefs = newRefs)
-      val valDefRhss = valDefEnv.map(_.rhs).toArray
-      val constructorParams = List(generator.toTuple(valDefRhss))
+      val envRefs = explicitRhsEnv.toArray
+      val constructorParams = List(generator.toTuple(envRefs))
       val capturedType = generator.toTypeTuple(capturedTypes)
 
       val sporeType =
@@ -95,6 +99,8 @@ private[spores] class SporeImplModule[C <: whitebox.Context](val c: C) {
           tq"$sporesPath.Spore5WithEnv[..$targs]"
         else if (paramSyms.size == 6)
           tq"$sporesPath.Spore6WithEnv[..$targs]"
+        else if (paramSyms.size == 7)
+          tq"$sporesPath.Spore7WithEnv[..$targs]"
         else ???
       generator.generateSpore(sporeName,
                               sporeType,

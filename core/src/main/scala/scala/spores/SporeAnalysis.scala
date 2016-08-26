@@ -49,7 +49,7 @@ protected class SporeAnalysis[C <: whitebox.Context with Singleton](val ctx: C) 
   }
 
   private class SymbolCollector extends Traverser {
-    var capturedSymbols = List.empty[Symbol]
+    var capturedSymbols = List.empty[(Symbol, Tree)]
     override def traverse(tree: Tree): Unit = {
       tree match {
         case app @ Apply(fun, List(captured)) if fun.symbol == captureSym =>
@@ -59,14 +59,14 @@ protected class SporeAnalysis[C <: whitebox.Context with Singleton](val ctx: C) 
             ctx.abort(captured.pos, Feedback.InvalidOuterReference(culprit))
           else if (!isPathWith(captured)(!_.isLazy))
             ctx.abort(captured.pos, Feedback.InvalidLazyMember(culprit))
-          else capturedSymbols ::= captured.symbol
+          else capturedSymbols ::= captured.symbol -> captured
 
         case _ => super.traverse(tree)
       }
     }
   }
 
-  def collectCaptured(sporeBody: Tree): List[Symbol] = {
+  def collectCaptured(sporeBody: Tree): List[(Symbol, Tree)] = {
     debug("Collecting captured symbols...")
     val collector = new SymbolCollector
     collector.traverse(sporeBody)
