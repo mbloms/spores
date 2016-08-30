@@ -366,4 +366,16 @@ protected class SporeGenerator[C <: whitebox.Context](val ctx: C) {
       new $sporeName(..$constructorParams)
     """
   }
+
+  private val applyName = TermName("apply")
+  def getSporeBodyFromGeneratedSpore(sporeDef: Tree): Tree = {
+    val sporeClassDef = sporeDef match {
+      case c: ClassDef => c
+      case _ => ctx.abort(ctx.enclosingPosition, Feedback.MissingSporeClassDef)
+    }
+    sporeClassDef.impl.collect {
+      case applyMethod: DefDef if applyMethod.name == applyName =>
+        applyMethod
+    }.head
+  }
 }

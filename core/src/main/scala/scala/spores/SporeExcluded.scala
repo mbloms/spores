@@ -39,30 +39,17 @@ object Conversions {
   } =
     macro SporeTranslator.toExcludedSpore5[T1, T2, T3, T4, T5, R, E, C]
 
-  implicit def toExcluded[T1, T2, T3, T4, T5, T6, R, E, C](s: Spore6[
-    T1,
-    T2,
-    T3,
-    T4,
-    T5,
-    T6,
-    R]): Spore6[T1, T2, T3, T4, T5, T6, R] {
+  // format: off
+  implicit def toExcluded[T1, T2, T3, T4, T5, T6, R, E, C](
+      s: Spore6[T1, T2, T3, T4, T5, T6, R]): Spore6[T1, T2, T3, T4, T5, T6, R] {
     type Excluded = E; type Captured = C
-  } =
-    macro SporeTranslator.toExcludedSpore6[T1, T2, T3, T4, T5, T6, R, E, C]
+  } = macro SporeTranslator.toExcludedSpore6[T1, T2, T3, T4, T5, T6, R, E, C]
 
   implicit def toExcluded[T1, T2, T3, T4, T5, T6, T7, R, E, C](
-      s: Spore7[T1, T2, T3, T4, T5, T6, T7, R]): Spore7[T1,
-                                                        T2,
-                                                        T3,
-                                                        T4,
-                                                        T5,
-                                                        T6,
-                                                        T7,
-                                                        R] {
+      s: Spore7[T1, T2, T3, T4, T5, T6, T7, R]): Spore7[T1, T2, T3, T4, T5, T6, T7, R] {
     type Excluded = E; type Captured = C
-  } =
-    macro SporeTranslator.toExcludedSpore7[T1, T2, T3, T4, T5, T6, T7, R, E, C]
+  } = macro SporeTranslator.toExcludedSpore7[T1, T2, T3, T4, T5, T6, T7, R, E, C]
+  // format: on
 }
 
 object SporeTranslator {
@@ -89,65 +76,73 @@ object SporeTranslator {
   def constructTree[A: c.WeakTypeTag, E: c.WeakTypeTag](c: whitebox.Context)(
       s: c.Tree): c.universe.Tree = {
     import c.universe._
-    val atpe = weakTypeOf[A]
-
-    // TODO(jvican): Increase the number of types here
-    val avoidedList: List[c.universe.Type] = {
-      if (atpe <:< weakTypeOf[(Any, Any)] ||
-          atpe <:< weakTypeOf[(Any, Any, Any)] ||
-          atpe <:< weakTypeOf[(Any, Any, Any, Any)] ||
-          atpe <:< weakTypeOf[(Any, Any, Any, Any, Any)] ||
-          atpe <:< weakTypeOf[(Any, Any, Any, Any, Any, Any)])
-        atpe.typeArgs
-      else List[c.universe.Type](atpe)
-    }
-
-    object traverser extends Traverser {
-      var mentionedTypes = List[TypeTree]()
-      override def traverse(tree: Tree): Unit = tree match {
-        case tt @ TypeTree() => mentionedTypes = tt :: mentionedTypes
-        case _ => super.traverse(tree)
-      }
-    }
-    traverser.traverse(s)
-    debug(s"${showCode(s)}")
-    debug(s"Traversed: ${traverser.mentionedTypes}")
-
-    val NothingType = typeOf[Nothing]
-    /* Check that btm is indeed the
-     * bottom type and that tpe is not */
-    def isBottomType(btm: Type, tpe: Type) =
-      btm =:= NothingType && !(tpe =:= btm)
-
-    /* This is the check: compiler error if some TypeTree
-     * in 's' has a type that is <:< of something in A */
-    traverser.mentionedTypes.foreach { t =>
-      avoidedList.foreach { at =>
-        if (t.tpe <:< at && !isBottomType(t.tpe, at)) {
-          c.abort(t.pos,
-                  Feedback.InvalidReferenceToExcludedType(t.tpe.toString))
-        }
-      }
-    }
 
     /* Divide the spore into pieces that are put together
      * to create a Spore[...] {type Excluded = ...} */
-    val Block(stmts, newInstance) = s
-    val correctFormat = stmts.headOption.exists {
-      case sporeDef: ClassDef => true
+    val firstStatementAndInstance = s match {
+      case b: Block => b.stats.headOption.map(_ -> b.expr)
+      case _ => None
+    }
+    val correctFormat = firstStatementAndInstance.exists {
+      case (sporeDef: ClassDef, newInstance) => true
       case _ => false
     }
 
     if (!correctFormat) c.abort(s.pos, Feedback.MissingSporeClassDef)
     else {
-      val sporeDef = stmts.head
+      val atpe = weakTypeOf[A]
+      val (sporeDef, newInstance) = firstStatementAndInstance.get
+
+      // TODO(jvican): Increase the number of types here
+      val avoidedList: List[c.universe.Type] = {
+        if (atpe <:< weakTypeOf[(Any, Any)] ||
+            atpe <:< weakTypeOf[(Any, Any, Any)] ||
+            atpe <:< weakTypeOf[(Any, Any, Any, Any)] ||
+            atpe <:< weakTypeOf[(Any, Any, Any, Any, Any)] ||
+            atpe <:< weakTypeOf[(Any, Any, Any, Any, Any, Any)])
+          atpe.typeArgs
+        else List[c.universe.Type](atpe)
+      }
+
+      object TypeCollector extends Traverser {
+        var mentionedTypes = List[TypeTree]()
+        override def traverse(tree: Tree): Unit = tree match {
+          case tt @ TypeTree() => mentionedTypes = tt :: mentionedTypes
+          case _ => super.traverse(tree)
+        }
+      }
+
+      val sporeGenerator = new SporeGenerator[c.type](c)
+      val sporeLogic = sporeGenerator.getSporeBodyFromGeneratedSpore(sporeDef)
+      TypeCollector.traverse(sporeLogic)
+      debug(s"Traversing: ${showCode(s)}")
+      debug(s"Mentioned types: ${TypeCollector.mentionedTypes}")
+
+      val NothingType = typeOf[Nothing]
+      /* Check that btm is indeed the
+       * bottom type and that tpe is not */
+      def isBottomType(btm: Type, tpe: Type) =
+        btm =:= NothingType && !(tpe =:= btm)
+
+      /* This is the check: compiler error if some TypeTree
+       * in 's' has a type that is <:< of something in A */
+      TypeCollector.mentionedTypes.foreach { t =>
+        avoidedList.foreach { at =>
+          if (t.tpe <:< at && !isBottomType(t.tpe, at)) {
+            c.abort(t.pos,
+                    Feedback.InvalidReferenceToExcludedType(t.tpe.toString))
+          }
+        }
+      }
+
       val sporeSym = sporeDef.symbol
+      debug(s"New instance: $newInstance")
       val q"new ${ _ }(...$constructorArgs)" = newInstance
       val excludedSporeInstantiation =
         q"""
-        $sporeDef
-        new $sporeSym(...$constructorArgs) {type Excluded = $atpe}
-      """
+          $sporeDef
+          new $sporeSym(...$constructorArgs) {type Excluded = $atpe}
+        """
 
       debug(s"Excluded transformed spore:\n$excludedSporeInstantiation")
       excludedSporeInstantiation
