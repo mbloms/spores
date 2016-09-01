@@ -130,6 +130,42 @@ toolboxClasspath in Test in core := {
   scala.tools.nsc.io.File(classpathPath).writeAll(classpath)
 }
 
+lazy val sporesSpark = project
+  .copy(id = "spores-spark")
+  .in(file("spores-spark"))
+  .settings(allSettings)
+  .settings(noPublish)
+  .dependsOn(core)
+  .settings(
+    libraryDependencies <<= libraryDependencies in core,
+    (test in Test) <<=
+      (test in Test) dependsOn (crossTest in Test),
+    (unsetSparkEnv in Test) <<=
+      (unsetSparkEnv in Test) triggeredBy (test in Test),
+    (clean in Compile) <<=
+      (clean in Compile) dependsOn (clean in Compile in core)
+  )
+
+val sparkEnv = "spores.spark"
+
+/* Run the test suite of core and then set the spark env and run tests. */
+// TODO(jvican): Add support for testOnly
+lazy val crossTest = taskKey[Unit]("Enable spark at compilation-time.")
+crossTest in Test in sporesSpark := {
+  // Check spark env is disabled before running normal tests
+  if (System.getProperty(sparkEnv, "false").toBoolean)
+    System.setProperty(sparkEnv, "false")
+  // Run normal tests
+  (test in Test in core).value
+  // Set spark environment before running spark tests
+  System.setProperty(sparkEnv, "true")
+}
+
+lazy val unsetSparkEnv = taskKey[Unit]("Disable spark environment")
+unsetSparkEnv in Test in sporesSpark := {
+  System.setProperty(sparkEnv, "false")
+}
+
 lazy val pickling = project
   .copy(id = "spores-pickling")
   .in(file("spores-pickling"))
@@ -153,4 +189,3 @@ lazy val readme = scalatex
   .settings(
     dependencyOverrides += "com.lihaoyi" %% "scalaparse" % "0.3.1"
   )
-
