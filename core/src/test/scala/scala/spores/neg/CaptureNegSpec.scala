@@ -6,6 +6,7 @@ import org.junit.runners.JUnit4
 
 import scala.spores._
 import scala.spores.TestUtil._
+import scala.spores.util.Feedback
 
 @RunWith(classOf[JUnit4])
 class CaptureNegSpec {

@@ -1,6 +1,6 @@
-package scala.spores
+package scala.spores.util
 
-protected object Feedback {
+private[spores] object Feedback {
   val MissingSporeClassDef =
     "Expected spore class definition. The generated format of a spore has changed."
 

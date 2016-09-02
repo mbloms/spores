@@ -9,6 +9,7 @@
 package scala.spores
 
 import scala.reflect.macros.whitebox
+import scala.spores.util.Feedback
 
 private[spores] class MacroModule[C <: whitebox.Context](val c: C) {
   import c.universe._

@@ -4,8 +4,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-import scala.spores.Feedback
 import scala.spores.TestUtil._
+import scala.spores.util.Feedback
 
 @RunWith(classOf[JUnit4])
 class StablePathNegSpec {

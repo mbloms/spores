@@ -9,6 +9,7 @@
 package scala.spores
 
 import scala.reflect.macros.whitebox
+import scala.spores.util.Feedback
 
 protected class SporeGenerator[C <: whitebox.Context](val ctx: C) {
   import ctx.universe._

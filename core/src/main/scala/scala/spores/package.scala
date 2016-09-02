@@ -12,12 +12,10 @@ import scala.language.experimental.macros
 import scala.language.{implicitConversions, postfixOps}
 import scala.reflect.macros.whitebox
 import scala.spores.spark.SerializationWitnesses
+import scala.spores.util.Versioning
 import scala.util.Try
 
-package object spores extends SerializationWitnesses {
-
-  val version = "0.3.0-b1"
-
+package object spores extends SerializationWitnesses with Versioning {
   object logger {
     def elem[T](es: sourcecode.Text[T]*)(implicit line: sourcecode.Line,
                                          file: sourcecode.File): Unit = {

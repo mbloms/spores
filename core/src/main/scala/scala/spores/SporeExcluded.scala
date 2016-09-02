@@ -3,6 +3,7 @@ package scala.spores
 import scala.language.implicitConversions
 import scala.language.experimental.macros
 import scala.reflect.macros.whitebox
+import scala.spores.util.Feedback
 
 /** Implicit conversion between spores and spores with excluded types. */
 object Conversions {

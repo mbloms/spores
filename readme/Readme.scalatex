@@ -1,7 +1,7 @@
 @import Main._
 @import scala.spores._
 @import scala.spores.readme.Readme._
-@sect("Spores", scala.spores.version)
+@sect("Spores", scala.spores.experimentalVersion)
 
     @div
       @p

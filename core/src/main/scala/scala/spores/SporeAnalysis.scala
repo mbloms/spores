@@ -1,6 +1,7 @@
 package scala.spores
 
 import scala.reflect.macros.whitebox
+import scala.spores.util.Feedback
 
 protected class SporeAnalysis[C <: whitebox.Context with Singleton](val ctx: C) {
 
