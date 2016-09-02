@@ -9,8 +9,9 @@
 package scala
 
 import scala.language.experimental.macros
-import scala.language.implicitConversions
+import scala.language.{implicitConversions, postfixOps}
 import scala.reflect.macros.whitebox
+import scala.util.Try
 
 package object spores {
 
@@ -28,9 +29,19 @@ package object spores {
     }
   }
 
+  def settingToBoolean(expectedBoolean: String, default: => Boolean = false) = {
+    Try { expectedBoolean.toBoolean } recover {
+      // If value cannot be parsed as Boolean, default to false
+      case t: Throwable => default
+    } get
+  }
+
+  private val enabledSpark = System.getProperty("spores.spark")
+  val isSparkEnabled = settingToBoolean(enabledSpark, default = false)
+
   // Change the default value to enable the macro debugging
-  val defaultDebugProperty = System.getProperty("spores.debug", "true")
-  private val isDebugEnabled = defaultDebugProperty.toBoolean
+  private val defaultDebugProperty = System.getProperty("spores.debug")
+  val isDebugEnabled = settingToBoolean(defaultDebugProperty, default = true)
   private[spores] def debug(s: => String)(implicit line: sourcecode.Line,
                                           file: sourcecode.File): Unit = {
     if (isDebugEnabled) logger.elem(s)

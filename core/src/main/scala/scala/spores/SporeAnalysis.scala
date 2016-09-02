@@ -149,6 +149,10 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
     s.owner == definitions.PredefModule
   }
 
+  private def isSerializable(t: Type): Boolean =
+    if (t == null || t == NoType) false
+    else t <:< typeOf[java.io.Serializable] || t <:< typeOf[Serializable]
+
   /** Check that a path is valid by inspecting all the referred symbols. */
   private def isPathValid(tree: Tree): (Boolean, Option[Tree]) = {
     debug(s"Checking isPathValid for $tree [${tree.symbol}]...")
@@ -202,7 +206,7 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
       }
     }
 
-    override def traverse(tree: Tree) {
+    override def traverse(tree: Tree): Unit = {
       tree match {
         case id: Ident =>
           debug(s"Checking ident: $id")
@@ -229,7 +233,7 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
             case (true, None) => // correct, do nothing
             case (true, Some(subtree)) => // correct, do nothing
             case (false, None) =>
-              ctx.abort(tree.pos,
+              ctx.abort(sel.pos,
                         Feedback.InvalidReferenceTo(sel.symbol.toString))
           }
         case _ => super.traverse(tree)
@@ -237,8 +241,27 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
     }
   }
 
+  private class SerializableInspector extends Traverser {
+    def needsSerializableCheck(sym: Symbol) =
+      !sym.isMethod && !sym.isPackage && !sym.isPackageClass
+
+    override def traverse(tree: Tree): Unit = {
+      tree match {
+        case ref: RefTree =>
+          debug(s"Checking ident is serializable: $ref")
+          val (tpe, sym) = (ref.tpe, ref.symbol)
+          if (needsSerializableCheck(sym) && !isSerializable(tpe)) {
+            ctx.abort(ref.pos,
+                      Feedback.NonSerializableType(sym.toString, tpe.toString))
+          }
+        case _ => super.traverse(tree)
+      }
+    }
+  }
+
   def checkReferencesInBody(sporeBody: Tree) = {
-    val inspector = new ReferenceInspector
-    inspector.traverse(sporeBody)
+    (new ReferenceInspector).traverse(sporeBody)
+    if (isSparkEnabled)
+      (new SerializableInspector).traverse(sporeBody)
   }
 }

@@ -116,6 +116,7 @@ lazy val core = project
  * in order to read it from the created Toolbox to run the neg tests. */
 lazy val toolboxClasspath = taskKey[Unit]("Write Toolbox's classpath.")
 toolboxClasspath in Test in core := {
+  System.setProperty(sparkEnv, "false")
   val classpathAttributes = (dependencyClasspath in Compile in core).value
   val dependenciesClasspath =
     classpathAttributes.map(_.data.getAbsolutePath).mkString(":")
@@ -143,7 +144,9 @@ lazy val sporesSpark = project
     (unsetSparkEnv in Test) <<=
       (unsetSparkEnv in Test) triggeredBy (test in Test),
     (clean in Compile) <<=
-      (clean in Compile) dependsOn (clean in Compile in core)
+      (clean in Compile) dependsOn (clean in Compile in core),
+    (clean in Compile) <<=
+      (clean in Compile) dependsOn (clean in Test in core)
   )
 
 val sparkEnv = "spores.spark"
