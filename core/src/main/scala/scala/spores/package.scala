@@ -116,8 +116,6 @@ package object spores extends SerializationWitnesses with Versioning {
       ctx: whitebox.Context)(
       fun: ctx.Expr[(T1, T2) => R]): ctx.Expr[Spore2[T1, T2, R]] = {
     import ctx.universe._
-
-    // check Spore constraints
     val impl = new MacroModule[ctx.type](ctx)
     val targs = List(weakTypeOf[T1], weakTypeOf[T2], weakTypeOf[R])
     val tree = impl.createSpore(fun.tree, targs)
@@ -130,8 +128,6 @@ package object spores extends SerializationWitnesses with Versioning {
                  R: ctx.WeakTypeTag](ctx: whitebox.Context)(
       fun: ctx.Expr[(T1, T2, T3) => R]): ctx.Expr[Spore3[T1, T2, T3, R]] = {
     import ctx.universe._
-
-    // check Spore constraints
     val impl = new MacroModule[ctx.type](ctx)
     val targs =
       List(weakTypeOf[T1], weakTypeOf[T2], weakTypeOf[T3], weakTypeOf[R])
@@ -147,8 +143,6 @@ package object spores extends SerializationWitnesses with Versioning {
       fun: ctx.Expr[(T1, T2, T3, T4) => R])
     : ctx.Expr[Spore4[T1, T2, T3, T4, R]] = {
     import ctx.universe._
-
-    // check Spore constraints
     val impl = new MacroModule[ctx.type](ctx)
     val targs =
       List(weakTypeOf[T1],
@@ -169,8 +163,6 @@ package object spores extends SerializationWitnesses with Versioning {
       fun: ctx.Expr[(T1, T2, T3, T4, T5) => R])
     : ctx.Expr[Spore5[T1, T2, T3, T4, T5, R]] = {
     import ctx.universe._
-
-    // check Spore constraints
     val impl = new MacroModule[ctx.type](ctx)
     val targs =
       List(weakTypeOf[T1],
@@ -193,8 +185,6 @@ package object spores extends SerializationWitnesses with Versioning {
       fun: ctx.Expr[(T1, T2, T3, T4, T5, T6) => R])
     : ctx.Expr[Spore6[T1, T2, T3, T4, T5, T6, R]] = {
     import ctx.universe._
-
-    // check Spore constraints
     val impl = new MacroModule[ctx.type](ctx)
     val targs =
       List(weakTypeOf[T1],
@@ -219,8 +209,6 @@ package object spores extends SerializationWitnesses with Versioning {
       fun: ctx.Expr[(T1, T2, T3, T4, T5, T6, T7) => R])
     : ctx.Expr[Spore7[T1, T2, T3, T4, T5, T6, T7, R]] = {
     import ctx.universe._
-
-    // check Spore constraints
     val impl = new MacroModule[ctx.type](ctx)
     val targs =
       List(weakTypeOf[T1],
