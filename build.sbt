@@ -99,6 +99,8 @@ lazy val root = project
   .aggregate(core, pickling)
   .dependsOn(core)
 
+val sparkEnv = "spores.spark"
+
 lazy val core = project
   .copy(id = "spores-core")
   .in(file("core"))
@@ -106,6 +108,8 @@ lazy val core = project
   .settings(
     moduleName := "spores-core",
     resourceDirectory in Compile := baseDirectory.value / "resources",
+    (test in Test) <<=
+      (test in Test) dependsOn (unsetSparkEnv in Global),
     test in Test <<=
       (test in Test) dependsOn (toolboxClasspath in Test),
     libraryDependencies ++= Dependencies.core,
@@ -116,7 +120,6 @@ lazy val core = project
  * in order to read it from the created Toolbox to run the neg tests. */
 lazy val toolboxClasspath = taskKey[Unit]("Write Toolbox's classpath.")
 toolboxClasspath in Test in core := {
-  System.setProperty(sparkEnv, "false")
   val classpathAttributes = (dependencyClasspath in Compile in core).value
   val dependenciesClasspath =
     classpathAttributes.map(_.data.getAbsolutePath).mkString(":")
@@ -142,30 +145,20 @@ lazy val sporesSpark = project
     (test in Test) <<=
       (test in Test) dependsOn (crossTest in Test),
     (unsetSparkEnv in Test) <<=
-      (unsetSparkEnv in Test) triggeredBy (test in Test),
+      (unsetSparkEnv in Global) triggeredBy (test in Test),
     (clean in Compile) <<=
-      (clean in Compile) dependsOn (clean in Compile in core),
-    (clean in Compile) <<=
-      (clean in Compile) dependsOn (clean in Test in core)
+      (clean in Compile) dependsOn (clean in Compile in core)
   )
-
-val sparkEnv = "spores.spark"
 
 /* Run the test suite of core and then set the spark env and run tests. */
 // TODO(jvican): Add support for testOnly
 lazy val crossTest = taskKey[Unit]("Enable spark at compilation-time.")
 crossTest in Test in sporesSpark := {
-  // Check spark env is disabled before running normal tests
-  if (System.getProperty(sparkEnv, "false").toBoolean)
-    System.setProperty(sparkEnv, "false")
-  // Run normal tests
-  (test in Test in core).value
-  // Set spark environment before running spark tests
   System.setProperty(sparkEnv, "true")
 }
 
 lazy val unsetSparkEnv = taskKey[Unit]("Disable spark environment")
-unsetSparkEnv in Test in sporesSpark := {
+unsetSparkEnv in Global := {
   System.setProperty(sparkEnv, "false")
 }
 
@@ -175,7 +168,9 @@ lazy val pickling = project
   .settings(allSettings)
   .settings(
     libraryDependencies ++= Dependencies.pickling,
-    parallelExecution in Test := false
+    parallelExecution in Test := false,
+    (test in Test) <<=
+      (test in Test) dependsOn (unsetSparkEnv in Global)
     // scalacOptions in Test ++= Seq("-Xlog-implicits")
   )
   .dependsOn(core)
