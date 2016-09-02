@@ -11,9 +11,10 @@ package scala
 import scala.language.experimental.macros
 import scala.language.{implicitConversions, postfixOps}
 import scala.reflect.macros.whitebox
+import scala.spores.spark.SerializationWitnesses
 import scala.util.Try
 
-package object spores {
+package object spores extends SerializationWitnesses {
 
   val version = "0.3.0-b1"
 

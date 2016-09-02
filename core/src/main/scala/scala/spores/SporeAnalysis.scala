@@ -4,8 +4,8 @@ import scala.reflect.macros.whitebox
 
 protected class SporeAnalysis[C <: whitebox.Context with Singleton](val ctx: C) {
 
-  import ctx.universe._
   import ctx.universe.Flag._
+  import ctx.universe._
 
   /** Strip the header and the body of a spore iff they are valid. */
   def stripSporeStructure(tree: Tree): (List[ValDef], Tree) = {
@@ -149,10 +149,6 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
     s.owner == definitions.PredefModule
   }
 
-  private def isSerializable(t: Type): Boolean =
-    if (t == null || t == NoType) false
-    else t <:< typeOf[java.io.Serializable] || t <:< typeOf[Serializable]
-
   /** Check that a path is valid by inspecting all the referred symbols. */
   private def isPathValid(tree: Tree): (Boolean, Option[Tree]) = {
     debug(s"Checking isPathValid for $tree [${tree.symbol}]...")
@@ -241,9 +237,22 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
     }
   }
 
+  private val sparkPath = q"scala.spores.spark"
   private class SerializableInspector extends Traverser {
     def needsSerializableCheck(sym: Symbol) =
       !sym.isMethod && !sym.isPackage && !sym.isPackageClass
+
+    def isSerializable(tpe: Type): Boolean = {
+      debug(s"Checking if $tpe is serializable")
+      val witnessTypeTree = ctx.typecheck(
+        tq"$sparkPath.SerializationWitness[$tpe]",
+        mode = ctx.TYPEmode)
+      if (tpe == null || tpe == NoType) false
+      else
+        tpe <:< typeOf[java.io.Serializable] ||
+        tpe <:< typeOf[Serializable] ||
+        ctx.inferImplicitValue(witnessTypeTree.tpe) != EmptyTree
+    }
 
     override def traverse(tree: Tree): Unit = {
       tree match {
