@@ -8,7 +8,7 @@ import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
 @RunWith(classOf[JUnit4])
-class SerializationSpec {
+class PrimitiveSerializableSpec {
   @Test
   def `A captured String is serializable`(): Unit = {
     val greeting = "Hello, World!"
