@@ -1,83 +1,98 @@
-package scala.spores.spark
-
-import scala.spores._
-import Conversions._
+package scala.spores.spark.run
 
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
+
+import scala.spores._
 
 @RunWith(classOf[JUnit4])
 class PrimitiveSerializableSpec {
   @Test
   def `A captured String is serializable`(): Unit = {
     val greeting = "Hello, World!"
-    spore {
+    val s = spore {
       val captured = greeting
-      () => println(s"$captured")
+      () =>
+        s"$captured"
     }
+    assert(s() == greeting)
   }
 
   @Test
   def `A captured Int is serializable`(): Unit = {
     val number: Int = 1
-    spore {
+    val s = spore {
       val captured = number
-      () => println(s"$captured")
+      () =>
+        s"$captured"
     }
+    assert(s() == number.toString)
   }
 
   @Test
   def `A captured Byte is serializable`(): Unit = {
     val number: Byte = 1
-    spore {
+    val s = spore {
       val captured = number
-      () => println(s"$captured")
+      () =>
+        s"$captured"
     }
+    assert(s() == number.toString)
   }
 
   @Test
   def `A captured Char is serializable`(): Unit = {
-    val number: Char = 1
-    spore {
-      val captured = number
-      () => println(s"$captured")
+    val char: Char = 1
+    val s = spore {
+      val captured = char
+      () =>
+        s"$captured"
     }
+    assert(s() == char.toString)
   }
 
   @Test
   def `A captured Short is serializable`(): Unit = {
     val number: Short = 1
-    spore {
+    val s = spore {
       val captured = number
-      () => println(s"$captured")
+      () =>
+        s"$captured"
     }
+    assert(s() == number.toString)
   }
 
   @Test
   def `A captured Long is serializable`(): Unit = {
     val number: Long = 1
-    spore {
+    val s = spore {
       val captured = number
-      () => println(s"$captured")
+      () =>
+        s"$captured"
     }
+    assert(s() == number.toString)
   }
 
   @Test
   def `A captured Float is serializable`(): Unit = {
     val number: Float = 1
-    spore {
+    val s = spore {
       val captured = number
-      () => println(s"$captured")
+      () =>
+        s"$captured"
     }
+    assert(s() == number.toString)
   }
 
   @Test
   def `A captured Double is serializable`(): Unit = {
     val number: Double = 1.0
-    spore {
+    val s = spore {
       val captured = number
-      () => println(s"$captured")
+      () =>
+        s"$captured"
     }
+    assert(s() == number.toString)
   }
 }

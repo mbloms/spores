@@ -249,10 +249,11 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
         tq"$sparkPath.SerializationWitness[$tpe]",
         mode = ctx.TYPEmode)
       if (tpe == null || tpe == NoType) false
-      else
+      else {
         tpe <:< typeOf[java.io.Serializable] ||
         tpe <:< typeOf[Serializable] ||
         ctx.inferImplicitValue(witnessTypeTree.tpe) != EmptyTree
+      }
     }
 
     override def traverse(tree: Tree): Unit = {
