@@ -110,8 +110,9 @@ lazy val core = project
     resourceDirectory in Compile := baseDirectory.value / "resources",
     (test in Test) <<=
       (test in Test) dependsOn (unsetSparkEnv in Global),
-    test in Test <<=
-      (test in Test) dependsOn (toolboxClasspath in Test),
+    // Defined in Compile to be reused in spores-spark
+    compile in Compile <<=
+      (compile in Compile) dependsOn (toolboxClasspath in Compile),
     libraryDependencies ++= Dependencies.core,
     parallelExecution in Test := false
   )
@@ -119,7 +120,7 @@ lazy val core = project
 /* Write all the compile-time dependencies of the spores macro to a file,
  * in order to read it from the created Toolbox to run the neg tests. */
 lazy val toolboxClasspath = taskKey[Unit]("Write Toolbox's classpath.")
-toolboxClasspath in Test in core := {
+toolboxClasspath in Compile in core := {
   val classpathAttributes = (dependencyClasspath in Compile in core).value
   val dependenciesClasspath =
     classpathAttributes.map(_.data.getAbsolutePath).mkString(":")
@@ -141,19 +142,20 @@ lazy val sporesSpark = project
   .settings(noPublish)
   .dependsOn(core)
   .settings(
+    cleanFiles ++= (cleanFiles in core).value,
+    resourceDirectory in Test :=
+      (resourceDirectory in Compile in core).value,
     libraryDependencies <<= libraryDependencies in core,
     (test in Test) <<=
-      (test in Test) dependsOn (crossTest in Test),
+      (test in Test) dependsOn (setSparkEnv in Test),
     (unsetSparkEnv in Test) <<=
-      (unsetSparkEnv in Global) triggeredBy (test in Test),
-    (clean in Compile) <<=
-      (clean in Compile) dependsOn (clean in Compile in core)
+      (unsetSparkEnv in Global) triggeredBy (test in Test)
   )
 
 /* Run the test suite of core and then set the spark env and run tests. */
 // TODO(jvican): Add support for testOnly
-lazy val crossTest = taskKey[Unit]("Enable spark at compilation-time.")
-crossTest in Test in sporesSpark := {
+lazy val setSparkEnv = taskKey[Unit]("Enable spark at compilation-time.")
+setSparkEnv in Test in sporesSpark := {
   System.setProperty(sparkEnv, "true")
 }
 
