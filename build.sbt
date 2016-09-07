@@ -112,7 +112,9 @@ lazy val core = project
       (test in Test) dependsOn (unsetSparkEnv in Global),
     // Defined in Compile to be reused in spores-spark
     compile in Compile <<=
-      (compile in Compile) dependsOn (toolboxClasspath in Compile),
+      (compile in Compile) dependsOn toolboxClasspath,
+    test in Test <<=
+      (test in Test) dependsOn toolboxClasspath,
     libraryDependencies ++= Dependencies.core,
     parallelExecution in Test := false
   )
@@ -120,7 +122,7 @@ lazy val core = project
 /* Write all the compile-time dependencies of the spores macro to a file,
  * in order to read it from the created Toolbox to run the neg tests. */
 lazy val toolboxClasspath = taskKey[Unit]("Write Toolbox's classpath.")
-toolboxClasspath in Compile in core := {
+toolboxClasspath in core := {
   val classpathAttributes = (dependencyClasspath in Compile in core).value
   val dependenciesClasspath =
     classpathAttributes.map(_.data.getAbsolutePath).mkString(":")
