@@ -144,10 +144,11 @@ lazy val sporesSpark = project
   .settings(noPublish)
   .dependsOn(core)
   .settings(
-    cleanFiles ++= (cleanFiles in core).value,
     resourceDirectory in Test :=
       (resourceDirectory in Compile in core).value,
     libraryDependencies <<= libraryDependencies in core,
+    (compile in Compile) <<=
+      (compile in Compile) dependsOn (clean in core),
     (test in Test) <<=
       (test in Test) dependsOn (setSparkEnv in Test),
     (unsetSparkEnv in Test) <<=
