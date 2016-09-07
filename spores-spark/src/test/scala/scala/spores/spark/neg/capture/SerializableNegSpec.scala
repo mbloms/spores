@@ -1,4 +1,4 @@
-package scala.spores.spark.neg
+package scala.spores.spark.neg.capture
 
 import org.junit.Test
 import org.junit.runner.RunWith

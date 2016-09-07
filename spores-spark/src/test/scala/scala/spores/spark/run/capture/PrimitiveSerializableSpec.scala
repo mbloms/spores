@@ -1,4 +1,4 @@
-package scala.spores.spark.run
+package scala.spores.spark.run.capture
 
 import org.junit.Test
 import org.junit.runner.RunWith
