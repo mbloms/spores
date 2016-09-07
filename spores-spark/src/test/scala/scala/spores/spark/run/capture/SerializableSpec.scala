@@ -1,5 +1,7 @@
 package scala.spores.spark.run.capture
 
+import java.io.{Externalizable, ObjectInput, ObjectOutput}
+
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -51,6 +53,50 @@ class SerializableSpec {
   @Test
   def `A class extending Serializable is serializable`(): Unit = {
     class A(val i: Int) extends Serializable
+    val a = new A(1)
+    val s = spore {
+      () => capture(a)
+    }
+    assert(s() == a)
+  }
+
+  @Test
+  def `An object extending Externalizable is serializable`(): Unit = {
+    object A extends Externalizable {
+      val s = 1
+      // These are stubs
+      override def readExternal(objectInput: ObjectInput): Unit = ???
+      override def writeExternal(objectOutput: ObjectOutput): Unit = ???
+    }
+    val a = A
+    val s = spore {
+      () => capture(a)
+    }
+    assert(s() == a)
+  }
+
+  @Test
+  def `An abstract class extending Externalizable is serializable`(): Unit = {
+    abstract class A extends Externalizable { val i: Int }
+    val a = new A {
+      val i = 1
+      // These are stubs
+      override def readExternal(objectInput: ObjectInput): Unit = ???
+      override def writeExternal(objectOutput: ObjectOutput): Unit = ???
+    }
+    val s = spore {
+      () => capture(a)
+    }
+    assert(s() == a)
+  }
+
+  @Test
+  def `A class extending Externalizable is serializable`(): Unit = {
+    class A(val i: Int) extends Externalizable {
+      // These are stubs
+      override def readExternal(objectInput: ObjectInput): Unit = ???
+      override def writeExternal(objectOutput: ObjectOutput): Unit = ???
+    }
     val a = new A(1)
     val s = spore {
       () => capture(a)

@@ -142,15 +142,14 @@ lazy val sporesSpark = project
   .in(file("spores-spark"))
   .settings(allSettings)
   .settings(noPublish)
-  .dependsOn(core)
+  .dependsOn(core % "test->compile")
   .settings(
     resourceDirectory in Test :=
       (resourceDirectory in Compile in core).value,
     libraryDependencies <<= libraryDependencies in core,
-    (compile in Compile) <<=
-      (compile in Compile) dependsOn (clean in core),
+    (compile in Compile) <<= (compile in Compile) dependsOn clean,
     (test in Test) <<=
-      (test in Test) dependsOn (setSparkEnv in Test),
+      (test in Test) dependsOn (setSparkEnv in Global),
     (unsetSparkEnv in Test) <<=
       (unsetSparkEnv in Global) triggeredBy (test in Test)
   )
@@ -158,7 +157,7 @@ lazy val sporesSpark = project
 /* Run the test suite of core and then set the spark env and run tests. */
 // TODO(jvican): Add support for testOnly
 lazy val setSparkEnv = taskKey[Unit]("Enable spark at compilation-time.")
-setSparkEnv in Test in sporesSpark := {
+setSparkEnv in Global := {
   System.setProperty(sparkEnv, "true")
 }
 
@@ -171,6 +170,7 @@ lazy val pickling = project
   .copy(id = "spores-pickling")
   .in(file("spores-pickling"))
   .settings(allSettings)
+  .dependsOn(core)
   .settings(
     libraryDependencies ++= Dependencies.pickling,
     parallelExecution in Test := false,
@@ -178,7 +178,6 @@ lazy val pickling = project
       (test in Test) dependsOn (unsetSparkEnv in Global)
     // scalacOptions in Test ++= Seq("-Xlog-implicits")
   )
-  .dependsOn(core)
 
 lazy val readme = scalatex
   .ScalatexReadme(
