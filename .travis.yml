@@ -1,6 +1,6 @@
 language: scala
 script:
-  - sbt ++$TRAVIS_SCALA_VERSION 'project spores-core' clean test 'project spores-spark' clean test 'project spores-pickling' clean test
+  - sbt ++$TRAVIS_SCALA_VERSION clean 'project spores-core' clean test 'project spores-spark' clean test 'project spores-pickling' clean test
 scala:
   - 2.11.7
 jdk:
