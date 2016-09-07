@@ -28,7 +28,7 @@ private[spores] object Feedback {
   def InvalidReferenceTo(symbol: String) =
     s"Spore contains references to an invalid symbol: $symbol."
 
-  def NonSerializableType(host: String, tpe: String) =
+  def NonSerializableType(tpe: String, host: String) =
     s"Spore contains references to a non-serializable type $tpe in $host."
 
   def InvalidReferenceToExcludedType(tpe: String) =

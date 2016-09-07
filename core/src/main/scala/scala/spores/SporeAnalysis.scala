@@ -262,8 +262,8 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
           debug(s"Checking ident is serializable: $ref")
           val (tpe, sym) = (ref.tpe, ref.symbol)
           if (needsSerializableCheck(sym) && !isSerializable(tpe)) {
-            ctx.abort(ref.pos,
-                      Feedback.NonSerializableType(sym.toString, tpe.toString))
+            val msg = Feedback.NonSerializableType(tpe.toString, sym.toString)
+            ctx.abort(ref.pos, msg)
           }
         case _ => super.traverse(tree)
       }
