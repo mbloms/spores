@@ -1,6 +1,13 @@
 # Spores
 
-Scala Spores, safe mobile closures: [SIP-21](http://docs.scala-lang.org/sips/pending/spores.html)
+[![Build Status](https://platform-ci.scala-lang.org/api/badges/jvican/spores-spark/status.svg)](https://platform-ci.scala-lang.org/jvican/spores-spark)
+
+Scala Spores, safe mobile closures: [SIP-21](http://docs.scala-lang.org/sips/pending/spores.html).
+
+The following repo is part of an ongoing effort to create a production-ready version
+of spores compatible with Spark and serializable checks. As a novelty, it adds a compiler
+plugin that complements the spores macro implementation and performs transitive serializable
+checks across captured elements in spores.
 
 ## Building Spores
 
