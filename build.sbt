@@ -78,8 +78,6 @@ lazy val compilerOptions = Seq(
 lazy val commonSettings = Seq(
   triggeredMessage in ThisBuild := Watched.clearWhenTriggered,
   watchSources += baseDirectory.value / "resources",
-  testOptions in Test += Tests
-    .Argument(TestFrameworks.JUnit, "-q", "-v", "-s"),
   scalacOptions in (Compile, console) ++= compilerOptions,
   resolvers += Resolver.sonatypeRepo("snapshots")
 )
@@ -110,7 +108,6 @@ lazy val core = project
     resourceDirectory in Compile := baseDirectory.value / "resources",
     (test in Test) <<=
       (test in Test) dependsOn (unsetSparkEnv in Global),
-    // Defined in Compile to be reused in spores-spark
     compile in Compile <<=
       (compile in Compile) dependsOn toolboxClasspath,
     test in Test <<=
@@ -134,7 +131,7 @@ toolboxClasspath in core := {
   resourceDir.mkdir() // In case it doesn't exist
   val resourcePath = resourceDir.getAbsolutePath
   val classpathPath = s"$resourcePath/toolbox.classpath"
-  scala.tools.nsc.io.File(classpathPath).writeAll(classpath)
+  IO.write(file(classpathPath), classpath)
 }
 
 lazy val sporesSpark = project
@@ -148,23 +145,19 @@ lazy val sporesSpark = project
       (resourceDirectory in Compile in core).value,
     libraryDependencies <<= libraryDependencies in core,
     (compile in Compile) <<= (compile in Compile) dependsOn clean,
-    (test in Test) <<=
-      (test in Test) dependsOn (setSparkEnv in Global),
-    (unsetSparkEnv in Test) <<=
-      (unsetSparkEnv in Global) triggeredBy (test in Test)
+    (test in Test) := {
+      setSparkEnv.value
+      (test in Test).value
+      unsetSparkEnv.value
+    }
   )
 
 /* Run the test suite of core and then set the spark env and run tests. */
-// TODO(jvican): Add support for testOnly
 lazy val setSparkEnv = taskKey[Unit]("Enable spark at compilation-time.")
-setSparkEnv in Global := {
-  System.setProperty(sparkEnv, "true")
-}
+setSparkEnv in Global := System.setProperty(sparkEnv, "true")
 
 lazy val unsetSparkEnv = taskKey[Unit]("Disable spark environment")
-unsetSparkEnv in Global := {
-  System.setProperty(sparkEnv, "false")
-}
+unsetSparkEnv in Global := System.setProperty(sparkEnv, "false")
 
 lazy val pickling = project
   .copy(id = "spores-pickling")

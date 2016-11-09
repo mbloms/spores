@@ -259,7 +259,7 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
     override def traverse(tree: Tree): Unit = {
       tree match {
         case ref: RefTree =>
-          debug(s"Checking ident is serializable: $ref")
+          debug(s"Checking ref is serializable: $ref")
           val (tpe, sym) = (ref.tpe, ref.symbol)
           if (needsSerializableCheck(sym) && !isSerializable(tpe)) {
             val msg = Feedback.NonSerializableType(tpe.toString, sym.toString)
