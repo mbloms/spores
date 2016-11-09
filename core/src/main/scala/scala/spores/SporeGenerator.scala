@@ -238,6 +238,7 @@ protected class SporeGenerator[C <: whitebox.Context](val ctx: C) {
                       returnType: Type,
                       environment: List[Symbol] = Nil,
                       capturedRefs: List[Tree] = Nil): DefDef = {
+    debug(s"Creating new def from ${showCode(oldBody)}")
     val (newParamDefs, newParamRefs) = generateNewParameters(oldParamSymbols)
     val oldSymbols = oldParamSymbols ::: environment
     val mapping = oldSymbols.zip(newParamRefs ::: capturedRefs).toMap
@@ -356,15 +357,19 @@ protected class SporeGenerator[C <: whitebox.Context](val ctx: C) {
                     sporeBody: Tree,
                     constructorParams: List[Tree] = Nil) = {
     // CapturedType is a `List` so that quasiquotes splice it correctly
-    val capturedParam = capturedType.map(t => q"val captured: $t")
+    val capturedParams = capturedType.map(t => q"val captured: $t")
     val capturedTypeDef = capturedType.headOption.getOrElse(nothingType)
-    q"""
-      class $sporeName(..$capturedParam) extends $sporeType { self =>
+    val generatedCode = q"""
+      class $sporeName(..$capturedParams) extends $sporeType { self =>
         type Captured = $capturedTypeDef
         this._className = $getName
+        def skipScalaSamConversion: Nothing = ???
+
         $sporeBody
       }
       new $sporeName(..$constructorParams)
     """
+    debug(s"Generated code is: $generatedCode")
+    generatedCode
   }
 }

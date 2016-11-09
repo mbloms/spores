@@ -37,7 +37,7 @@ private[spores] class MacroModule[C <: whitebox.Context](val c: C) {
                                               captured,
                                               declared)
 
-    debug(s"Checking conformance of ${showRaw(sporeBody)}...")
+    debug(s"Checking conformance of ${showCode(sporeBody)}...")
     checker.checkReferencesInBody(sporeBody)
     val explicitEnv = explicitSporeEnv.map(vd => vd.symbol -> vd.rhs)
     val fullSporeEnv = nonExplicitEnv ++ explicitEnv

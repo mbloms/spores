@@ -19,6 +19,13 @@ sealed trait SporeBase {
   /** Enable the creation of spores via reflection. */
   def className: String = _className
   protected[this] var _className: String = null
+
+  /** The abstract member prevents conversion to Scala SAM types in 2.12.0.
+    *
+    * The existence of this member allows implicit conversion from
+    * a function to a spore to kick in instead.
+    */
+  def skipScalaSamConversion: Nothing
 }
 
 trait NullarySpore[+R] extends Function0[R] with SporeBase

@@ -1,12 +1,20 @@
-import scala.spores.Dependencies
-
 lazy val buildSettings = Seq(
   organization := "org.scala-lang.modules",
   organizationName := "LAMP/EPFL",
   organizationHomepage := Some(new URL("http://lamp.epfl.ch")),
   version := "0.3.0-SNAPSHOT",
-  scalaVersion := "2.11.7"
+  scalaVersion := "2.11.7",
+  crossScalaVersions := Seq("2.11.7", "2.12.0")
 )
+
+lazy val baseDependencies =
+  libraryDependencies ++= Seq(
+    "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
+    "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test",
+    "junit" % "junit" % "4.12" % "test",
+    "com.novocode" % "junit-interface" % "0.11" % "test",
+    "com.lihaoyi" %% "sourcecode" % "0.1.3"
+  )
 
 lazy val publishSettings = Seq(
   publishMavenStyle := true,
@@ -103,6 +111,7 @@ lazy val core = project
   .copy(id = "spores-core")
   .in(file("core"))
   .settings(allSettings)
+  .settings(baseDependencies)
   .settings(
     moduleName := "spores-core",
     resourceDirectory in Compile := baseDirectory.value / "resources",
@@ -112,7 +121,6 @@ lazy val core = project
       (compile in Compile) dependsOn toolboxClasspath,
     test in Test <<=
       (test in Test) dependsOn toolboxClasspath,
-    libraryDependencies ++= Dependencies.core,
     parallelExecution in Test := false
   )
 
@@ -138,13 +146,14 @@ lazy val sporesSpark = project
   .copy(id = "spores-spark")
   .in(file("spores-spark"))
   .settings(allSettings)
+  .settings(baseDependencies)
   .settings(noPublish)
   .dependsOn(core % "test->compile")
   .settings(
     resourceDirectory in Test :=
       (resourceDirectory in Compile in core).value,
-    libraryDependencies <<= libraryDependencies in core,
-    (compile in Compile) <<= (compile in Compile) dependsOn clean,
+    (compile in Compile) :=
+      ((compile in Compile) dependsOn clean).value,
     (test in Test) := {
       setSparkEnv.value
       (test in Test).value
@@ -163,9 +172,11 @@ lazy val pickling = project
   .copy(id = "spores-pickling")
   .in(file("spores-pickling"))
   .settings(allSettings)
+  .settings(baseDependencies)
   .dependsOn(core)
   .settings(
-    libraryDependencies ++= Dependencies.pickling,
+    libraryDependencies +=
+      "org.scala-lang.modules" %% "scala-pickling" % "0.11.0-M2",
     parallelExecution in Test := false,
     (test in Test) <<=
       (test in Test) dependsOn (unsetSparkEnv in Global)
