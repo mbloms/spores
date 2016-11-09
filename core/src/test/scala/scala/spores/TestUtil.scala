@@ -34,7 +34,7 @@ object TestUtil {
     m.mkToolBox(options = compileOptions)
   }
 
-  def toolboxClasspath = {
+  lazy val toolboxClasspath = {
     val resource = getClass.getClassLoader.getResource("toolbox.classpath")
     val classpathFile = scala.io.Source.fromFile(resource.toURI)
     val completeSporesCoreClasspath = classpathFile.getLines.mkString

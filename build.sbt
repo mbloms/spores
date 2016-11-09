@@ -108,9 +108,6 @@ lazy val root = project
 
 val sparkEnv = "spores.spark"
 
-lazy val setUpAndTest = taskKey[Unit]("Set up the environment and test.")
-lazy val toolboxClasspath = taskKey[Unit]("Write Toolbox's classpath.")
-
 lazy val core = project
   .copy(id = "spores-core")
   .in(file("core"))
@@ -122,7 +119,7 @@ lazy val core = project
     parallelExecution in Test := false,
     /* Write all the compile-time dependencies of the spores macro to a file,
      * in order to read it from the created Toolbox to run the neg tests. */
-    toolboxClasspath := {
+    resourceGenerators in Compile += Def.task {
       val logger = streams.value.log
       val classpathAttributes = (dependencyClasspath in Compile).value
       val dependenciesClasspath =
@@ -134,17 +131,13 @@ lazy val core = project
       val resourceDir = (resourceDirectory in Compile).value
       resourceDir.mkdir() // In case it doesn't exist
       val resourcePath = resourceDir.getAbsolutePath
-      val classpathPath = s"$resourcePath/toolbox.classpath"
-      IO.write(file(classpathPath), classpath)
-      logger.success("The classpath for neg tests has been generated.")
-    },
-    compile in Compile := {
-      toolboxClasspath.value
-      (compile in Compile).value
-    }
+      val toolboxTestClasspath = file(s"$resourcePath/toolbox.classpath")
+      IO.write(toolboxTestClasspath, classpath)
+      List(toolboxTestClasspath.getAbsoluteFile)
+    }.taskValue
   )
 
-lazy val sporesSpark: Project = project
+lazy val sporesSpark = project
   .copy(id = "spores-spark")
   .in(file("spores-spark"))
   .settings(allSettings)
@@ -156,13 +149,6 @@ lazy val sporesSpark: Project = project
       (resourceDirectory in Compile in core).value,
     javaOptions in Test ++= Seq("-Dspores.spark=true")
   )
-
-/* Run the test suite of core and then set the spark env and run tests. */
-lazy val setSparkEnv = taskKey[Unit]("Enable spark at compilation-time.")
-setSparkEnv in Global := System.setProperty(sparkEnv, "true")
-
-lazy val unsetSparkEnv = taskKey[Unit]("Disable spark environment")
-unsetSparkEnv in Global := System.setProperty(sparkEnv, "false")
 
 lazy val pickling = project
   .copy(id = "spores-pickling")
