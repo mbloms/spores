@@ -4,7 +4,8 @@ lazy val buildSettings = Seq(
   organizationHomepage := Some(new URL("http://lamp.epfl.ch")),
   version := "0.3.0-SNAPSHOT",
   scalaVersion := "2.11.7",
-  crossScalaVersions := Seq("2.11.7", "2.12.0")
+  crossScalaVersions := Seq("2.11.7", "2.12.0"),
+  fork in Test := true
 )
 
 lazy val baseDependencies =
@@ -107,6 +108,9 @@ lazy val root = project
 
 val sparkEnv = "spores.spark"
 
+lazy val setUpAndTest = taskKey[Unit]("Set up the environment and test.")
+lazy val toolboxClasspath = taskKey[Unit]("Write Toolbox's classpath.")
+
 lazy val core = project
   .copy(id = "spores-core")
   .in(file("core"))
@@ -115,34 +119,32 @@ lazy val core = project
   .settings(
     moduleName := "spores-core",
     resourceDirectory in Compile := baseDirectory.value / "resources",
-    (test in Test) <<=
-      (test in Test) dependsOn (unsetSparkEnv in Global),
-    compile in Compile <<=
-      (compile in Compile) dependsOn toolboxClasspath,
-    test in Test <<=
-      (test in Test) dependsOn toolboxClasspath,
-    parallelExecution in Test := false
+    parallelExecution in Test := false,
+    /* Write all the compile-time dependencies of the spores macro to a file,
+     * in order to read it from the created Toolbox to run the neg tests. */
+    toolboxClasspath := {
+      val logger = streams.value.log
+      val classpathAttributes = (dependencyClasspath in Compile).value
+      val dependenciesClasspath =
+        classpathAttributes.map(_.data.getAbsolutePath).mkString(":")
+      val scalaBinVersion = (scalaBinaryVersion in Compile).value
+      val targetDir = (target in Compile).value.getAbsolutePath
+      val compiledClassesDir = s"$targetDir/scala-$scalaBinVersion/classes"
+      val classpath = s"$compiledClassesDir:$dependenciesClasspath"
+      val resourceDir = (resourceDirectory in Compile).value
+      resourceDir.mkdir() // In case it doesn't exist
+      val resourcePath = resourceDir.getAbsolutePath
+      val classpathPath = s"$resourcePath/toolbox.classpath"
+      IO.write(file(classpathPath), classpath)
+      logger.success("The classpath for neg tests has been generated.")
+    },
+    compile in Compile := {
+      toolboxClasspath.value
+      (compile in Compile).value
+    }
   )
 
-/* Write all the compile-time dependencies of the spores macro to a file,
- * in order to read it from the created Toolbox to run the neg tests. */
-lazy val toolboxClasspath = taskKey[Unit]("Write Toolbox's classpath.")
-toolboxClasspath in core := {
-  val classpathAttributes = (dependencyClasspath in Compile in core).value
-  val dependenciesClasspath =
-    classpathAttributes.map(_.data.getAbsolutePath).mkString(":")
-  val scalaBinVersion = (scalaBinaryVersion in Compile in core).value
-  val targetDir = (target in Compile in core).value.getAbsolutePath
-  val compiledClassesDir = s"$targetDir/scala-$scalaBinVersion/classes"
-  val classpath = s"$compiledClassesDir:$dependenciesClasspath"
-  val resourceDir = (resourceDirectory in Compile in core).value
-  resourceDir.mkdir() // In case it doesn't exist
-  val resourcePath = resourceDir.getAbsolutePath
-  val classpathPath = s"$resourcePath/toolbox.classpath"
-  IO.write(file(classpathPath), classpath)
-}
-
-lazy val sporesSpark = project
+lazy val sporesSpark: Project = project
   .copy(id = "spores-spark")
   .in(file("spores-spark"))
   .settings(allSettings)
@@ -152,13 +154,7 @@ lazy val sporesSpark = project
   .settings(
     resourceDirectory in Test :=
       (resourceDirectory in Compile in core).value,
-    (compile in Compile) :=
-      ((compile in Compile) dependsOn clean).value,
-    (test in Test) := {
-      setSparkEnv.value
-      (test in Test).value
-      unsetSparkEnv.value
-    }
+    javaOptions in Test ++= Seq("-Dspores.spark=true")
   )
 
 /* Run the test suite of core and then set the spark env and run tests. */
@@ -177,9 +173,7 @@ lazy val pickling = project
   .settings(
     libraryDependencies +=
       "org.scala-lang.modules" %% "scala-pickling" % "0.11.0-M2",
-    parallelExecution in Test := false,
-    (test in Test) <<=
-      (test in Test) dependsOn (unsetSparkEnv in Global)
+    parallelExecution in Test := false
     // scalacOptions in Test ++= Seq("-Xlog-implicits")
   )
 
