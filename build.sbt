@@ -3,8 +3,8 @@ lazy val buildSettings = Seq(
   organizationName := "LAMP/EPFL",
   organizationHomepage := Some(new URL("http://lamp.epfl.ch")),
   version := "0.3.0-SNAPSHOT",
-  scalaVersion := "2.11.7",
-  crossScalaVersions := Seq("2.11.7", "2.12.0"),
+  scalaVersion := "2.11.8",
+  crossScalaVersions := Seq("2.11.8", "2.12.0"),
   fork in Test := true
 )
 
@@ -167,9 +167,15 @@ lazy val `spores-checker` = project
   .settings(allSettings)
   .dependsOn(core)
   .settings(
-    libraryDependencies ++= testDependencies :+
+    libraryDependencies +=
       "org.scala-lang" % "scala-compiler" % scalaVersion.value,
-    publishArtifact in Compile := false
+    scalacOptions in Test ++= {
+      val compiledPlugin = (packageBin in Compile).value
+      Seq(
+        s"-Xplugin:${compiledPlugin.getAbsolutePath}",
+        s"-Jdummy=${compiledPlugin.lastModified}"
+      )
+    }
   )
 
 lazy val readme = scalatex
