@@ -1,0 +1,4 @@
+<plugin>
+    <name>spores-transitive-plugin</name>
+    <classname>scala.spores.TransitiveSporesPlugin</classname>
+</plugin>

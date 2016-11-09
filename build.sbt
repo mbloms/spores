@@ -8,14 +8,18 @@ lazy val buildSettings = Seq(
   fork in Test := true
 )
 
-lazy val baseDependencies =
+lazy val testDependencies = Seq(
+  "junit" % "junit" % "4.12" % "test",
+  "com.novocode" % "junit-interface" % "0.11" % "test"
+)
+
+lazy val baseDependencies = {
   libraryDependencies ++= Seq(
     "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
     "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test",
-    "junit" % "junit" % "4.12" % "test",
-    "com.novocode" % "junit-interface" % "0.11" % "test",
     "com.lihaoyi" %% "sourcecode" % "0.1.3"
-  )
+  ) ++ testDependencies
+}
 
 lazy val publishSettings = Seq(
   publishMavenStyle := true,
@@ -103,7 +107,7 @@ lazy val root = project
   .in(file("."))
   .settings(allSettings)
   .settings(noPublish)
-  .aggregate(core, pickling)
+  .aggregate(core, `spores-pickling`, `spores-spark`, `spores-checker`)
   .dependsOn(core)
 
 val sparkEnv = "spores.spark"
@@ -137,9 +141,7 @@ lazy val core = project
     }.taskValue
   )
 
-lazy val sporesSpark = project
-  .copy(id = "spores-spark")
-  .in(file("spores-spark"))
+lazy val `spores-spark` = project
   .settings(allSettings)
   .settings(baseDependencies)
   .settings(noPublish)
@@ -150,9 +152,7 @@ lazy val sporesSpark = project
     javaOptions in Test ++= Seq("-Dspores.spark=true")
   )
 
-lazy val pickling = project
-  .copy(id = "spores-pickling")
-  .in(file("spores-pickling"))
+lazy val `spores-pickling` = project
   .settings(allSettings)
   .settings(baseDependencies)
   .dependsOn(core)
@@ -161,6 +161,15 @@ lazy val pickling = project
       "org.scala-lang.modules" %% "scala-pickling" % "0.11.0-M2",
     parallelExecution in Test := false
     // scalacOptions in Test ++= Seq("-Xlog-implicits")
+  )
+
+lazy val `spores-checker` = project
+  .settings(allSettings)
+  .dependsOn(core)
+  .settings(
+    libraryDependencies ++= testDependencies :+
+      "org.scala-lang" % "scala-compiler" % scalaVersion.value,
+    publishArtifact in Compile := false
   )
 
 lazy val readme = scalatex
