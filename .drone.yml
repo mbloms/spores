@@ -11,7 +11,7 @@ pipeline:
   build:
     image: scalaplatform/scala:0.5
     commands:
-      - sbt clean spores-core/test spores-pickling/test spores-spark/test
+      - sbt clean spores-core/test spores-pickling/test spores-spark/test spores-checker/test:compile
 
   sftp_cache:
     image: plugins/sftp-cache
