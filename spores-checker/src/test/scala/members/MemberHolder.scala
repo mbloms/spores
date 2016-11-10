@@ -19,12 +19,13 @@ abstract class MemberHolder(member0: Int) extends BaseMemberHolder {
   println(member1)
 }
 
+trait Foo
 class Bar(member0: Int, val member5: String, var member8: Int)
     extends MemberHolder(member0) {
   val member2 = ""
   val member3 = 4.0
-  val member4: Object = new Integer(1)
-  val member6: Object = member4
+  val member4: Object = new Foo {}
+  val member6: Object = member4.asInstanceOf[Object]
   var member7: List[String] = Nil
   member7 = List("")
   @transient var memberIgnored: Int => Int = (a: Int) => a

@@ -30,9 +30,9 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
         val msg = s"Fields in ${symbol.name.decodedName}: $fields"
         reporter.info(symbol.pos, msg, force = true)
         fields.foreach { field =>
-          if (!field.isSerializable && field.isNumericValueClass) {
-            reporter.error(field.pos,
-                           s"Not serializable: $field with type ${field.tpe}")
+          if (!field.isSerializable && !field.info.typeSymbol.asClass.isPrimitive) {
+            reporter.warning(field.pos,
+                             s"Not serializable: $field with type ${field.tpe}")
           }
         }
       }
