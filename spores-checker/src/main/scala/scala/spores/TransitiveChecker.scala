@@ -13,17 +13,17 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
 
     val alreadyChecked = scala.collection.mutable.HashSet[Symbol]()
 
-    @inline private def isTransientInJava(className: String,
-                                          fieldName: String): Boolean = {
-      // TODO(jvican): This is a hack, see https://issues.scala-lang.org/browse/SI-10042
+    @inline private def isTransientInJava(sym: Symbol): Boolean = {
+      val className = sym.owner.asClass.fullName
+      val fieldName = sym.name.decoded
+      // TODO(jvican): Hack, see https://issues.scala-lang.org/browse/SI-10042
       val javaClass = JavaClassLoader.loadClass(className)
       val field = javaClass.getDeclaredField(fieldName)
       java.lang.reflect.Modifier.isTransient(field.getModifiers)
     }
 
     @inline def isTransient(sym: Symbol) = {
-      (sym.isJavaDefined && isTransientInJava(sym.owner.asClass.fullName,
-                                              sym.name.decoded)) ||
+      (sym.isJavaDefined && isTransientInJava(sym)) ||
       sym.hasFlag(Flags.TRANS_FLAG) ||
       sym.annotations.exists(_.tpe.typeSymbol == definitions.TransientAttr)
     }
