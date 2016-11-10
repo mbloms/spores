@@ -10,6 +10,7 @@ pipeline:
 
   build:
     image: scalaplatform/scala:0.5
+    pull: true
     commands:
       - sbt clean spores-core/test spores-pickling/test spores-spark/test spores-checker/test:compile
 
