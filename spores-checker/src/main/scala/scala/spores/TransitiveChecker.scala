@@ -11,6 +11,8 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
 
   class TransitiveTraverser(unit: CompilationUnit) extends Traverser {
 
+    val alreadyChecked = scala.collection.mutable.HashSet[Symbol]()
+
     @inline private def isTransientInJava(className: String,
                                           fieldName: String): Boolean = {
       // TODO(jvican): This is a hack, see https://issues.scala-lang.org/browse/SI-10042
@@ -29,28 +31,32 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
     /** Transitively check that the types of the fields are Serializable.
       *
       * Watch out: traverse works by checking the fields of a given symbol.
-      * However, traits only have accessors, not actual fields, and
+      * However, abstract fields of traits are represented as accessors, and
       * accessors are ignored in the analysis. This could lead us to false
       * positives because top-level traits can be instantiated and passed
-      * through the program. This is dangerous and must be checked carefully.
+      * through the program without any inherited class holding the fields,
+      * only the accessors. This is dangerous and must be checked carefully.
       */
     override def traverse(tree: Tree): Unit = {
       def checkMembers(symbol: Symbol): Unit = {
-        val members = symbol.info.members
-        //reporter.info(symbol.pos, s"Found members $members", force = true)
-        val noTransientFields = members
-          .filter(m => m.isTerm && !m.isMethod && !m.isModule)
-          .filterNot(isTransient)
-          .toList
-        val msg = s"Fields in ${symbol.name.decodedName}: $noTransientFields"
-        reporter.info(symbol.pos, msg, force = true)
-        noTransientFields.foreach { field =>
-          if (!field.info.typeSymbol.asClass.isPrimitive) {
-            if (!field.isSerializable) {
-              reporter.warning(
-                field.pos,
-                s"Not serializable: $field with type ${field.tpe}")
-            } else checkMembers(field.info.typeSymbol)
+        if (!alreadyChecked.contains(symbol)) {
+          alreadyChecked += symbol
+          val members = symbol.info.members
+          //reporter.info(symbol.pos, s"Found members $members", force = true)
+          val noTransientFields = members
+            .filter(m => m.isTerm && !m.isMethod && !m.isModule)
+            .filterNot(isTransient)
+            .toList
+          val msg = s"Fields in ${symbol.name.decodedName}: $noTransientFields"
+          reporter.info(symbol.pos, msg, force = true)
+          noTransientFields.foreach { field =>
+            if (!field.info.typeSymbol.asClass.isPrimitive) {
+              if (!field.isSerializable) {
+                reporter.warning(
+                  field.pos,
+                  s"Not serializable: $field with type ${field.tpe}")
+              } else checkMembers(field.info.typeSymbol)
+            }
           }
         }
       }
