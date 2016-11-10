@@ -175,7 +175,9 @@ lazy val `spores-checker` = project
         s"-Xplugin:${compiledPlugin.getAbsolutePath}",
         s"-Jdummy=${compiledPlugin.lastModified}"
       )
-    }
+    },
+    // Make sure that java classes are in the classpath
+    compileOrder := CompileOrder.JavaThenScala
   )
 
 lazy val readme = scalatex

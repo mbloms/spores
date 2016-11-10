@@ -1,4 +1,4 @@
-package members
+package scala.spores
 
 trait BaseBaseMemberHolder {
   val member5: String
@@ -29,4 +29,5 @@ class Bar(member0: Int, val member5: String, var member8: Int)
   var member7: List[String] = Nil
   member7 = List("")
   @transient var memberIgnored: Int => Int = (a: Int) => a
+  val member9 = new scala.spores.JavaTransientMemberHolder
 }
