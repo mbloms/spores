@@ -20,9 +20,9 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
       * through the program. This is dangerous and must be checked carefully.
       */
     override def traverse(tree: Tree): Unit = {
-      def checkMembers(symbol: Symbol) = {
+      def checkMembers(symbol: Symbol): Unit = {
         val members = symbol.info.members
-        reporter.info(symbol.pos, s"Found members $members", force = true)
+        // reporter.info(symbol.pos, s"Found members $members", force = true)
         val fields = members
           .filter(m => m.isTerm && !m.isMethod && !m.isModule)
           .filterNot(isTransient)
@@ -30,9 +30,12 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
         val msg = s"Fields in ${symbol.name.decodedName}: $fields"
         reporter.info(symbol.pos, msg, force = true)
         fields.foreach { field =>
-          if (!field.isSerializable && !field.info.typeSymbol.asClass.isPrimitive) {
-            reporter.warning(field.pos,
-                             s"Not serializable: $field with type ${field.tpe}")
+          if (!field.info.typeSymbol.asClass.isPrimitive) {
+            if (!field.isSerializable) {
+              reporter.warning(
+                field.pos,
+                s"Not serializable: $field with type ${field.tpe}")
+            } else checkMembers(field.info.typeSymbol)
           }
         }
       }
