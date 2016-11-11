@@ -107,10 +107,8 @@ lazy val root = project
   .in(file("."))
   .settings(allSettings)
   .settings(noPublish)
-  .aggregate(core, `spores-pickling`, `spores-spark`, `spores-checker`)
+  .aggregate(core, `spores-pickling`, `spores-checker`)
   .dependsOn(core)
-
-val sparkEnv = "spores.spark"
 
 lazy val core = project
   .copy(id = "spores-core")
@@ -124,32 +122,19 @@ lazy val core = project
     /* Write all the compile-time dependencies of the spores macro to a file,
      * in order to read it from the created Toolbox to run the neg tests. */
     resourceGenerators in Compile += Def.task {
-      val logger = streams.value.log
       val classpathAttributes = (dependencyClasspath in Compile).value
       val dependenciesClasspath =
         classpathAttributes.map(_.data.getAbsolutePath).mkString(":")
       val scalaBinVersion = (scalaBinaryVersion in Compile).value
-      val targetDir = (target in Compile).value.getAbsolutePath
-      val compiledClassesDir = s"$targetDir/scala-$scalaBinVersion/classes"
+      val targetDir = (target in Compile).value
+      val compiledClassesDir = targetDir / s"scala-$scalaBinVersion/classes"
       val classpath = s"$compiledClassesDir:$dependenciesClasspath"
       val resourceDir = (resourceDirectory in Compile).value
       resourceDir.mkdir() // In case it doesn't exist
-      val resourcePath = resourceDir.getAbsolutePath
-      val toolboxTestClasspath = file(s"$resourcePath/toolbox.classpath")
+      val toolboxTestClasspath = resourceDir / "toolbox.classpath"
       IO.write(toolboxTestClasspath, classpath)
       List(toolboxTestClasspath.getAbsoluteFile)
     }.taskValue
-  )
-
-lazy val `spores-spark` = project
-  .settings(allSettings)
-  .settings(baseDependencies)
-  .settings(noPublish)
-  .dependsOn(core % "test->compile")
-  .settings(
-    resourceDirectory in Test :=
-      (resourceDirectory in Compile in core).value,
-    javaOptions in Test ++= Seq("-Dspores.spark=true")
   )
 
 lazy val `spores-pickling` = project
@@ -165,8 +150,13 @@ lazy val `spores-pickling` = project
 
 lazy val `spores-checker` = project
   .settings(allSettings)
+  .settings(baseDependencies)
   .dependsOn(core)
   .settings(
+    // Make sure that java classes are in the classpath
+    compileOrder := CompileOrder.JavaThenScala,
+    resourceDirectories in Test +=
+      (resourceDirectory in Compile in core).value,
     libraryDependencies +=
       "org.scala-lang" % "scala-compiler" % scalaVersion.value,
     scalacOptions in Test ++= {
@@ -176,8 +166,13 @@ lazy val `spores-checker` = project
         s"-Jdummy=${compiledPlugin.lastModified}"
       )
     },
-    // Make sure that java classes are in the classpath
-    compileOrder := CompileOrder.JavaThenScala
+    resourceGenerators in Test += Def.task {
+      val extraOptions = (scalacOptions in Test).value.mkString(" ")
+      val resourceDir = (resourceDirectory in Test).value
+      val extraOptionsFile = resourceDir / "toolbox.extra"
+      IO.write(extraOptionsFile, extraOptions)
+      List(extraOptionsFile.getAbsoluteFile)
+    }.taskValue
   )
 
 lazy val readme = scalatex

@@ -238,41 +238,6 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
     }
   }
 
-  private val sparkPath = q"scala.spores.spark"
-  private class SerializableInspector extends Traverser {
-    def needsSerializableCheck(sym: Symbol) =
-      !sym.isMethod && !sym.isPackage && !sym.isPackageClass
-
-    def isSerializable(tpe: Type): Boolean = {
-      debug(s"Checking if $tpe is serializable")
-      val witnessTypeTree = ctx.typecheck(
-        tq"$sparkPath.SerializationWitness[$tpe]",
-        mode = ctx.TYPEmode)
-      if (tpe == null || tpe == NoType) false
-      else {
-        tpe <:< typeOf[java.io.Serializable] ||
-        tpe <:< typeOf[Serializable] ||
-        ctx.inferImplicitValue(witnessTypeTree.tpe) != EmptyTree
-      }
-    }
-
-    override def traverse(tree: Tree): Unit = {
-      tree match {
-        case ref: RefTree =>
-          debug(s"Checking ref is serializable: $ref")
-          val (tpe, sym) = (ref.tpe, ref.symbol)
-          if (needsSerializableCheck(sym) && !isSerializable(tpe)) {
-            val msg = Feedback.NonSerializableType(tpe.toString, sym.toString)
-            ctx.abort(ref.pos, msg)
-          }
-        case _ => super.traverse(tree)
-      }
-    }
-  }
-
-  def checkReferencesInBody(sporeBody: Tree) = {
+  def checkReferencesInBody(sporeBody: Tree) =
     (new ReferenceInspector).traverse(sporeBody)
-    if (isSparkEnabled)
-      (new SerializableInspector).traverse(sporeBody)
-  }
 }

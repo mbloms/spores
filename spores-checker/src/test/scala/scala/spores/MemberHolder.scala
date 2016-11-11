@@ -1,5 +1,10 @@
 package scala.spores
 
+/** This file is for experimentation and is not affected by
+  * the test execution if changes are not explicitly made in
+  * the plugin. It helps check interop with Java transient and
+  * checking of basic members. */
+
 trait BaseBaseMemberHolder {
   val member5: String
   val member6: Object

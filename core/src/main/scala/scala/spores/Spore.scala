@@ -8,7 +8,7 @@
 
 package scala.spores
 
-sealed trait SporeBase {
+sealed trait SporeBase extends Serializable {
 
   /** Represent the type of the captured variables.
     *

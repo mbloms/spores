@@ -11,11 +11,10 @@ package scala
 import scala.language.experimental.macros
 import scala.language.{implicitConversions, postfixOps}
 import scala.reflect.macros.whitebox
-import scala.spores.spark.SerializationWitnesses
 import scala.spores.util.Versioning
 import scala.util.Try
 
-package object spores extends SerializationWitnesses with Versioning {
+package object spores extends Versioning {
   object logger {
     def elem[T](es: sourcecode.Text[T]*)(implicit line: sourcecode.Line,
                                          file: sourcecode.File): Unit = {
@@ -34,9 +33,6 @@ package object spores extends SerializationWitnesses with Versioning {
       case t: Throwable => default
     } get
   }
-
-  private val enabledSpark = System.getProperty("spores.spark")
-  val isSparkEnabled = settingToBoolean(enabledSpark, default = false)
 
   // Change the default value to enable the macro debugging
   private val defaultDebugProperty = System.getProperty("spores.debug")

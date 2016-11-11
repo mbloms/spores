@@ -1,4 +1,4 @@
-package scala.spores.spark.neg.capture
+package scala.spores.spark.neg.defined.capture
 
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -11,27 +11,29 @@ import scala.spores.util.Feedback
 class SerializableNegSpec {
   @Test
   def `A class is not serializable`() {
-    expectError(Feedback.NonSerializableType("Foo", "value foo")) {
+    expectError(Feedback.NonSerializableType("anonspore$macro$1", "value captured", "Foo")) {
       """
         import scala.spores._
         class Foo(val number: Int)
         val foo = new Foo(1)
         spore {
-          () => capture(foo)
+          val captured = foo
+          () => captured
         }
       """
     }
   }
 
-  @Test
+@Test
   def `A trait is not serializable`() {
-    expectError(Feedback.NonSerializableType("Foo", "value foo")) {
+    expectError(Feedback.NonSerializableType("anonspore$macro$1", "value captured", "Foo")) {
       """
         import scala.spores._
         trait Foo { val number: Int }
         val foo = new Foo { val number = 1 }
         spore {
-          () => capture(foo)
+          val captured = foo
+          () => captured
         }
       """
     }
@@ -39,13 +41,14 @@ class SerializableNegSpec {
 
   @Test
   def `An abstract class is not serializable`() {
-    expectError(Feedback.NonSerializableType("Foo", "value foo")) {
+    expectError(Feedback.NonSerializableType("anonspore$macro$1", "value captured", "Foo")) {
       """
         import scala.spores._
         abstract class Foo(val number: Int)
-        val foo = new Foo { val number = 1 }
+        val foo = new Foo(1) {}
         spore {
-          () => capture(foo)
+          val captured = foo
+          () => captured
         }
       """
     }
@@ -53,13 +56,14 @@ class SerializableNegSpec {
 
   @Test
   def `An object is not serializable`() {
-    expectError(Feedback.NonSerializableType("Foo.type", "value foo")) {
+    expectError(Feedback.NonSerializableType("anonspore$macro$1", "value captured", "Foo")) {
       """
         import scala.spores._
         object Foo { val number = 1 }
         val foo = Foo
         spore {
-          () => capture(foo)
+          val captured = foo
+          () => captured
         }
       """
     }
