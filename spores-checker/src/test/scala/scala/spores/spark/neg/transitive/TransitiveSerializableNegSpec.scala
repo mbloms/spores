@@ -8,7 +8,7 @@ import scala.spores.spark.TestUtil._
 import scala.spores.util.PluginFeedback.NonSerializableType
 
 @RunWith(classOf[JUnit4])
-class TransitiveNegSpec {
+class TransitiveSerializableNegSpec {
   @Test
   def `Depth 1: Non serializable fields in classes are detected`(): Unit = {
     expectError(

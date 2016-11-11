@@ -1,4 +1,4 @@
-package scala.spores.spark.run.transitive
+package scala.spores.spark.run.transitive.transient
 
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -7,12 +7,12 @@ import org.junit.runners.JUnit4
 import scala.spores._
 
 @RunWith(classOf[JUnit4])
-class TransitiveSpec {
+class TransientSerializableSpec {
   @Test
-  def `Depth 1: Serializable fields in classes are detected`(): Unit = {
-    class Bar extends Serializable
+  def `Depth 1: Ignore Scala transient fields`(): Unit = {
+    class Bar(@transient val b: Function[Int, Int]) extends Serializable
     class Foo(val bar: Bar) extends Serializable
-    val foo = new Foo(new Bar)
+    val foo = new Foo(new Bar(i => i))
     spore {
       val captured = foo
       () =>
@@ -21,11 +21,11 @@ class TransitiveSpec {
   }
 
   @Test
-  def `Depth 2: Serializable fields in classes are ignored`(): Unit = {
-    abstract class Baz extends Serializable
+  def `Depth 2: Ignore Scala transient fields`(): Unit = {
+    abstract class Baz(@transient val a: Object) extends Serializable
     class Bar(val baz: Baz) extends Serializable
     class Foo(val bar: Bar) extends Serializable
-    val foo = new Foo(new Bar(new Baz {}))
+    val foo = new Foo(new Bar(new Baz(new Object) {}))
     spore {
       val captured = foo
       () =>
@@ -34,12 +34,12 @@ class TransitiveSpec {
   }
 
   @Test
-  def `Depth 3: Serializable fields in classes are ignored`(): Unit = {
-    abstract class Baz2 extends Serializable
+  def `Depth 3: Ignore Scala transient fields`(): Unit = {
+    class Baz2(@transient val a: Object) extends Serializable
     abstract class Baz(val baz2: Baz2) extends Serializable
     class Bar(val baz: Baz) extends Serializable
     class Foo(val bar: Bar) extends Serializable
-    val foo = new Foo(new Bar(new Baz(new Baz2 {}) {}))
+    val foo = new Foo(new Bar(new Baz(new Baz2(new Object)) {}))
     spore {
       val captured = foo
       () =>
