@@ -2,7 +2,7 @@ package scala.spores
 
 import java.net.URLClassLoader
 
-import scala.spores.util.Feedback._
+import scala.spores.util.PluginFeedback._
 
 class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
   import global._
@@ -28,8 +28,8 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
     }
 
     @inline def reportError(sym: Symbol) = {
-      val (owner, tpe) = (sym.owner.decodedName.trim, sym.tpe)
-      val msg  = NonSerializableType(owner.toString, sym.toString, tpe.toString)
+      val (owner, tpe) = (sym.owner.decodedName.trim, sym.tpe.dealiasWiden.toString)
+      val msg = NonSerializableType(owner.toString, sym.toString, tpe)
       reporter.error(sym.pos, msg)
     }
 

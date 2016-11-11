@@ -5,13 +5,13 @@ import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
 import scala.spores.spark.TestUtil._
-import scala.spores.util.Feedback
+import scala.spores.util.PluginFeedback.NonSerializableType
 
 @RunWith(classOf[JUnit4])
 class SerializableNegSpec {
   @Test
   def `A class is not serializable`() {
-    expectError(Feedback.NonSerializableType("anonspore$macro$1", "value captured", "Foo")) {
+    expectError(NonSerializableType("anonspore$macro$1", "value captured", "Foo")) {
       """
         import scala.spores._
         class Foo(val number: Int)
@@ -26,7 +26,7 @@ class SerializableNegSpec {
 
 @Test
   def `A trait is not serializable`() {
-    expectError(Feedback.NonSerializableType("anonspore$macro$1", "value captured", "Foo")) {
+    expectError(NonSerializableType("anonspore$macro$1", "value captured", "Foo")) {
       """
         import scala.spores._
         trait Foo { val number: Int }
@@ -41,7 +41,7 @@ class SerializableNegSpec {
 
   @Test
   def `An abstract class is not serializable`() {
-    expectError(Feedback.NonSerializableType("anonspore$macro$1", "value captured", "Foo")) {
+    expectError(NonSerializableType("anonspore$macro$1", "value captured", "Foo")) {
       """
         import scala.spores._
         abstract class Foo(val number: Int)
@@ -56,7 +56,7 @@ class SerializableNegSpec {
 
   @Test
   def `An object is not serializable`() {
-    expectError(Feedback.NonSerializableType("anonspore$macro$1", "value captured", "Foo")) {
+    expectError(NonSerializableType("anonspore$macro$1", "value captured", "Foo")) {
       """
         import scala.spores._
         object Foo { val number = 1 }

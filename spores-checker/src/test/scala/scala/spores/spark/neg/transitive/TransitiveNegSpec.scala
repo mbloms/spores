@@ -1,11 +1,11 @@
-package scala.spores.spark.neg.transitive
+package scala.spores.spark.run.transitive
 
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
 import scala.spores.spark.TestUtil._
-import scala.spores.util.Feedback._
+import scala.spores.util.PluginFeedback.NonSerializableType
 
 @RunWith(classOf[JUnit4])
 class TransitiveNegSpec {
