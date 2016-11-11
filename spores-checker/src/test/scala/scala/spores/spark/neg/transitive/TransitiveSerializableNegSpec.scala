@@ -65,4 +65,21 @@ class TransitiveSerializableNegSpec {
       """.stripMargin
     }
   }
+
+  @Test
+  def `Detect a wrapper around a function`(): Unit = {
+    expectError(
+      NonSerializableType("FakeWrapper", "value wrapped", "Int => Int")
+    ) {
+      """
+        |import scala.spores._
+        |class FakeWrapper(wrapped: Int => Int) extends Serializable
+        |val foo = new FakeWrapper(i => i)
+        |spore {
+        |  val captured = foo
+        |  () => captured
+        |}
+      """.stripMargin
+    }
+  }
 }
