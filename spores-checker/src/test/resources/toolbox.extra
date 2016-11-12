@@ -1,1 +1,1 @@
--Xplugin:/data/rw/code/scala/spores/spores-checker/target/scala-2.11/spores-checker_2.11-0.3.0-SNAPSHOT.jar -Jdummy=1478879132000
+-Xplugin:/data/rw/code/scala/spores/spores-checker/target/scala-2.11/spores-serialization_2.11-0.4.0-M1.jar -Jdummy=1478909744000

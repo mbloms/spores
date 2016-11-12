@@ -1,9 +1,11 @@
 lazy val buildSettings = Seq(
-  organization := "org.scala-lang.modules",
-  organizationName := "LAMP/EPFL",
-  organizationHomepage := Some(new URL("http://lamp.epfl.ch")),
-  version := "0.3.0-SNAPSHOT",
+  resolvers += Resolver.bintrayRepo("scalacenter", "releases"),
+  resolvers += Resolver.sonatypeRepo("snapshots"),
+  organization := "ch.epfl.scala",
+  organizationName := "Scala Center",
+  organizationHomepage := Some(new URL("https://scala.epfl.ch")),
   scalaVersion := "2.11.8",
+  // 2.12 is not yet available because of SI-10009
   crossScalaVersions := Seq("2.11.8", "2.12.0"),
   fork in Test := true
 )
@@ -24,50 +26,32 @@ lazy val baseDependencies = {
 lazy val publishSettings = Seq(
   publishMavenStyle := true,
   publishArtifact := true,
-  publishTo := {
-    val nexus = "https://oss.sonatype.org/"
-    if (isSnapshot.value)
-      Some("snapshots" at nexus + "content/repositories/snapshots")
-    else
-      Some("releases" at nexus + "service/local/staging/deploy/maven2")
-  },
-  pomIncludeRepository := { x =>
-    false
-  },
   publishArtifact in Test := false,
+  bintrayOrganization := Some("scalacenter"),
+  bintrayRepository := "releases",
+  bintrayPackageLabels :=
+    Seq("compiler", "spores", "spark", "serialization", "plugin", "scala"),
+  publishTo := (publishTo in bintray).value,
   licenses := Seq(
-    "BSD 3-Clause License" -> url(
-      "http://www.scala-lang.org/downloads/license.html")),
-  homepage := Some(url("https://github.com/heathermiller/spores")),
+    "BSD 3-Clause" -> url("http://www.scala-lang.org/downloads/license.html")),
+  // Note that original repo is http://github.com/heathermiller/spores
+  homepage := Some(url("https://github.com/jvican/spores-spark")),
   startYear := Some(2013),
   autoAPIMappings := true,
-  scmInfo := Some(
-    ScmInfo(
-      url("https://github.com/heathermiller/spores"),
-      "scm:git:git@github.com:heathermiller/spores.git"
-    )
-  ),
-  pomExtra :=
-    <developers>
-      <developer>
-        <id>heathermiller</id>
-        <name>Heather Miller</name>
-        <timezone>+1</timezone>
-        <url>http://github.com/heathermiller</url>
-      </developer>
-      <developer>
-        <id>phaller</id>
-        <name>Philipp Haller</name>
-        <timezone>+1</timezone>
-        <url>http://github.com/phaller</url>
-      </developer>
-      <developer>
-        <id>jvican</id>
-        <name>Jorge Vicente Cantero</name>
-        <timezone>+1</timezone>
-        <url>https://github.com/jvican</url>
-      </developer>
-    </developers>
+  developers := List(
+    Developer("heathermiller",
+              "Heather Miller",
+              "heather.miller@epfl.ch",
+              url("http://github.com/heathermiller")),
+    Developer("phaller",
+              "Philipp Haller",
+              "phaller@kth.se",
+              url("http://github.com/phaller")),
+    Developer("jvican",
+              "Jorge Vicente Cantero",
+              "jorge.vicentecantero@epfl.ch",
+              url("http://github.com/jvican"))
+  )
 )
 
 lazy val compilerOptions = Seq(
@@ -92,7 +76,7 @@ lazy val commonSettings = Seq(
   triggeredMessage in ThisBuild := Watched.clearWhenTriggered,
   watchSources += baseDirectory.value / "resources",
   scalacOptions in (Compile, console) ++= compilerOptions,
-  resolvers += Resolver.sonatypeRepo("snapshots")
+  testOptions in Test += Tests.Argument("-v")
 )
 
 lazy val noPublish = Seq(
@@ -103,20 +87,18 @@ lazy val noPublish = Seq(
 lazy val allSettings = commonSettings ++ buildSettings ++ publishSettings
 
 lazy val root = project
-  .copy(id = "spores")
   .in(file("."))
   .settings(allSettings)
   .settings(noPublish)
-  .aggregate(core, `spores-pickling`, `spores-checker`)
-  .dependsOn(core)
+  .aggregate(`spores-core`, `spores-pickling`, `spores-checker`)
+  .dependsOn(`spores-core`)
 
-lazy val core = project
-  .copy(id = "spores-core")
+lazy val `spores-core` = project
+  .copy(id = "spores")
   .in(file("core"))
   .settings(allSettings)
   .settings(baseDependencies)
   .settings(
-    moduleName := "spores-core",
     resourceDirectory in Compile := baseDirectory.value / "resources",
     parallelExecution in Test := false,
     /* Write all the compile-time dependencies of the spores macro to a file,
@@ -140,7 +122,7 @@ lazy val core = project
 lazy val `spores-pickling` = project
   .settings(allSettings)
   .settings(baseDependencies)
-  .dependsOn(core)
+  .dependsOn(`spores-core`)
   .settings(
     libraryDependencies +=
       "org.scala-lang.modules" %% "scala-pickling" % "0.11.0-M2",
@@ -149,14 +131,15 @@ lazy val `spores-pickling` = project
   )
 
 lazy val `spores-checker` = project
+  .settings(name := "spores-serialization")
   .settings(allSettings)
   .settings(baseDependencies)
-  .dependsOn(core)
+  .dependsOn(`spores-core`)
   .settings(
     // Make sure that java classes are in the classpath
     compileOrder := CompileOrder.JavaThenScala,
     resourceDirectories in Test +=
-      (resourceDirectory in Compile in core).value,
+      (resourceDirectory in Compile in `spores-core`).value,
     libraryDependencies +=
       "org.scala-lang" % "scala-compiler" % scalaVersion.value,
     scalacOptions in Test ++= {
@@ -182,7 +165,7 @@ lazy val readme = scalatex
     url = "https://github.com/jvican/spores/tree/master",
     source = "Readme"
   )
-  .dependsOn(core)
+  .dependsOn(`spores-core`)
   .settings(noPublish)
   .settings(
     dependencyOverrides += "com.lihaoyi" %% "scalaparse" % "0.3.1"
