@@ -4,6 +4,7 @@ target/
 .ensime
 .ensime_cache/
 toolbox.classpath
+toolbox.extra
 extra.classpath
 /.gitignore
 ### SBT template
