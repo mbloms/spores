@@ -12,7 +12,7 @@ pipeline:
     image: scalaplatform/scala:0.5
     pull: true
     commands:
-      - sbt clean spores/test spores-pickling/test spores-checker/test
+      - sbt clean spores/test spores-pickling/test spores-serialization/test
 
   sftp_cache:
     image: plugins/sftp-cache

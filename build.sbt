@@ -90,7 +90,7 @@ lazy val root = project
   .in(file("."))
   .settings(allSettings)
   .settings(noPublish)
-  .aggregate(`spores-core`, `spores-pickling`, `spores-checker`)
+  .aggregate(`spores-core`, `spores-pickling`, `spores-serialization`)
   .dependsOn(`spores-core`)
 
 lazy val `spores-core` = project
@@ -130,8 +130,7 @@ lazy val `spores-pickling` = project
     // scalacOptions in Test ++= Seq("-Xlog-implicits")
   )
 
-lazy val `spores-checker` = project
-  .settings(name := "spores-serialization")
+lazy val `spores-serialization` = project
   .settings(allSettings)
   .settings(baseDependencies)
   .dependsOn(`spores-core`)
