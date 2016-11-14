@@ -46,4 +46,33 @@ class TransitiveSerializableSpec {
         captured
     }
   }
+
+  @Test
+  def `Compile correctly type params annotated with Serializable, by default`(): Unit = {
+    import scala.spores._
+    import scala.spores.PrimitiveSerializationWitnesses._
+    class SerializableTypeParam[T : CanBeSerialized](typedValue: T)
+        extends Serializable
+    val foo = new SerializableTypeParam(1)
+    val s = spore {
+      val captured = foo
+      () =>
+        captured
+    }
+    s()
+  }
+
+  @Test
+  def `Compile correctly type params not annotated with Serializable, by default`(): Unit = {
+    import scala.spores._
+    class NoSerializableTypeParam[T](typedValue: T)
+      extends Serializable
+    val foo = new NoSerializableTypeParam[Int](1)
+    val s = spore {
+      val captured = foo
+      () =>
+        captured
+    }
+    s()
+  }
 }

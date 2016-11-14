@@ -9,6 +9,7 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
   private val classPath = global.classPath.asURLs
   val JavaClassLoader = new URLClassLoader(classPath.toArray)
   val sporesBaseSymbol = global.rootMirror.symbolOf[scala.spores.SporeBase]
+  val sporesCanBeSerialized = global.rootMirror.symbolOf[scala.spores.CanBeSerialized[_]]
   val alreadyChecked = scala.collection.mutable.HashMap[Symbol, Boolean]()
 
   class TransitiveTraverser(unit: CompilationUnit, config: PluginConfig)
@@ -56,7 +57,7 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
           val members = symbol.info.members
           //reporter.info(symbol.pos, s"Found members $members", force = true)
           val noTransientFields = members
-            .filter(m => m.isTerm && !m.isMethod && !m.isModule)
+            .filter(m => m.isTerm && !m.isMethod && !m.isModule && !m.isImplicit)
             .filterNot(isTransient)
             .toList
           //val msg = s"Fields in ${symbol.decodedName}: $noTransientFields"
@@ -75,8 +76,20 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
                 val msg = StoppedTransitiveInspection(symbolName, fieldName)
                 report(config.forceTransitive, field.pos, msg)
               } else {
-                val msg = NonSerializableTypeParam(symbolName, fieldName)
-                report(config.forceSerializableTypeParams, field.pos, msg)
+                val evidences = members
+                  .filter(m => m.isTerm && !m.isMethod && !m.isModule && m.isImplicit)
+                val existingEvidence = evidences.filter { scope =>
+                  scope.tpe <:< typeOf[CanBeSerialized[_]] &&
+                  scope.info.typeArgs.contains(fieldSymbol.tpe)
+                }
+                if (existingEvidence.isEmpty) {
+                  val msg = NonSerializableTypeParam(symbolName, fieldName)
+                  report(config.forceSerializableTypeParams, field.pos, msg)
+                } else {
+
+                  val msg = StoppedTransitiveInspection(symbolName, fieldName)
+                  report(config.forceTransitive, field.pos, msg)
+                }
               }
             } else {
               reporter.error(field.pos,

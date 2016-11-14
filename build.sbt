@@ -142,8 +142,16 @@ lazy val `spores-serialization` = project
       (resourceDirectory in Compile in `spores-core`).value,
     libraryDependencies +=
       "org.scala-lang" % "scala-compiler" % scalaVersion.value,
+    test in assembly := {},
+    assemblyExcludedJars in assembly := {
+      // Make sure that only fansi is shipped with the compiler
+      val includedDependencies = List("sourcecode", "fansi")
+      val cp = (fullClasspath in assembly).value
+      cp.filter(jar =>
+        !includedDependencies.exists(i => jar.data.getName.contains(i)))
+    },
     scalacOptions in Test ++= {
-      val compiledPlugin = (packageBin in Compile).value
+      val compiledPlugin = assembly.value
       Seq(
         s"-Xplugin:${compiledPlugin.getAbsolutePath}",
         s"-Jdummy=${compiledPlugin.lastModified}"
