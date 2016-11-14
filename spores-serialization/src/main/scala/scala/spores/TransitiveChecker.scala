@@ -68,25 +68,27 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
               if (!fieldSymbol.asClass.isPrimitive) {
                 if (!field.isSerializable) reportError(field)
                 else checkMembers(field.info.typeSymbol)
-              }
+              } // Primitives are supposed to be serializable.
             } else if (fieldSymbol.isTypeParameter) {
               val (symbolName, fieldName) =
                 (symbol.decodedName, fieldSymbol.decodedName)
               if (fieldSymbol.isSerializable) {
                 val msg = StoppedTransitiveInspection(symbolName, fieldName)
                 report(config.forceTransitive, field.pos, msg)
+
               } else {
                 val evidences = members
                   .filter(m => m.isTerm && !m.isMethod && !m.isModule && m.isImplicit)
                 val existingEvidence = evidences.filter { scope =>
+                  val typeArgs = symbol.info.typeArgs
                   scope.tpe <:< typeOf[CanBeSerialized[_]] &&
-                  scope.info.typeArgs.contains(fieldSymbol.tpe)
+                  typeArgs.contains(fieldSymbol.tpe) &&
+                  typeArgs.length == 1
                 }
                 if (existingEvidence.isEmpty) {
                   val msg = NonSerializableTypeParam(symbolName, fieldName)
                   report(config.forceSerializableTypeParams, field.pos, msg)
                 } else {
-
                   val msg = StoppedTransitiveInspection(symbolName, fieldName)
                   report(config.forceTransitive, field.pos, msg)
                 }
@@ -100,7 +102,7 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
       }
 
       tree match {
-        case Block(List(cls: ClassDef), invocation) =>
+        case Block(List(cls: ClassDef), _) =>
           if (cls.symbol.tpe <:< sporesBaseSymbol.tpe) {
             checkMembers(cls.symbol)
             super.traverse(tree)
