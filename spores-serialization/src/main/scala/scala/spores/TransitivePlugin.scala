@@ -30,4 +30,9 @@ class TransitivePlugin(val global: Global) extends Plugin {
       }
     }
   }
+
+  override val optionsHelp: Option[String] = Some(s"""
+       |-P:spores-transitive-checker:$forceTransitiveOption       Forces failure if the transitive search cannot be completed.
+       |-P:spores-transitive-checker:$forceSerializableTypeParams Forces failure if type parameters of classes/traits are not serializable.
+    """.stripMargin)
 }
