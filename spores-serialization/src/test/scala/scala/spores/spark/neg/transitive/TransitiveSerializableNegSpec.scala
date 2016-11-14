@@ -5,7 +5,7 @@ import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
 import scala.spores.spark.TestUtil._
-import scala.spores.util.PluginFeedback.NonSerializableType
+import scala.spores.util.PluginFeedback._
 
 @RunWith(classOf[JUnit4])
 class TransitiveSerializableNegSpec {
@@ -75,6 +75,23 @@ class TransitiveSerializableNegSpec {
         |import scala.spores._
         |class FakeWrapper(wrapped: Int => Int) extends Serializable
         |val foo = new FakeWrapper(i => i)
+        |spore {
+        |  val captured = foo
+        |  () => captured
+        |}
+      """.stripMargin
+    }
+  }
+
+  @Test
+  def `Detect warning in type params that are not annotated with Serializable`(): Unit = {
+    expectWarning(
+      StoppedTransitiveInspection("UnserializableTypeParam", "T")
+    ) {
+      """
+        |import scala.spores._
+        |class UnserializableTypeParam[T](typedValue: T) extends Serializable
+        |val foo = new UnserializableTypeParam(1)
         |spore {
         |  val captured = foo
         |  () => captured

@@ -27,8 +27,9 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
       (sym.isJavaDefined && isTransientInJava(sym))
     }
 
-    @inline def reportError(sym: Symbol) = {
-      val (owner, tpe) = (sym.owner.decodedName.trim, sym.tpe.dealiasWiden.toString)
+    def reportError(sym: Symbol) = {
+      val (owner, tpe) =
+        (sym.owner.decodedName.trim, sym.tpe.dealiasWiden.toString)
       val msg = NonSerializableType(owner.toString, sym.toString, tpe)
       reporter.error(sym.pos, msg)
     }
@@ -52,13 +53,30 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
             .filter(m => m.isTerm && !m.isMethod && !m.isModule)
             .filterNot(isTransient)
             .toList
-          val msg =
-            s"Fields in ${symbol.name.decodedName}: $noTransientFields"
+          val msg = s"Fields in ${symbol.decodedName}: $noTransientFields"
           //reporter.info(symbol.pos, msg, force = true)
           noTransientFields.foreach { field =>
-            if (!field.info.typeSymbol.asClass.isPrimitive) {
-              if (!field.isSerializable) reportError(field)
-              else checkMembers(field.info.typeSymbol)
+            val fieldSymbol = field.info.typeSymbol
+            if (fieldSymbol.isClass) {
+              if (!fieldSymbol.asClass.isPrimitive) {
+                if (!field.isSerializable) reportError(field)
+                else checkMembers(field.info.typeSymbol)
+              }
+            } else if (fieldSymbol.isTypeParameter) {
+              if (!fieldSymbol.isSerializable) {
+                reporter.warning(
+                  field.pos,
+                  StoppedTransitiveInspection(symbol.decodedName,
+                                              fieldSymbol.decodedName))
+              } else {
+                reporter.warning(
+                  field.pos,
+                  StoppedTransitiveInspection(symbol.decodedName,
+                                              fieldSymbol.decodedName))
+              }
+            } else {
+              reporter.error(field.pos,
+                             s"Type ${fieldSymbol.tpe} is not handled.")
             }
           }
         }

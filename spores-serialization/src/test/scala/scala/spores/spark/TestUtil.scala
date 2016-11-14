@@ -44,8 +44,18 @@ object TestUtil {
       baseCompileOptions: String =
         s"-cp $toolboxClasspath $toolboxPluginOptions")(code: String) {
     val errorMessage = intercept[ToolBoxError] {
-      eval(code, compileOptions + " " + baseCompileOptions)
+      eval(code, s"$compileOptions $baseCompileOptions")
     }.getMessage
     assert(errorMessage.contains(errorSnippet), errorMessage)
+  }
+
+  def expectWarning(
+      errorSnippet: String,
+      compileOptions: String = "",
+      baseCompileOptions: String =
+        s"-cp $toolboxClasspath $toolboxPluginOptions")(code: String): Unit = {
+    expectError(errorSnippet,
+                compileOptions + "-Xfatal-warnings",
+                baseCompileOptions)(code)
   }
 }
