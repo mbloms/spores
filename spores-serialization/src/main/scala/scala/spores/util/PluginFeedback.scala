@@ -3,17 +3,26 @@ package scala.spores.util
 import fansi.Color
 
 object PluginFeedback {
-  def NonSerializableType(owner: String, member: String, tpe: String) =
-    s"Spore contains non-serializable references in $owner: $member with $tpe."
+  def BoldRed(msg: String) = Color.Red(msg).overlay(fansi.Bold.On)
+  def SolutionTemplate(msg: String) =
+    s"${Color.Green(fansi.Bold.On.apply("Solution:"))} $msg"
 
-  def StoppedTransitiveInspection(owner0: String, tparam0: String) = {
-    val owner = Color.Red(owner0)
-    val tparam = Color.Red(tparam0)
-    s"""${Color.Red(s"Transitive inspection cannot continue beyond $owner:")}
-       |  Type parameter $tparam is not fully known at the spore definition site.
+  def NonSerializableType(owner: String, member: String, tpe: String) = {
+    s"Spore contains non-serializable references in $owner: $member with $tpe."
+  }
+
+  def StoppedTransitiveInspection(owner: String, tparam: String) = {
+    s"""${BoldRed(s"Transitive inspection cannot continue beyond $owner:")}
+       |  Type parameter ${Color.Red(tparam)} is not fully known at the spore definition site.
        |
-       |${Color.Green(s"Solution: Move the spores definition wherever type $tparam0 is concrete.")}
+       |${SolutionTemplate(s"Move the spores definition where type $tparam is concrete.")}
      """.stripMargin
   }
 
+  def NonSerializableTypeParam(owner: String, tparam: String) = {
+    s"""${BoldRed(s"Type parameter $tparam in $owner does not extend `Serializable`.")}
+       |
+       |${SolutionTemplate(s"Define `$tparam` as `$tparam <: Serializable` or extend $tparam with the most precise serializable super class.")}
+     """.stripMargin
+  }
 }

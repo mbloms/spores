@@ -7,6 +7,13 @@ class TransitivePlugin(val global: Global) extends Plugin {
   val name = "spores-transitive-plugin"
   val description = "Performs spore transitive checks."
   val components = List[PluginComponent](CheckerComponent)
+  val forceTransitiveOption = "force-transitive"
+  val forceSerializableTypeParams = "force-serializable-type-parameters"
+  val config = PluginConfig(
+    super.options.contains(forceTransitiveOption),
+    super.options.contains(forceSerializableTypeParams))
+
+  override def init(ops: List[String], e: (String) => Unit): Boolean = true
 
   // It has to be lazy, otherwise incremental compiler fails :D
   lazy val checker = new TransitiveChecker(TransitivePlugin.this.global)
@@ -18,7 +25,7 @@ class TransitivePlugin(val global: Global) extends Plugin {
     override def newPhase(prev: Phase): Phase = {
       new StdPhase(prev) {
         override def apply(unit: global.CompilationUnit): Unit = {
-          new checker.TransitiveTraverser(unit).traverse(unit.body)
+          new checker.TransitiveTraverser(unit, config).traverse(unit.body)
         }
       }
     }

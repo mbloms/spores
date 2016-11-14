@@ -11,7 +11,8 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
   val sporesBaseSymbol = global.rootMirror.symbolOf[scala.spores.SporeBase]
   val alreadyChecked = scala.collection.mutable.HashMap[Symbol, Boolean]()
 
-  class TransitiveTraverser(unit: CompilationUnit) extends Traverser {
+  class TransitiveTraverser(unit: CompilationUnit, config: PluginConfig)
+      extends Traverser {
     @inline private def isTransientInJava(sym: Symbol): Boolean = {
       //debug(s"Checking ref is serializable: $ref")
       val className = sym.owner.asClass.fullName
@@ -34,6 +35,11 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
       reporter.error(sym.pos, msg)
     }
 
+    def report(errorOrWarning: Boolean, pos: Position, msg: String) = {
+      if (errorOrWarning) reporter.error(pos, msg)
+      else reporter.warning(pos, msg)
+    }
+
     /** Transitively check that the types of the fields are Serializable.
       *
       * Watch out: traverse works by checking the fields of a given symbol.
@@ -53,7 +59,7 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
             .filter(m => m.isTerm && !m.isMethod && !m.isModule)
             .filterNot(isTransient)
             .toList
-          val msg = s"Fields in ${symbol.decodedName}: $noTransientFields"
+          //val msg = s"Fields in ${symbol.decodedName}: $noTransientFields"
           //reporter.info(symbol.pos, msg, force = true)
           noTransientFields.foreach { field =>
             val fieldSymbol = field.info.typeSymbol
@@ -63,16 +69,14 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
                 else checkMembers(field.info.typeSymbol)
               }
             } else if (fieldSymbol.isTypeParameter) {
-              if (!fieldSymbol.isSerializable) {
-                reporter.warning(
-                  field.pos,
-                  StoppedTransitiveInspection(symbol.decodedName,
-                                              fieldSymbol.decodedName))
+              val (symbolName, fieldName) =
+                (symbol.decodedName, fieldSymbol.decodedName)
+              if (fieldSymbol.isSerializable) {
+                val msg = StoppedTransitiveInspection(symbolName, fieldName)
+                report(config.forceTransitive, field.pos, msg)
               } else {
-                reporter.warning(
-                  field.pos,
-                  StoppedTransitiveInspection(symbol.decodedName,
-                                              fieldSymbol.decodedName))
+                val msg = NonSerializableTypeParam(symbolName, fieldName)
+                report(config.forceSerializableTypeParams, field.pos, msg)
               }
             } else {
               reporter.error(field.pos,
