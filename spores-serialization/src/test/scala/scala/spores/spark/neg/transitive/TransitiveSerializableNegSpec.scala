@@ -90,8 +90,9 @@ class TransitiveSerializableNegSpec {
     ) {
       """
         |import scala.spores._
+        |class Foo
         |class UnserializableTypeParam[T](typedValue: T) extends Serializable
-        |val foo = new UnserializableTypeParam(1)
+        |val foo = new UnserializableTypeParam(new Foo)
         |spore {
         |  val captured = foo
         |  () => captured
@@ -108,8 +109,9 @@ class TransitiveSerializableNegSpec {
     ) {
       """
         |import scala.spores._
+        |class Foo
         |class UnserializableTypeParam[T](typedValue: T) extends Serializable
-        |val foo = new UnserializableTypeParam(1)
+        |val foo = new UnserializableTypeParam(new Foo)
         |spore {
         |  val captured = foo
         |  () => captured
@@ -121,12 +123,13 @@ class TransitiveSerializableNegSpec {
   @Test
   def `Detect warning in type params annotated with Serializable`(): Unit = {
     expectWarning(
-      StoppedTransitiveInspection("SerializableTypeParam", "T")
+      StoppedTransitiveInspection("SerializableTypeParam", "T", Some("SerializableTypeParam[Foo]"))
     ) {
       """
         |import scala.spores._
+        |class Foo extends Serializable
         |class SerializableTypeParam[T <: Serializable](typedValue: T) extends Serializable
-        |val foo = new SerializableTypeParam[Int](1)
+        |val foo = new SerializableTypeParam(new Foo)
         |spore {
         |  val captured = foo
         |  () => captured
@@ -138,13 +141,14 @@ class TransitiveSerializableNegSpec {
   @Test
   def `Detect error in serializable tparams if force-transitive option is set`(): Unit = {
     expectError(
-      StoppedTransitiveInspection("SerializableTypeParam", "T"),
+      StoppedTransitiveInspection("SerializableTypeParam", "T", Some("SerializableTypeParam[Foo]")),
       "-P:spores-transitive-plugin:force-transitive"
     ) {
       """
         |import scala.spores._
+        |class Foo extends Serializable
         |class SerializableTypeParam[T <: Serializable](typedValue: T) extends Serializable
-        |val foo = new SerializableTypeParam[Int](1)
+        |val foo = new SerializableTypeParam(new Foo)
         |spore {
         |  val captured = foo
         |  () => captured

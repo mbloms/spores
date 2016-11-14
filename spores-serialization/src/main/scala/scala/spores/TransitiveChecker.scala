@@ -9,7 +9,6 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
   private val classPath = global.classPath.asURLs
   val JavaClassLoader = new URLClassLoader(classPath.toArray)
   val sporesBaseSymbol = global.rootMirror.symbolOf[scala.spores.SporeBase]
-  val sporesCanBeSerialized = global.rootMirror.symbolOf[scala.spores.CanBeSerialized[_]]
   val alreadyChecked = scala.collection.mutable.HashMap[Symbol, Boolean]()
 
   class TransitiveTraverser(unit: CompilationUnit, config: PluginConfig)
@@ -51,13 +50,15 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
       * only the accessors. This is dangerous and must be checked carefully.
       */
     override def traverse(tree: Tree): Unit = {
-      def checkMembers(symbol: Symbol): Unit = {
+      def checkMembers(symbol: Symbol,
+                       concreteType0: Option[Type] = None): Unit = {
         if (!symbol.isSerializable) reportError(symbol)
         else {
           val members = symbol.info.members
           //reporter.info(symbol.pos, s"Found members $members", force = true)
           val noTransientFields = members
-            .filter(m => m.isTerm && !m.isMethod && !m.isModule && !m.isImplicit)
+            .filter(m =>
+              m.isTerm && !m.isMethod && !m.isModule && !m.isImplicit)
             .filterNot(isTransient)
             .toList
           //val msg = s"Fields in ${symbol.decodedName}: $noTransientFields"
@@ -67,30 +68,36 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
             if (fieldSymbol.isClass) {
               if (!fieldSymbol.asClass.isPrimitive) {
                 if (!field.isSerializable) reportError(field)
-                else checkMembers(field.info.typeSymbol)
-              } // Primitives are supposed to be serializable.
+                else checkMembers(field.info.typeSymbol, Some(field.tpe))
+              }
             } else if (fieldSymbol.isTypeParameter) {
-              val (symbolName, fieldName) =
-                (symbol.decodedName, fieldSymbol.decodedName)
-              if (fieldSymbol.isSerializable) {
-                val msg = StoppedTransitiveInspection(symbolName, fieldName)
-                report(config.forceTransitive, field.pos, msg)
-
-              } else {
-                val evidences = members
-                  .filter(m => m.isTerm && !m.isMethod && !m.isModule && m.isImplicit)
+              // TODO(jvican): Improve error handling here.
+              val concreteType = concreteType0.get
+              val concreteFieldType = concreteType.memberType(fieldSymbol)
+              val concreteFieldSymbol = concreteFieldType.typeSymbol
+              if (!concreteFieldSymbol.asClass.isPrimitive) {
+                val evidences = members.filter(m =>
+                  m.isTerm && !m.isMethod && !m.isModule && m.isImplicit)
                 val existingEvidence = evidences.filter { scope =>
                   val typeArgs = symbol.info.typeArgs
                   scope.tpe <:< typeOf[CanBeSerialized[_]] &&
                   typeArgs.contains(fieldSymbol.tpe) &&
                   typeArgs.length == 1
                 }
-                if (existingEvidence.isEmpty) {
+
+                val (symbolName, fieldName) =
+                  (symbol.decodedName, fieldSymbol.decodedName)
+                if (concreteFieldSymbol.isSerializable || existingEvidence.nonEmpty) {
+                  // TODO(jvican): Continue search in subclasses
+                  // TODO(jvican): Check for sealed class hierarchy
+                  val msg =
+                    StoppedTransitiveInspection(symbolName,
+                                                fieldName,
+                                                Some(concreteType.toString))
+                  report(config.forceTransitive, field.pos, msg)
+                } else {
                   val msg = NonSerializableTypeParam(symbolName, fieldName)
                   report(config.forceSerializableTypeParams, field.pos, msg)
-                } else {
-                  val msg = StoppedTransitiveInspection(symbolName, fieldName)
-                  report(config.forceTransitive, field.pos, msg)
                 }
               }
             } else {
