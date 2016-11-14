@@ -46,6 +46,7 @@ object TestUtil {
     val errorMessage = intercept[ToolBoxError] {
       eval(code, s"$compileOptions $baseCompileOptions")
     }.getMessage
+    println(errorMessage)
     assert(errorMessage.contains(errorSnippet), errorMessage)
   }
 

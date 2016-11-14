@@ -19,7 +19,8 @@ lazy val baseDependencies = {
   libraryDependencies ++= Seq(
     "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
     "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test",
-    "com.lihaoyi" %% "sourcecode" % "0.1.3"
+    "com.lihaoyi" %% "sourcecode" % "0.1.3",
+    "com.lihaoyi" %% "fansi" % "0.2.3"
   ) ++ testDependencies
 }
 
