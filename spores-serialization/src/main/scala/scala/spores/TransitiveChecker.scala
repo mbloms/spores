@@ -88,13 +88,16 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
                 val (symbolName, fieldName) =
                   (symbol.decodedName, fieldSymbol.decodedName)
                 if (concreteFieldSymbol.isSerializable || existingEvidence.nonEmpty) {
-                  // TODO(jvican): Continue search in subclasses
+                  // The phantom of SI-7046 follow us...
+                  val subclasses = concreteFieldSymbol.asClass.knownDirectSubclasses
                   // TODO(jvican): Check for sealed class hierarchy
-                  val msg =
-                    StoppedTransitiveInspection(symbolName,
-                                                fieldName,
-                                                Some(concreteType.toString))
-                  report(config.forceTransitive, field.pos, msg)
+                  if (subclasses.isEmpty) {
+                    val msg =
+                      StoppedTransitiveInspection(symbolName,
+                                                  fieldName,
+                                                  Some(concreteType.toString))
+                    report(config.forceTransitive, field.pos, msg)
+                  } else subclasses.foreach(checkMembers(_))
                 } else {
                   val msg = NonSerializableTypeParam(symbolName, fieldName)
                   report(config.forceSerializableTypeParams, field.pos, msg)

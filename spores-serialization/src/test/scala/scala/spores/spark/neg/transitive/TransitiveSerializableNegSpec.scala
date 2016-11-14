@@ -156,4 +156,23 @@ class TransitiveSerializableNegSpec {
       """.stripMargin
     }
   }
+
+  @Test
+  def `Detect non-serializable subclasses of sealed serializable subclass`(): Unit = {
+    expectError(
+      NonSerializableType("Trap", "value o", "Object")
+    ) {
+      """
+        |import scala.spores._
+        |sealed class Foo extends Serializable
+        |final case class Trap(o: Object) extends Foo
+        |class SerializableTypeParam[T <: Serializable](typedValue: T) extends Serializable
+        |val foo = new SerializableTypeParam(new Foo)
+        |spore {
+        |  val captured = foo
+        |  () => captured
+        |}
+      """.stripMargin
+    }
+  }
 }
