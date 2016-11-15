@@ -166,15 +166,58 @@ lazy val `spores-serialization` = project
     }.taskValue
   )
 
-lazy val readme = scalatex
-  .ScalatexReadme(
-    projectId = "readme",
-    wd = file(""),
-    url = "https://github.com/jvican/spores/tree/master",
-    source = "Readme"
-  )
-  .dependsOn(`spores-core`)
+
+lazy val makeProcess = taskKey[Unit]("Make the process.")
+lazy val createProcessIndex = taskKey[Unit]("Create index.html.")
+lazy val publishDocs = taskKey[Unit]("Make and publish the process.")
+lazy val readme: Project = project
+  .in(file("readme"))
+  .enablePlugins(OrnatePlugin)
+  .settings(allSettings)
   .settings(noPublish)
+  .settings(scalaVersion := "2.11.8")
   .settings(
-    dependencyOverrides += "com.lihaoyi" %% "scalaparse" % "0.3.1"
+    ghpages.settings,
+    git.remoteRepo := "git@github.com:jvican/spores",
+    name := "spores",
+    ornateSourceDir := Some(baseDirectory.value / "src" / "ornate"),
+    ornateTargetDir := Some(target.value / "site"),
+    siteSourceDirectory := ornateTargetDir.value.get,
+    makeProcess := {
+      val logger = streams.value.log
+      ornate.value
+      // Work around Ornate limitation to add custom CSS
+      val targetDir = ornateTargetDir.value.get
+      val cssFolder = targetDir / "_theme" / "css"
+      if (!cssFolder.exists) cssFolder.mkdirs()
+      val processDir = baseDirectory.value
+      val resourcesFolder = processDir / "src" / "resources"
+      val customCss = resourcesFolder / "css" / "custom.css"
+      val mainCss = cssFolder / "app.css"
+      logger.info("Adding custom CSS...")
+      IO.append(mainCss, IO.read(customCss))
+    },
+    createProcessIndex := {
+      val logger = streams.value.log
+      // Redirecting index to contents...
+      val repositoryTarget = GhPagesKeys.repository.value
+      import java.nio.file.{Paths, Files}
+      def getPath(f: java.io.File): java.nio.file.Path =
+        Paths.get(f.toPath.toAbsolutePath.toString)
+      val destFile = getPath(repositoryTarget / "index.html")
+      logger.info(s"Checking that $destFile does not exist.")
+      if (!Files.isSymbolicLink(destFile)) {
+        val srcLink = Paths.get("contents.html")
+        logger.info(s"Generating index.html poiting to $srcLink.")
+        Files.createSymbolicLink(destFile, srcLink)
+      }
+    },
+    GhPagesKeys.synchLocal :=
+      GhPagesKeys.synchLocal.dependsOn(createProcessIndex).value,
+    publishDocs := Def.sequential(
+      makeProcess,
+      GhPagesKeys.cleanSite,
+      GhPagesKeys.synchLocal,
+      GhPagesKeys.pushSite
+    ).value
   )
