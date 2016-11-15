@@ -18,7 +18,7 @@
             <div class="row">
               <div class="large-12 columns a_limited top-bar">
                 <div class="top-bar-left">
-                  <p>The Scala Platform</p>
+                  <p>Spores</p>
 
                 </div>
                 <div class="top-bar-right align-right row">
@@ -40,7 +40,16 @@
               
               <main class="columns large-order-2 sections" id="_sections">
                 <h1 id="spores" class="a_section" data-magellan-target="spores">Spores<a class="a_hlink" href="#spores"></a></h1>
-<p>Bla, bla, bla.</p>
+<p><a href="https://platform-ci.scala-lang.org/jvican/spores-spark"><img src="https://platform-ci.scala-lang.org/api/badges/jvican/spores-spark/status.svg" alt="Build Status" /></a></p>
+<p>Scala Spores, safe mobile closures: <a href="http://docs.scala-lang.org/sips/pending/spores.html">SIP-21</a>.</p>
+<p>Spores enable a safer use of closures in concurrent and distributed environments.
+Their goal is to provide users control over functions' environment, which allows
+them to control captured variables and exclude the use of certain types, among other
+use cases.</p>
+<p>Spores are naturally useful in serialization. Used with implicit-based pickling
+libraries or Java Serialization, they help library authors and Spark users alike
+to detect serialization issues at runtime.</p>
+<p>More generally, spores can be used to <em>guarantee properties of a function</em>.</p>
 
               </main>
               
