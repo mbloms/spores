@@ -167,11 +167,11 @@ lazy val `spores-serialization` = project
   )
 
 
-lazy val makeProcess = taskKey[Unit]("Make the process.")
+lazy val makeDocs = taskKey[Unit]("Make the process.")
 lazy val createProcessIndex = taskKey[Unit]("Create index.html.")
 lazy val publishDocs = taskKey[Unit]("Make and publish the process.")
-lazy val readme: Project = project
-  .in(file("readme"))
+lazy val docs: Project = project
+  .in(file("docs"))
   .enablePlugins(OrnatePlugin)
   .settings(allSettings)
   .settings(noPublish)
@@ -179,11 +179,12 @@ lazy val readme: Project = project
   .settings(
     ghpages.settings,
     git.remoteRepo := "git@github.com:jvican/spores",
+    git.branch := Some("gh-pages"),
     name := "spores",
     ornateSourceDir := Some(baseDirectory.value / "src" / "ornate"),
     ornateTargetDir := Some(target.value / "site"),
     siteSourceDirectory := ornateTargetDir.value.get,
-    makeProcess := {
+    makeDocs := {
       val logger = streams.value.log
       ornate.value
       // Work around Ornate limitation to add custom CSS
@@ -215,7 +216,7 @@ lazy val readme: Project = project
     GhPagesKeys.synchLocal :=
       GhPagesKeys.synchLocal.dependsOn(createProcessIndex).value,
     publishDocs := Def.sequential(
-      makeProcess,
+      makeDocs,
       GhPagesKeys.cleanSite,
       GhPagesKeys.synchLocal,
       GhPagesKeys.pushSite
