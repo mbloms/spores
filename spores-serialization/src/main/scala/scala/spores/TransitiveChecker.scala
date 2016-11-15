@@ -31,7 +31,7 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
     def reportError(sym: Symbol) = {
       val (owner, tpe) =
         (sym.owner.decodedName.trim, sym.tpe.dealiasWiden.toString)
-      val msg = NonSerializableType(owner.toString, sym.toString, tpe)
+      val msg = nonSerializableType(owner.toString, sym.toString, tpe)
       reporter.error(sym.pos, msg)
     }
 
@@ -55,14 +55,12 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
         if (!symbol.isSerializable) reportError(symbol)
         else {
           val members = symbol.info.members
-          //reporter.info(symbol.pos, s"Found members $members", force = true)
-          val noTransientFields = members
-            .filter(m =>
-              m.isTerm && !m.isMethod && !m.isModule && !m.isImplicit)
-            .filterNot(isTransient)
-            .toList
-          //val msg = s"Fields in ${symbol.decodedName}: $noTransientFields"
-          //reporter.info(symbol.pos, msg, force = true)
+          // TODO(jvican): Don't remove implicits values from the analysis
+          val noTransientFields = members.filter { m =>
+            val validField = m.isTerm && !m.isMethod && !m.isModule
+            validField && !m.isImplicit && !isTransient(m)
+          }.toList
+
           noTransientFields.foreach { field =>
             val fieldSymbol = field.info.typeSymbol
             if (fieldSymbol.isClass) {
@@ -71,7 +69,7 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
                 else checkMembers(field.info.typeSymbol, Some(field.tpe))
               }
             } else if (fieldSymbol.isTypeParameter) {
-              // TODO(jvican): Improve error handling here.
+              // This is safe, we must have the concrete type if tparam
               val concreteType = concreteType0.get
               val concreteFieldType = concreteType.memberType(fieldSymbol)
               val concreteFieldSymbol = concreteFieldType.typeSymbol
@@ -87,25 +85,26 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
 
                 val (symbolName, fieldName) =
                   (symbol.decodedName, fieldSymbol.decodedName)
-                if (concreteFieldSymbol.isSerializable || existingEvidence.nonEmpty) {
-                  // The phantom of SI-7046 follow us...
-                  val subclasses = concreteFieldSymbol.asClass.knownDirectSubclasses
-                  // TODO(jvican): Check for sealed class hierarchy
-                  if (subclasses.isEmpty) {
-                    val msg =
-                      StoppedTransitiveInspection(symbolName,
-                                                  fieldName,
-                                                  Some(concreteType.toString))
+                if (concreteFieldSymbol.isSerializable ||
+                    existingEvidence.nonEmpty) {
+                  if (concreteFieldSymbol.isSealed &&
+                      !concreteFieldSymbol.isEffectivelyFinal) {
+                    val subclasses =
+                      concreteFieldSymbol.asClass.knownDirectSubclasses
+                    subclasses.foreach(checkMembers(_))
+                  } else {
+                    val concrete = Some(concreteType.toString)
+                    val msg = stopInspection(symbolName, fieldName, concrete)
                     report(config.forceTransitive, field.pos, msg)
-                  } else subclasses.foreach(checkMembers(_))
+                  }
                 } else {
-                  val msg = NonSerializableTypeParam(symbolName, fieldName)
+                  val msg = nonSerializableTypeParam(symbolName, fieldName)
                   report(config.forceSerializableTypeParams, field.pos, msg)
                 }
               }
             } else {
-              reporter.error(field.pos,
-                             s"Type ${fieldSymbol.tpe} is not handled.")
+              val unhandled = fieldSymbol.tpe.toString
+              reporter.error(field.pos, unhandled)
             }
           }
         }

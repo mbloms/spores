@@ -5,14 +5,14 @@ import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
 import scala.spores.spark.TestUtil._
-import scala.spores.util.PluginFeedback.NonSerializableType
+import scala.spores.util.PluginFeedback.nonSerializableType
 
 @RunWith(classOf[JUnit4])
 class InteropJavaSerializableNegSpec {
   @Test
   def `Depth 2: Non serializable fields in classes are detected`(): Unit = {
     expectError(
-      NonSerializableType("JavaTransientNonSerializableOwner", "variable member", "Object")
+      nonSerializableType("JavaTransientNonSerializableOwner", "variable member", "Object")
     ) {
       """
         |import scala.spores._
@@ -28,7 +28,7 @@ class InteropJavaSerializableNegSpec {
 
   def `Depth3: Non serializable fields in classes are detected`(): Unit = {
     expectError(
-      NonSerializableType("JavaTransientNonSerializableOwner2", "variable member", "JavaTransientNonSerializableMember")
+      nonSerializableType("JavaTransientNonSerializableOwner2", "variable member", "JavaTransientNonSerializableMember")
     ) {
       """
         |import scala.spores._
