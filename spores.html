@@ -47,15 +47,19 @@ in concurrent and distributed environments. It allows developers to guarantee pr
 of functions based on types, having more control over the function's environment.</p>
 <p>In order to provide this, spores augment the <code class="hljs">Function</code> type with type information
 of the captured variables. Captured variables are terms defined outside of the function
-definition. <code class="hljs">Spores</code> are designed to be composable: not only in their logic, but also
-property-wise.</p>
+definition and used throughout the closure body. <code class="hljs">Spores</code> are designed to be composable
+in both logic and properties.</p>
+<h2 id="why-should-i-use-them" class="a_section" data-magellan-target="why-should-i-use-them">Why should I use them?<a class="a_hlink" href="#why-should-i-use-them"></a></h2>
 <p>Because of these features, spores are naturally useful in different programming domains.
-A classic example would be serialization. By using implicit-based pickling libraries
-or plain Java serialization, spores help developers detect serialization issues at compile-time
-instead of runtime.</p>
+A classic example is function serialization where RDD-like APIs require the closure to
+be serialized and sent across the wire. Spores strive to make error detection happen at
+compile-time rather than runtime, and thus save time and increase developer productivity.</p>
+<h2 id="about" class="a_section" data-magellan-target="about">About<a class="a_hlink" href="#about"></a></h2>
 <p>Spores is a research project by <a href="https://heather.miller.am">Heather Miller</a> and <a href="http://lampwww.epfl.ch/~phaller/">Philipp Haller</a>.
 If you want to read more about the underlying theory, check the paper <a href="https://infoscience.epfl.ch/record/191239/files/spores_1.pdf">Spores: A Type-based Foundation
 for Closures in the Age of Concurrency and Distribution</a>.</p>
+<p>The Scala Center is supporting this project under the <a href="https://github.com/scalacenter/advisoryboard/blob/master/proposals/006-compile-time-serializibility-check.md">Advisory Board proposal submitted
+by IBM</a>.</p>
 
               </main>
               
@@ -84,6 +88,39 @@ for Closures in the Age of Concurrency and Distribution</a>.</p>
                 </div>
               
               
+              
+                <div class="small-12 medium-12 large-2 large-order-3 columns a_show-for-xlarge" data-sticky-container>
+                  <nav class="a_pagenav" data-sticky data-sticky-on="large" data-anchor="_sections">
+                     <header><p>On This Page</p>
+</header> 
+                    <ul class="vertical menu" data-magellan>
+                       
+  <li>
+    
+       <a href="#spores">Spores</a> 
+    
+    
+      <ul class="vertical menu">  
+  <li>
+    
+       <a href="#why-should-i-use-them">Why should I use them?</a> 
+    
+    
+  </li>
+  
+  <li>
+    
+       <a href="#about">About</a> 
+    
+    
+  </li>
+  </ul>
+    
+  </li>
+ 
+                    </ul>
+                  </nav>
+                </div>
               
             </div>
           </div>
