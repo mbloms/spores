@@ -9,14 +9,21 @@ of functions based on types, having more control over the function's environment
 
 In order to provide this, spores augment the `Function` type with type information
 of the captured variables. Captured variables are terms defined outside of the function
-definition. `Spores` are designed to be composable: not only in their logic, but also
-property-wise.
+definition and used throughout the closure body. `Spores` are designed to be composable
+in both logic and properties.
+
+## Why should I use them?
 
 Because of these features, spores are naturally useful in different programming domains. 
-A classic example would be serialization. By using implicit-based pickling libraries
-or plain Java serialization, spores help developers detect serialization issues at compile-time
-instead of runtime.
+A classic example is function serialization where RDD-like APIs require the closure to
+be serialized and sent across the wire. Spores strive to make error detection happen at
+compile-time rather than runtime, and thus save time and increase developer productivity.
+
+## About
 
 Spores is a research project by [Heather Miller](https://heather.miller.am) and [Philipp Haller](http://lampwww.epfl.ch/~phaller/).
 If you want to read more about the underlying theory, check the paper [Spores: A Type-based Foundation
 for Closures in the Age of Concurrency and Distribution](https://infoscience.epfl.ch/record/191239/files/spores_1.pdf).
+
+The Scala Center is supporting this project under the [Advisory Board proposal submitted
+by IBM](https://github.com/scalacenter/advisoryboard/blob/master/proposals/006-compile-time-serializibility-check.md).
