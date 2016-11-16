@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spores</title>
+    <title>Spark integration</title>
     <link rel="stylesheet" href="_theme/css/foundation.min.css">
     <link rel="stylesheet" href="_theme/css/app.css">
      <link rel="stylesheet" href="_theme/css/highlight.js/styles/github-gist.css"> 
@@ -39,23 +39,25 @@
             <div class="row">
               
               <main class="columns large-order-2 sections" id="_sections">
-                <h1 id="spores" class="a_section" data-magellan-target="spores">Spores<a class="a_hlink" href="#spores"></a></h1>
-<p><a href="https://platform-ci.scala-lang.org/jvican/spores-spark"><img src="https://platform-ci.scala-lang.org/api/badges/jvican/spores-spark/status.svg" alt="Build Status" /></a></p>
-<p>Scala Spores, safe mobile closures: <a href="http://docs.scala-lang.org/sips/pending/spores.html">SIP-21</a>.</p>
-<p>Spores is an extension of the Scala compiler that enables a safer use of closures
-in concurrent and distributed environments. It allows developers to guarantee properties
-of functions based on types, having more control over the function's environment.</p>
-<p>In order to provide this, spores augment the <code class="hljs">Function</code> type with type information
-of the captured variables. Captured variables are terms defined outside of the function
-definition. <code class="hljs">Spores</code> are designed to be composable: not only in their logic, but also
-property-wise.</p>
-<p>Because of these features, spores are naturally useful in different programming domains.
-A classic example would be serialization. By using implicit-based pickling libraries
-or plain Java serialization, spores help developers detect serialization issues at compile-time
-instead of runtime.</p>
-<p>Spores is a research project by <a href="https://heather.miller.am">Heather Miller</a> and <a href="http://lampwww.epfl.ch/~phaller/">Philipp Haller</a>.
-If you want to read more about the underlying theory, check the paper <a href="https://infoscience.epfl.ch/record/191239/files/spores_1.pdf">Spores: A Type-based Foundation
-for Closures in the Age of Concurrency and Distribution</a>.</p>
+                <h1 id="spark-integration" class="a_section" data-magellan-target="spark-integration">Spark integration<a class="a_hlink" href="#spark-integration"></a></h1>
+<p>Spores can be integrated with Spark to provide a safer use of closure.
+While they can be used by implicit-based libraries like <a href="https://github.com/scala/pickling">Scala Pickling</a>,
+<a href="https://github.com/lihaoyi/upickle-pprint">uPickle</a>,
+<a href="https://github.com/travisbrown/circe">Circe</a> or
+<a href="https://github.com/ochrons/boopickle">BooPickle</a>, this tutorial only considers
+the integration with <code class="hljs">{java, scala}.util.Serializable</code>-based libraries.</p>
+<h2 id="goal" class="a_section" data-magellan-target="goal">Goal<a class="a_hlink" href="#goal"></a></h2>
+<p>Help Spark users identify serialization issues at compile-time rather than
+runtime. Concretely, this translates into addressing <a href="http://www.cakesolutions.net/teamblogs/demystifying-spark-serialisation-error">common</a> [1]
+<a href="https://databricks.gitbooks.io/databricks-spark-knowledge-base/content/troubleshooting/javaionotserializableexception.html">serialization issues</a> [2].</p>
+<h2 id="installation" class="a_section" data-magellan-target="installation">Installation<a class="a_hlink" href="#installation"></a></h2>
+<p>Add the following sbt settings to your <code class="hljs">build.sbt</code>:</p>
+<div class="row">
+<pre class="hljs small-expand columns a_xscroll"><code class="language-scala">libraryDependencies += <span class="hljs-string">"ch.epfl.scala"</span> % <span class="hljs-string">"spores"</span> %% <span class="hljs-string">"0.4-M1"</span>
+addCompilerPlugin(<span class="hljs-string">"ch.epfl.scala"</span> % <span class="hljs-string">"spores-serialization"</span> %% <span class="hljs-string">"0.4-M1"</span>)
+</code></pre>
+</div>
+<h2 id="quickstart" class="a_section" data-magellan-target="quickstart">Quickstart<a class="a_hlink" href="#quickstart"></a></h2>
 
               </main>
               
@@ -65,14 +67,14 @@ for Closures in the Age of Concurrency and Distribution</a>.</p>
                     
                   <ul>
                      
-  <li  class="a_thispage" >
+  <li >
     
       <a href="spores.html">Spores</a>
     
     
   </li>
   
-  <li >
+  <li  class="a_thispage" >
     
       <a href="java-serialization.html">Spark integration</a>
     
@@ -84,6 +86,46 @@ for Closures in the Age of Concurrency and Distribution</a>.</p>
                 </div>
               
               
+              
+                <div class="small-12 medium-12 large-2 large-order-3 columns a_show-for-xlarge" data-sticky-container>
+                  <nav class="a_pagenav" data-sticky data-sticky-on="large" data-anchor="_sections">
+                     <header><p>On This Page</p>
+</header> 
+                    <ul class="vertical menu" data-magellan>
+                       
+  <li>
+    
+       <a href="#spark-integration">Spark integration</a> 
+    
+    
+      <ul class="vertical menu">  
+  <li>
+    
+       <a href="#goal">Goal</a> 
+    
+    
+  </li>
+  
+  <li>
+    
+       <a href="#installation">Installation</a> 
+    
+    
+  </li>
+  
+  <li>
+    
+       <a href="#quickstart">Quickstart</a> 
+    
+    
+  </li>
+  </ul>
+    
+  </li>
+ 
+                    </ul>
+                  </nav>
+                </div>
               
             </div>
           </div>
