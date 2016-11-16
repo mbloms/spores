@@ -40,6 +40,27 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
       else reporter.warning(pos, msg)
     }
 
+    @inline def filterInvalid(members: List[Symbol]) = {
+      // TODO(jvican): Don't remove implicits values from the analysis
+      members.filter { m =>
+        val validField = m.isTerm && !m.isMethod && !m.isModule
+        validField && !m.isImplicit && !isTransient(m)
+      }
+    }
+
+    @inline
+    def canBeSerialized(members: Scope, concreteType: Type) = {
+      // TODO(jvican): Augment this with a proper implicit search
+      val evidences = members.filter(m =>
+        m.isTerm && !m.isMethod && !m.isModule && m.isImplicit)
+      evidences.filter { implicitEvidence =>
+        val typeArgs = implicitEvidence.info.typeArgs
+        implicitEvidence.tpe <:< typeOf[CanBeSerialized[_]] &&
+        typeArgs.contains(concreteType) &&
+        typeArgs.length == 1
+      }.nonEmpty
+    }
+
     /** Transitively check that the types of the fields are Serializable.
       *
       * Watch out: traverse works by checking the fields of a given symbol.
@@ -54,13 +75,20 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
                        concreteType0: Option[Type] = None): Unit = {
         if (!symbol.isSerializable) reportError(symbol)
         else {
-          val members = symbol.info.members
-          // TODO(jvican): Don't remove implicits values from the analysis
-          val noTransientFields = members.filter { m =>
-            val validField = m.isTerm && !m.isMethod && !m.isModule
-            validField && !m.isImplicit && !isTransient(m)
-          }.toList
+          val symbolInfo = symbol.info
+          val members = symbolInfo.members
+          val currentTypeParams = symbolInfo.typeParams.map(_.tpe)
+          val numberCurrentTypeParams = currentTypeParams.length
 
+          // Get the members of base classes with already applied type params
+          val tparamsBaseClassMembers = symbolInfo.baseClasses.filter { bc =>
+            val numberTypeParams = bc.typeParams.length
+            numberTypeParams > 0 &&
+            numberTypeParams > numberCurrentTypeParams
+          }.flatMap(_.info.members)
+
+          val allMembers = members ++ tparamsBaseClassMembers
+          val noTransientFields = filterInvalid(allMembers.toList)
           noTransientFields.foreach { field =>
             val fieldSymbol = field.info.typeSymbol
             if (fieldSymbol.isClass) {
@@ -69,24 +97,17 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
                 else checkMembers(field.info.typeSymbol, Some(field.tpe))
               }
             } else if (fieldSymbol.isTypeParameter) {
+              val (symbolName, fieldName) =
+                (symbol.decodedName, fieldSymbol.decodedName)
+
               // This is safe, we must have the concrete type if tparam
               val concreteType = concreteType0.get
               val concreteFieldType = concreteType.memberType(fieldSymbol)
               val concreteFieldSymbol = concreteFieldType.typeSymbol
-              if (!concreteFieldSymbol.asClass.isPrimitive) {
-                val evidences = members.filter(m =>
-                  m.isTerm && !m.isMethod && !m.isModule && m.isImplicit)
-                val existingEvidence = evidences.filter { scope =>
-                  val typeArgs = symbol.info.typeArgs
-                  scope.tpe <:< typeOf[CanBeSerialized[_]] &&
-                  typeArgs.contains(fieldSymbol.tpe) &&
-                  typeArgs.length == 1
-                }
-
-                val (symbolName, fieldName) =
-                  (symbol.decodedName, fieldSymbol.decodedName)
+              if (concreteFieldSymbol.isClass &&
+                  !concreteFieldSymbol.asClass.isPrimitive) {
                 if (concreteFieldSymbol.isSerializable ||
-                    existingEvidence.nonEmpty) {
+                    canBeSerialized(members, concreteFieldType)) {
                   if (concreteFieldSymbol.isSealed &&
                       !concreteFieldSymbol.isEffectivelyFinal) {
                     val subclasses =
@@ -98,13 +119,27 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
                     report(config.forceTransitive, field.pos, msg)
                   }
                 } else {
+                  val (owner, tpe) =
+                    (fieldSymbol.owner.decodedName.trim,
+                     concreteFieldType.dealiasWiden.toString)
+                  val msg = nonSerializableType(owner, field.toString, tpe)
+                  reporter.error(fieldSymbol.pos, msg)
+                }
+              } else if (concreteFieldSymbol.isAbstractType) {
+                if (concreteFieldSymbol.isSerializable ||
+                    canBeSerialized(members, concreteFieldType)) {
+                  val concrete = Some(concreteType.toString)
+                  val msg = stopInspection(symbolName, fieldName, concrete)
+                  report(config.forceTransitive, field.pos, msg)
+                } else {
                   val msg = nonSerializableTypeParam(symbolName, fieldName)
                   report(config.forceSerializableTypeParams, field.pos, msg)
+
                 }
               }
             } else {
               val unhandled = fieldSymbol.tpe.toString
-              reporter.error(field.pos, unhandled)
+              reporter.error(field.pos, unhandledType(unhandled))
             }
           }
         }

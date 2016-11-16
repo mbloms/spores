@@ -84,6 +84,27 @@ class TransitiveSerializableNegSpec {
   }
 
   @Test
+  def `Detect non serializable type in already applied type param`(): Unit = {
+    expectError(
+      nonSerializableType("Foo", "value value2", "Unserializable")
+    ) {
+      """
+        |import scala.spores._
+        |class Foo[T, U](value1: T, value2: U) extends Serializable
+        |class Unserializable(val o: Object)
+        |val noSerializable = new Unserializable("")
+        |class PartialFoo[T](value: T) extends Foo(value, noSerializable)
+        |val foo = new PartialFoo(1)
+        |spore {
+        |  val captured = foo
+        |  () => captured
+        |}
+        |val test = new Foo(1, 2)
+      """.stripMargin
+    }
+  }
+
+  @Test
   def `Detect warning in type params not annotated with Serializable`(): Unit = {
     expectWarning(
       nonSerializableTypeParam("UnserializableTypeParam", "T")
@@ -92,11 +113,14 @@ class TransitiveSerializableNegSpec {
         |import scala.spores._
         |class Foo
         |class UnserializableTypeParam[T](typedValue: T) extends Serializable
-        |val foo = new UnserializableTypeParam(new Foo)
-        |spore {
-        |  val captured = foo
-        |  () => captured
+        |class Wrapper[T](outsider: T) {
+        |  val foo = new UnserializableTypeParam(outsider)
+        |  spore {
+        |    val captured = foo
+        |    () => captured
+        |  }
         |}
+        |val wrapped = new Wrapper(new Foo)
       """.stripMargin
     }
   }
@@ -111,11 +135,14 @@ class TransitiveSerializableNegSpec {
         |import scala.spores._
         |class Foo
         |class UnserializableTypeParam[T](typedValue: T) extends Serializable
-        |val foo = new UnserializableTypeParam(new Foo)
-        |spore {
-        |  val captured = foo
-        |  () => captured
+        |class Wrapper[T](outsider: T) {
+        |  val foo = new UnserializableTypeParam(outsider)
+        |  spore {
+        |    val captured = foo
+        |    () => captured
+        |  }
         |}
+        |val wrapped = new Wrapper(new Foo)
       """.stripMargin
     }
   }
@@ -123,12 +150,33 @@ class TransitiveSerializableNegSpec {
   @Test
   def `Detect warning in type params annotated with Serializable`(): Unit = {
     expectWarning(
-      stopInspection("SerializableTypeParam", "T", Some("SerializableTypeParam[Foo]"))
+      stopInspection("SerializableTypeParam", "T", Some("SerializableTypeParam[T]"))
     ) {
       """
         |import scala.spores._
         |class Foo extends Serializable
         |class SerializableTypeParam[T <: Serializable](typedValue: T) extends Serializable
+        |class Wrapper[T <: Serializable](outsider: T) {
+        |  val foo = new SerializableTypeParam(outsider)
+        |  spore {
+        |    val captured = foo
+        |    () => captured
+        |  }
+        |}
+        |val wrapped = new Wrapper(new Foo)
+      """.stripMargin
+    }
+  }
+
+  @Test
+  def `Detect error in concrete non-serializable type params`(): Unit = {
+    expectError(
+      nonSerializableType("SerializableTypeParam", "value typedValue", "Foo")
+    ) {
+      """
+        |import scala.spores._
+        |class Foo()
+        |class SerializableTypeParam[T](typedValue: T) extends Serializable
         |val foo = new SerializableTypeParam(new Foo)
         |spore {
         |  val captured = foo

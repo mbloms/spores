@@ -46,7 +46,12 @@ object TestUtil {
     val errorMessage = intercept[ToolBoxError] {
       eval(code, s"$compileOptions $baseCompileOptions")
     }.getMessage
-    assert(errorMessage.contains(errorSnippet), errorMessage)
+    val userMessage =
+      s"""
+        |FOUND: $errorMessage
+        |EXPECTED: $errorSnippet
+      """.stripMargin
+    assert(errorMessage.contains(errorSnippet), userMessage)
   }
 
   def expectWarning(

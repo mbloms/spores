@@ -7,7 +7,8 @@ object PluginFeedback {
   private def SolutionTemplate(msg: String) =
     s"${Color.Green(fansi.Bold.On.apply("Solution:"))} $msg"
 
-  def unhandledType(tpe: String) = BoldRed("Type tpe is not handled.")
+  def unhandledType(tpe: String) =
+    BoldRed(s"Type $tpe is not handled.").toString
 
   def nonSerializableType(owner: String, member: String, tpe: String) = {
     s"Spore contains non-serializable references in $owner: $member with $tpe."
