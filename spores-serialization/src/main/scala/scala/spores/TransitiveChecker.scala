@@ -14,7 +14,6 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
   class TransitiveTraverser(unit: CompilationUnit, config: PluginConfig)
       extends Traverser {
     @inline private def isTransientInJava(sym: Symbol): Boolean = {
-      //debug(s"Checking ref is serializable: $ref")
       val className = sym.owner.asClass.fullName
       val fieldName = sym.name.decoded
       // TODO(jvican): Hack, see https://issues.scala-lang.org/browse/SI-10042
@@ -40,13 +39,12 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
       else reporter.warning(pos, msg)
     }
 
-    @inline def filterInvalid(members: List[Symbol]) = {
-      // TODO(jvican): Don't remove implicits values from the analysis
-      members.filter { m =>
-        val validField = m.isTerm && !m.isMethod && !m.isModule
-        validField && !m.isImplicit && !isTransient(m)
-      }
-    }
+    @inline def onlyTerm(member: Symbol) =
+      member.isTerm && !member.isMethod && !member.isModule
+
+    // TODO(jvican): Don't remove implicits values from the analysis
+    @inline def pruneScope(members: Scope) =
+      members.filter(m => !m.isImplicit && !isTransient(m))
 
     @inline
     def canBeSerialized(members: Scope, concreteType: Type) = {
@@ -61,15 +59,7 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
       }.nonEmpty
     }
 
-    /** Transitively check that the types of the fields are Serializable.
-      *
-      * Watch out: traverse works by checking the fields of a given symbol.
-      * However, abstract fields of traits are represented as accessors, and
-      * accessors are ignored in the analysis. This could lead us to false
-      * positives because top-level traits can be instantiated and passed
-      * through the program without any inherited class holding the fields,
-      * only the accessors. This is dangerous and must be checked carefully.
-      */
+    /** Transitively check that the types of the fields are Serializable. */
     override def traverse(tree: Tree): Unit = {
       def checkMembers(symbol: Symbol,
                        concreteType0: Option[Type] = None): Unit = {
@@ -77,6 +67,7 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
         else {
           val symbolInfo = symbol.info
           val members = symbolInfo.members
+          val termMembers = members.filter(onlyTerm)
           val currentTypeParams = symbolInfo.typeParams.map(_.tpe)
           val numberCurrentTypeParams = currentTypeParams.length
 
@@ -85,10 +76,11 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
             val numberTypeParams = bc.typeParams.length
             numberTypeParams > 0 &&
             numberTypeParams > numberCurrentTypeParams
-          }.flatMap(_.info.members)
+          }.flatMap(_.info.members.filter(onlyTerm))
 
-          val allMembers = members ++ tparamsBaseClassMembers
-          val noTransientFields = filterInvalid(allMembers.toList)
+          val allMembers = (termMembers ++ tparamsBaseClassMembers).toList
+          val noTransientFields = pruneScope(newScopeWith(allMembers: _*))
+
           noTransientFields.foreach { field =>
             val fieldSymbol = field.info.typeSymbol
             if (fieldSymbol.isClass) {

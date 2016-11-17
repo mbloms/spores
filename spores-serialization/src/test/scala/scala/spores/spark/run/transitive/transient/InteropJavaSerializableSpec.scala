@@ -9,7 +9,7 @@ import scala.spores._
 @RunWith(classOf[JUnit4])
 class InteropJavaSerializableSpec {
   @Test
-  def `Non serializable fields in classes are detected`(): Unit = {
+  def `Java defined transient fields in classes are ignored`(): Unit = {
     val interop = new JavaInteropEntrypoint()
     val foo = interop.transientSerializable
     spore {
