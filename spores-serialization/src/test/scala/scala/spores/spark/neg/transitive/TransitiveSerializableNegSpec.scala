@@ -34,7 +34,7 @@ class TransitiveSerializableNegSpec {
     ) {
       """
         |import scala.spores._
-        |abstract class Baz
+        |class Baz
         |class Bar(val baz: Baz) extends Serializable
         |class Foo(val bar: Bar) extends Serializable
         |val foo = new Foo(new Bar(new Baz {}))
@@ -53,7 +53,120 @@ class TransitiveSerializableNegSpec {
     ) {
       """
         |import scala.spores._
+        |class Baz2
+        |abstract class Baz(val baz2: Baz2) extends Serializable
+        |class Bar(val baz: Baz) extends Serializable
+        |class Foo(val bar: Bar) extends Serializable
+        |val foo = new Foo(new Bar(new Baz(new Baz2 {}) {}))
+        |spore {
+        |  val captured = foo
+        |  () => captured
+        |}
+      """.stripMargin
+    }
+  }
+
+  @Test
+  def `Depth 1: Non serializable fields in abstract classes are detected`(): Unit = {
+    expectError(
+      nonSerializableType("Foo", "value bar", "Bar")
+    ) {
+      """
+        |import scala.spores._
+        |abstract class Bar
+        |class Foo(val bar: Bar) extends Serializable
+        |val foo = new Foo(new Bar {})
+        |spore {
+        |  val captured = foo
+        |  () => captured
+        |}
+      """.stripMargin
+    }
+  }
+
+  @Test
+  def `Depth 2: Non serializable fields in abstract classes are detected`(): Unit = {
+    expectError(
+      nonSerializableType("Bar", "value baz", "Baz")
+    ) {
+      """
+        |import scala.spores._
+        |abstract class Baz
+        |class Bar(val baz: Baz) extends Serializable
+        |class Foo(val bar: Bar) extends Serializable
+        |val foo = new Foo(new Bar(new Baz {}))
+        |spore {
+        |  val captured = foo
+        |  () => captured
+        |}
+      """.stripMargin
+    }
+  }
+
+  @Test
+  def `Depth 3: Non serializable fields in abstract classes are detected`(): Unit = {
+    expectError(
+      nonSerializableType("Baz", "value baz2", "Baz2")
+    ) {
+      """
+        |import scala.spores._
         |abstract class Baz2
+        |abstract class Baz(val baz2: Baz2) extends Serializable
+        |class Bar(val baz: Baz) extends Serializable
+        |class Foo(val bar: Bar) extends Serializable
+        |val foo = new Foo(new Bar(new Baz(new Baz2 {}) {}))
+        |spore {
+        |  val captured = foo
+        |  () => captured
+        |}
+      """.stripMargin
+    }
+  }
+    @Test
+  def `Depth 1: Non serializable fields in traits are detected`(): Unit = {
+    expectError(
+      nonSerializableType("Foo", "value bar", "Bar")
+    ) {
+      """
+        |import scala.spores._
+        |trait Bar
+        |class Foo(val bar: Bar) extends Serializable
+        |val foo = new Foo(new Bar {})
+        |spore {
+        |  val captured = foo
+        |  () => captured
+        |}
+      """.stripMargin
+    }
+  }
+
+  @Test
+  def `Depth 2: Non serializable fields in traits are detected`(): Unit = {
+    expectError(
+      nonSerializableType("Bar", "value baz", "Baz")
+    ) {
+      """
+        |import scala.spores._
+        |trait Baz
+        |class Bar(val baz: Baz) extends Serializable
+        |class Foo(val bar: Bar) extends Serializable
+        |val foo = new Foo(new Bar(new Baz {}))
+        |spore {
+        |  val captured = foo
+        |  () => captured
+        |}
+      """.stripMargin
+    }
+  }
+
+  @Test
+  def `Depth 3: Non serializable fields in traits are detected`(): Unit = {
+    expectError(
+      nonSerializableType("Baz", "value baz2", "Baz2")
+    ) {
+      """
+        |import scala.spores._
+        |trait Baz2
         |abstract class Baz(val baz2: Baz2) extends Serializable
         |class Bar(val baz: Baz) extends Serializable
         |class Foo(val bar: Bar) extends Serializable
