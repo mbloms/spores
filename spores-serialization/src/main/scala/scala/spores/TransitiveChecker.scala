@@ -61,8 +61,18 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
 
     /** Transitively check that the types of the fields are Serializable. */
     override def traverse(tree: Tree): Unit = {
+      def analyzeClassHierarchy(symbol: Symbol) = {
+        if (symbol.isSealed) {
+          val subclasses = symbol.asClass.knownDirectSubclasses
+          subclasses.foreach(checkMembers(_))
+        } else if (!symbol.isEffectivelyFinal) {
+          val msg = openClassHierarchy(symbol.toString)
+          report(config.forceClosedClassHierarchy, symbol.pos, msg)
+        }
+      }
       def checkMembers(symbol: Symbol,
-                       concreteType0: Option[Type] = None): Unit = {
+                       concreteType0: Option[Type] = None,
+                       isSpore: Boolean = false): Unit = {
         if (!symbol.isSerializable) reportError(symbol)
         else {
           val symbolInfo = symbol.info
@@ -81,6 +91,9 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
           val allMembers = (termMembers ++ tparamsBaseClassMembers).toList
           val noTransientFields = pruneScope(newScopeWith(allMembers: _*))
 
+          if (!isSpore)
+            analyzeClassHierarchy(symbol)
+
           noTransientFields.foreach { field =>
             val fieldSymbol = field.info.typeSymbol
             if (fieldSymbol.isClass) {
@@ -97,20 +110,11 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
               val concreteFieldType = concreteType.memberType(fieldSymbol)
               val concreteFieldSymbol = concreteFieldType.typeSymbol
 
-              println(concreteFieldType)
               if (concreteFieldSymbol.isClass &&
                   !concreteFieldSymbol.asClass.isPrimitive) {
                 if (concreteFieldSymbol.isSerializable ||
                     canBeSerialized(members, concreteFieldType)) {
-                  if (concreteFieldSymbol.isSealed &&
-                      !concreteFieldSymbol.isEffectivelyFinal) {
-                    val subclasses =
-                      concreteFieldSymbol.asClass.knownDirectSubclasses
-                    subclasses.foreach(checkMembers(_))
-                  } else if (!concreteFieldSymbol.isEffectivelyFinal) {
-                    val msg = openClassHierarchy(concreteFieldType.typeSymbolDirect.toString)
-                    report(config.forceClosedClassHierarchy, concreteFieldSymbol.pos, msg)
-                  }
+                  analyzeClassHierarchy(concreteFieldSymbol)
                 } else {
                   val (owner, tpe) =
                     (fieldSymbol.owner.decodedName.trim,
@@ -140,7 +144,7 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
       tree match {
         case Block(List(cls: ClassDef), _) =>
           if (cls.symbol.tpe <:< sporesBaseSymbol.tpe) {
-            checkMembers(cls.symbol)
+            checkMembers(cls.symbol, isSpore = true)
             super.traverse(tree)
           }
         case _ => super.traverse(tree)

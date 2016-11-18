@@ -12,7 +12,7 @@ import scala.spores._
 class SerializableSpec {
   @Test
   def `A case class is serializable`(): Unit = {
-    case class A(number: Int)
+    final case class A(number: Int)
     val a = A(1)
     val s = spore {
       val captured = a
@@ -45,7 +45,7 @@ class SerializableSpec {
 
   @Test
   def `An abstract class extending Serializable is serializable`(): Unit = {
-    abstract class A extends Serializable { val i: Int }
+    sealed abstract class A extends Serializable { val i: Int }
     val a = new A { val i = 1 }
     val s = spore {
       val captured = a
@@ -56,7 +56,7 @@ class SerializableSpec {
 
   @Test
   def `A class extending Serializable is serializable`(): Unit = {
-    class A(val i: Int) extends Serializable
+    sealed class A(val i: Int) extends Serializable
     val a = new A(1)
     val s = spore {
       val captured = a
@@ -83,7 +83,7 @@ class SerializableSpec {
 
   @Test
   def `An abstract class extending Externalizable is serializable`(): Unit = {
-    abstract class A extends Externalizable { val i: Int }
+    sealed abstract class A extends Externalizable { val i: Int }
     val a = new A {
       val i = 1
       // These are stubs
@@ -99,7 +99,7 @@ class SerializableSpec {
 
   @Test
   def `A class extending Externalizable is serializable`(): Unit = {
-    class A(val i: Int) extends Externalizable {
+    sealed class A(val i: Int) extends Externalizable {
       // These are stubs
       override def readExternal(objectInput: ObjectInput): Unit = ???
       override def writeExternal(objectOutput: ObjectOutput): Unit = ???
