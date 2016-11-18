@@ -102,11 +102,8 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
                 else checkMembers(fieldSymbol, Some(field.tpe))
               }
             } else if (fieldSymbol.isTypeParameter) {
-              val (symbolName, fieldName) =
-                (symbol.decodedName, fieldSymbol.decodedName)
-
               // This is safe, we must have the concrete type if tparam
-              val concreteType = concreteType0.get
+              val concreteType = concreteType0.getOrElse(field.tpe)
               val concreteFieldType = concreteType.memberType(fieldSymbol)
               val concreteFieldSymbol = concreteFieldType.typeSymbol
 
@@ -123,8 +120,21 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
                   report(true, fieldSymbol.pos, msg)
                 }
               } else if (concreteFieldSymbol.isAbstractType) {
-                if (concreteFieldSymbol.isSerializable ||
-                    canBeSerialized(members, concreteFieldType)) {
+                val (symbolName, fieldName) =
+                  (symbol.decodedName, fieldSymbol.decodedName)
+
+                val hiBounds =
+                  concreteFieldSymbol.typeSignature.bounds.hi.typeSymbol
+                val canBeProvedSerializable = {
+                  hiBounds.isSealed &&
+                  hiBounds.isSerializable ||
+                  canBeSerialized(members, hiBounds.tpe)
+                }
+
+                if (hiBounds.exists && canBeProvedSerializable) {
+                  analyzeClassHierarchy(hiBounds)
+                } else if (concreteFieldSymbol.isSerializable ||
+                           canBeSerialized(members, concreteFieldType)) {
                   val concrete = Some(concreteType.toString)
                   val msg = stopInspection(symbolName, fieldName, concrete)
                   report(config.forceTransitive, field.pos, msg)

@@ -85,4 +85,20 @@ class TransitiveSerializableSpec {
       () => captured
     }
   }
+
+  @Test
+  def `Ignore type parameters that are bounded with closed hierarchies`(): Unit = {
+    final class DamnHowSerializableIAm extends Serializable
+    sealed trait Foo extends Serializable {val foo: String}
+    final case class Bar(foo: String, bar: Int) extends Foo
+    final case class Bar2(foo: String, bar2: Float) extends Foo
+    final case class Baz(foo: String, damn: DamnHowSerializableIAm) extends Foo
+
+    class Wrapper[T <: Foo](wrapped: T) {
+      spore {
+        val captured = wrapped
+        () => captured
+      }
+    }
+  }
 }
