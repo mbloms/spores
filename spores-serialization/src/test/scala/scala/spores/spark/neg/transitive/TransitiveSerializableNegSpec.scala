@@ -301,7 +301,7 @@ class TransitiveSerializableNegSpec {
 
   @Test
   def `Depth 1: Detect error in open class hierarchy if option is enabled`(): Unit = {
-    expectError(openClassHierarchy("classSerializableTypeParam"), "-P:spores-transitive-plugin:force-closed-class-hierarchy") {
+    expectError(openClassHierarchy("class SerializableTypeParam"), "-P:spores-transitive-plugin:force-closed-class-hierarchy") {
       """
         |import scala.spores._
         |class Foo extends Serializable
@@ -369,17 +369,17 @@ class TransitiveSerializableNegSpec {
       """.stripMargin
     }
   }
-/*
+
   @Test
   def `Detect error in non-specified type parameter in recursive type`(): Unit = {
     expectError(
-      nonSerializableType("::", "value head", "::[T, HList]"),
-      "-P:spores-transitive-plugin:force-serializable-type-parameters"
+      stopInspection("::", "H", Some("::[T,::[T,HNil.type]]")),
+      "-P:spores-transitive-plugin:force-transitive"
     ) {
       """
         |import scala.spores._
         |sealed trait HList extends Product with Serializable
-        |case class ::[+H, +T <: HList](head : H, tail : T) extends HList
+        |final case class ::[+H, +T <: HList](head : H, tail : T) extends HList
         |case object HNil extends HList
         |
         |class Wrapper[T <: Serializable](outsider: T) {
@@ -396,12 +396,12 @@ class TransitiveSerializableNegSpec {
   @Test
   def `Detect warning in non-specified type parameter in recursive type`(): Unit = {
     expectWarning(
-      stopInspection("::", "H", Some("::[T, HList]"))
+      stopInspection("::", "H", Some("::[T,::[T,HNil.type]]"))
     ) {
       """
         |import scala.spores._
         |sealed trait HList extends Product with Serializable
-        |case class ::[+H, +T <: HList](head : H, tail : T) extends HList
+        |final case class ::[+H, +T <: HList](head : H, tail : T) extends HList
         |case object HNil extends HList
         |
         |class Wrapper[T <: Serializable](outsider: T) {
@@ -413,5 +413,5 @@ class TransitiveSerializableNegSpec {
         |}
       """.stripMargin
     }
-  }*/
+  }
 }
