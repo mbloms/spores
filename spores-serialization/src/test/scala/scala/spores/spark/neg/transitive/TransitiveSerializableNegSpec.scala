@@ -394,6 +394,28 @@ class TransitiveSerializableNegSpec {
   }
 
   @Test
+  def `Detect error in non-specified type parameter in recursive type II`(): Unit = {
+    expectError(
+      stopInspection("::", "H", Some("::[T,::[T,HNil.type]]")),
+      "-P:spores-transitive-plugin:force-transitive"
+    ) {
+      """
+        |import scala.spores._
+        |sealed trait HList extends Product with Serializable
+        |final case class ::[+H, +T <: HList](head : H, tail : T) extends HList
+        |case object HNil extends HList
+        |
+        |class Wrapper[T <: Serializable](outsider: T) {
+        |  spore {
+        |    val captured = ::(outsider, ::(outsider, HNil))
+        |    () => captured
+        |  }
+        |}
+      """.stripMargin
+    }
+  }
+
+  @Test
   def `Detect warning in non-specified type parameter in recursive type`(): Unit = {
     expectWarning(
       stopInspection("::", "H", Some("::[T,::[T,HNil.type]]"))
