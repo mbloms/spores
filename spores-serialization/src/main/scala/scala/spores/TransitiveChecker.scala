@@ -86,7 +86,7 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
             if (fieldSymbol.isClass) {
               if (!fieldSymbol.asClass.isPrimitive) {
                 if (!field.isSerializable) reportError(field)
-                else checkMembers(field.info.typeSymbol, Some(field.tpe))
+                else checkMembers(fieldSymbol, Some(field.tpe))
               }
             } else if (fieldSymbol.isTypeParameter) {
               val (symbolName, fieldName) =
@@ -96,6 +96,8 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
               val concreteType = concreteType0.get
               val concreteFieldType = concreteType.memberType(fieldSymbol)
               val concreteFieldSymbol = concreteFieldType.typeSymbol
+
+              println(concreteFieldType)
               if (concreteFieldSymbol.isClass &&
                   !concreteFieldSymbol.asClass.isPrimitive) {
                 if (concreteFieldSymbol.isSerializable ||
@@ -105,17 +107,16 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
                     val subclasses =
                       concreteFieldSymbol.asClass.knownDirectSubclasses
                     subclasses.foreach(checkMembers(_))
-                  } else {
-                    val concrete = Some(concreteType.toString)
-                    val msg = stopInspection(symbolName, fieldName, concrete)
-                    report(config.forceTransitive, field.pos, msg)
+                  } else if (!concreteFieldSymbol.isEffectivelyFinal) {
+                    val msg = openClassHierarchy(concreteFieldType.typeSymbolDirect.toString)
+                    report(config.forceClosedClassHierarchy, concreteFieldSymbol.pos, msg)
                   }
                 } else {
                   val (owner, tpe) =
                     (fieldSymbol.owner.decodedName.trim,
                      concreteFieldType.dealiasWiden.toString)
                   val msg = nonSerializableType(owner, field.toString, tpe)
-                  reporter.error(fieldSymbol.pos, msg)
+                  report(true, fieldSymbol.pos, msg)
                 }
               } else if (concreteFieldSymbol.isAbstractType) {
                 if (concreteFieldSymbol.isSerializable ||
@@ -126,12 +127,11 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
                 } else {
                   val msg = nonSerializableTypeParam(symbolName, fieldName)
                   report(config.forceSerializableTypeParams, field.pos, msg)
-
                 }
               }
             } else {
               val unhandled = fieldSymbol.tpe.toString
-              reporter.error(field.pos, unhandledType(unhandled))
+              report(true, field.pos, unhandledType(unhandled))
             }
           }
         }

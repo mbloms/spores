@@ -97,18 +97,4 @@ class TransientSerializableSpec {
         captured
     }
   }
-
-  @Test
-  def `Correctly check recursive type`(): Unit = {
-    // Not a real implementation, just illustrates use of recursive types
-    trait HList[T] extends Serializable
-    case class HCons[T <: HList[_]](value: T) extends HList[T]
-    case object HNil extends HList[Int]
-    val foo = HCons(HCons(HNil))
-    spore {
-      val captured = foo
-      () =>
-        captured
-    }
-  }
 }

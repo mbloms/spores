@@ -300,15 +300,28 @@ class TransitiveSerializableNegSpec {
   }
 
   @Test
-  def `Detect error in serializable tparams if force-transitive option is set`(): Unit = {
-    expectError(
-      stopInspection("SerializableTypeParam", "T", Some("SerializableTypeParam[Foo]")),
-      "-P:spores-transitive-plugin:force-transitive"
-    ) {
+  def `Depth 1: Detect error in open class hierarchy if option is enabled`(): Unit = {
+    expectError(openClassHierarchy("class Foo"), "-P:spores-transitive-plugin:force-closed-class-hierarchy") {
       """
         |import scala.spores._
         |class Foo extends Serializable
         |class SerializableTypeParam[T <: Serializable](typedValue: T) extends Serializable
+        |val foo = new SerializableTypeParam(new Foo)
+        |spore {
+        |  val captured = foo
+        |  () => captured
+        |}
+      """.stripMargin
+    }
+  }
+
+  @Test
+  def `Depth 2: Detect error in open class hierarchy if option is enabled`(): Unit = {
+    expectError(openClassHierarchy("class Foo"), "-P:spores-transitive-plugin:force-closed-class-hierarchy") {
+      """
+        |import scala.spores._
+        |class Foo extends Serializable
+        |sealed class SerializableTypeParam[T <: Serializable](typedValue: T) extends Serializable
         |val foo = new SerializableTypeParam(new Foo)
         |spore {
         |  val captured = foo
@@ -329,7 +342,7 @@ class TransitiveSerializableNegSpec {
         |final case class Trap(o: Object) extends Foo
         |class Trap2(o: Object) extends Foo
         |case class Trap3(o: Object) extends Trap2(o)
-        |class SerializableTypeParam[T <: Serializable](typedValue: T) extends Serializable
+        |sealed class SerializableTypeParam[T <: Serializable](typedValue: T) extends Serializable
         |val foo = new SerializableTypeParam(new Foo)
         |spore {
         |  val captured = foo
@@ -338,4 +351,67 @@ class TransitiveSerializableNegSpec {
       """.stripMargin
     }
   }
+
+  @Test
+  def `Detect warning if open hierarchy`(): Unit = {
+    expectWarning(openClassHierarchy("class ::")) {
+      """
+        |import scala.spores._
+        |sealed trait HList extends Product with Serializable
+        |// Should be final, otherwise check is not complete.
+        |case class ::[+H, +T <: HList](head : H, tail : T) extends HList
+        |case object HNil extends HList
+        |val foo = ::("", ::(1, HNil))
+        |spore {
+        |  val captured = foo
+        |  () => captured
+        |}
+      """.stripMargin
+    }
+  }
+/*
+  @Test
+  def `Detect error in non-specified type parameter in recursive type`(): Unit = {
+    expectError(
+      nonSerializableType("::", "value head", "::[T, HList]"),
+      "-P:spores-transitive-plugin:force-serializable-type-parameters"
+    ) {
+      """
+        |import scala.spores._
+        |sealed trait HList extends Product with Serializable
+        |case class ::[+H, +T <: HList](head : H, tail : T) extends HList
+        |case object HNil extends HList
+        |
+        |class Wrapper[T <: Serializable](outsider: T) {
+        |  val foo = ::(outsider, ::(outsider, HNil))
+        |  spore {
+        |    val captured = foo
+        |    () => captured
+        |  }
+        |}
+      """.stripMargin
+    }
+  }
+
+  @Test
+  def `Detect warning in non-specified type parameter in recursive type`(): Unit = {
+    expectWarning(
+      stopInspection("::", "H", Some("::[T, HList]"))
+    ) {
+      """
+        |import scala.spores._
+        |sealed trait HList extends Product with Serializable
+        |case class ::[+H, +T <: HList](head : H, tail : T) extends HList
+        |case object HNil extends HList
+        |
+        |class Wrapper[T <: Serializable](outsider: T) {
+        |  val foo = ::(outsider, ::(outsider, HNil))
+        |  spore {
+        |    val captured = foo
+        |    () => captured
+        |  }
+        |}
+      """.stripMargin
+    }
+  }*/
 }

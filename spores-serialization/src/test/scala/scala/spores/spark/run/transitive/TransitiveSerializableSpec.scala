@@ -49,7 +49,6 @@ class TransitiveSerializableSpec {
 
   @Test
   def `Compile correctly type params annotated with Serializable, by default`(): Unit = {
-    import scala.spores._
     import scala.spores.PrimitiveSerializationWitnesses._
     class SerializableTypeParam[T : CanBeSerialized](typedValue: T)
         extends Serializable
@@ -64,7 +63,6 @@ class TransitiveSerializableSpec {
 
   @Test
   def `Compile correctly type params not annotated with Serializable, by default`(): Unit = {
-    import scala.spores._
     class NoSerializableTypeParam[T](typedValue: T)
       extends Serializable
     val foo = new NoSerializableTypeParam[Int](1)
@@ -74,5 +72,17 @@ class TransitiveSerializableSpec {
         captured
     }
     s()
+  }
+
+  @Test
+  def `Correctly check recursive type`(): Unit = {
+    sealed trait HList extends Product with Serializable
+    final case class ::[+H, +T <: HList](head : H, tail : T) extends HList
+    case object HNil extends HList
+    val foo = ::("", ::(1, HNil))
+    spore {
+      val captured = foo
+      () => captured
+    }
   }
 }

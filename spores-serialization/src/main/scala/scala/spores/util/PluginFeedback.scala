@@ -26,6 +26,14 @@ object PluginFeedback {
      """.stripMargin
   }
 
+  def openClassHierarchy(openClass: String) = {
+    s"""${BoldRed(s"Detected open class hierarchy in $openClass.")}
+       |  Transitive inspection cannot ensure that ${Color.Red(openClass)} is not being extended somewhere else. For a complete serializable check, class hierarchies need to be closed.
+       |
+       |${SolutionTemplate(s"Close the class hierarchy by marking super classes as `sealed` and sub classes as `final`.")}
+     """.stripMargin
+  }
+
   def nonSerializableTypeParam(owner: String, tparam: String) = {
     s"""${BoldRed(
          s"Type parameter $tparam in $owner does not extend `Serializable` or has an implicit value `CanBeSerialized[$tparam]` in scope.")}

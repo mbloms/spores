@@ -9,9 +9,11 @@ class TransitivePlugin(val global: Global) extends Plugin {
   val components = List[PluginComponent](CheckerComponent)
   val forceTransitiveOption = "force-transitive"
   val forceSerializableTypeParams = "force-serializable-type-parameters"
+  val forceClosedClassHierarchy = "force-closed-class-hierarchy"
   val config = PluginConfig(
     super.options.contains(forceTransitiveOption),
-    super.options.contains(forceSerializableTypeParams))
+    super.options.contains(forceSerializableTypeParams),
+    super.options.contains(forceClosedClassHierarchy))
 
   override def init(ops: List[String], e: (String) => Unit): Boolean = true
 
