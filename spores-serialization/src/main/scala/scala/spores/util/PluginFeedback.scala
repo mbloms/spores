@@ -11,7 +11,7 @@ object PluginFeedback {
     BoldRed(s"Type $tpe is not handled.").toString
 
   def nonSerializableType(owner: String, member: String, tpe: String) = {
-    s"Spore contains non-serializable references in `$owner`: $member with $tpe."
+    s"Spore contains non-serializable references in `$owner`: $member of type $tpe."
   }
 
   def stopInspection(owner: String,

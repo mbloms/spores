@@ -414,4 +414,25 @@ class TransitiveSerializableNegSpec {
       """.stripMargin
     }
   }
+
+  @Test
+  def `Fail when type parameter is not bound to be serializable in HList`(): Unit = {
+    expectError(
+      nonSerializableType("::", "value head", "Object"),
+      "-P:spores-transitive-plugin:force-transitive"
+    ) {
+      """
+        |import scala.spores._
+        |sealed trait HList extends Product with Serializable
+        |final case class ::[+H, +T <: HList](head : H, tail : T) extends HList
+        |case object HNil extends HList
+        |val hehe: Object = ""
+        |val foo = ::(hehe, ::(hehe, HNil))
+        |spore {
+        |  val captured = foo
+        |  () => captured
+        |}
+      """.stripMargin
+    }
+  }
 }
