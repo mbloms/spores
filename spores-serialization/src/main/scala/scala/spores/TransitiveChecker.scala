@@ -91,6 +91,7 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
           val allMembers = (termMembers ++ tparamsBaseClassMembers).toList
           val noTransientFields = pruneScope(newScopeWith(allMembers: _*))
 
+          // Spores are not final => Excluded conversion macro
           if (!isSpore)
             analyzeClassHierarchy(symbol)
 
@@ -102,7 +103,6 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
                 else checkMembers(fieldSymbol, Some(field.tpe))
               }
             } else if (fieldSymbol.isTypeParameter) {
-              // This is safe, we must have the concrete type if tparam
               val concreteType = concreteType0.getOrElse(field.tpe)
               val concreteFieldType = concreteType.memberType(fieldSymbol)
               val concreteFieldSymbol = concreteFieldType.typeSymbol
