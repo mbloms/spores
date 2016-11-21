@@ -584,4 +584,90 @@ class TransitiveSerializableNegSpec {
       """.stripMargin
     }
   }
+
+  @Test
+  def `Depth 2: Detect unserializable field in trait of closed class hierarchy in high bounds of type parameters`(): Unit = {
+    expectError(nonSerializableType("CatchMe", "value a", "Object")) {
+      """import scala.spores._
+        |final class DamnHowSerializableIAm extends Serializable
+        |sealed trait Foo extends Serializable {val foo: String}
+        |final case class Bar(foo: CatchMe, bar: Int) extends Foo
+        |sealed trait Bar2 extends Foo
+        |final case class Baz(foo: String, damn: DamnHowSerializableIAm) extends Foo
+        |final case class CatchMe(a: Object, foo: String) extends Bar2
+        |
+        |class Wrapper[T <: Foo](wrapped: T) {
+        |  spore {
+        |    val captured = wrapped
+        |    () => captured
+        |  }
+        |}
+      """.stripMargin
+    }
+  }
+
+  @Test
+  def `Depth 2: Detect unserializable field in intermediate non-sealed trait of closed class hierarchy in high bounds of type parameters`(): Unit = {
+    expectError(nonSerializableType("CatchMe", "value a", "Object")) {
+      """import scala.spores._
+        |final class DamnHowSerializableIAm extends Serializable
+        |sealed trait Foo extends Serializable {val foo: String}
+        |final case class Bar(foo: CatchMe, bar: Int) extends Foo
+        |trait Bar2 extends Foo
+        |final case class Baz(foo: String, damn: DamnHowSerializableIAm) extends Foo
+        |final case class CatchMe(a: Object, foo: String) extends Bar2
+        |
+        |class Wrapper[T <: Foo](wrapped: T) {
+        |  spore {
+        |    val captured = wrapped
+        |    () => captured
+        |  }
+        |}
+      """.stripMargin
+    }
+  }
+
+  @Test
+  def `Depth 3: Detect unserializable field in trait of closed class hierarchy in high bounds of type parameters`(): Unit = {
+    expectError(nonSerializableType("CatchMe", "value a", "Object")) {
+      """import scala.spores._
+        |final class DamnHowSerializableIAm extends Serializable
+        |sealed trait Foo extends Serializable {val foo: String}
+        |final case class Bar(foo: CatchMe, bar: Int) extends Foo
+        |trait Bar2 extends Foo
+        |final case class Baz(foo: String, damn: DamnHowSerializableIAm) extends Foo
+        |sealed trait Bar3 extends Foo { val hehe: String }
+        |final case class CatchMe(a: Object, hehe: String, foo: String) extends Bar3
+        |
+        |class Wrapper[T <: Foo](wrapped: T) {
+        |  spore {
+        |    val captured = wrapped
+        |    () => captured
+        |  }
+        |}
+      """.stripMargin
+    }
+  }
+
+  @Test
+  def `Depth 3: Detect unserializable field in intermediate non-sealed trait of closed class hierarchy in high bounds of type parameters`(): Unit = {
+    expectError(nonSerializableType("CatchMe", "value a", "Object")) {
+      """import scala.spores._
+        |final class DamnHowSerializableIAm extends Serializable
+        |sealed trait Foo extends Serializable {val foo: String}
+        |final case class Bar(foo: CatchMe, bar: Int) extends Foo
+        |sealed class Bar2(foo: String, bar2: Float) extends Foo
+        |final case class Baz(foo: String, damn: DamnHowSerializableIAm) extends Foo
+        |trait Bar3 extends Foo { val hehe: String }
+        |final case class CatchMe(a: Object, hehe: String, foo: String) extends Bar3
+        |
+        |class Wrapper[T <: Foo](wrapped: T) {
+        |  spore {
+        |    val captured = wrapped
+        |    () => captured
+        |  }
+        |}
+      """.stripMargin
+    }
+  }
 }
