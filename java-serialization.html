@@ -58,6 +58,51 @@ addCompilerPlugin(<span class="hljs-string">"ch.epfl.scala"</span> % <span class
 </code></pre>
 </div>
 <h2 id="quickstart" class="a_section" data-magellan-target="quickstart">Quickstart<a class="a_hlink" href="#quickstart"></a></h2>
+<h2 id="basics" class="a_section" data-magellan-target="basics">Basics<a class="a_hlink" href="#basics"></a></h2>
+<h3 id="closed-class-hierarchies" class="a_section" data-magellan-target="closed-class-hierarchies">Closed class hierarchies<a class="a_hlink" href="#closed-class-hierarchies"></a></h3>
+<p>Closed class hierarchies play a key role in Scala because:</p>
+<ul>
+<li>allows the compiler to <a href="https://en.wikipedia.org/wiki/Closed-world_assumption">assume a closed-world</a> for a concrete set of classes;</li>
+<li>macros and compiler plugins have <em>full</em> access to its definition and properties.</li>
+</ul>
+<p>This section sheds some light on the differences between the two and why
+<code class="hljs">spores-serialization</code> requires closed class hierarchies to ensure the correct
+serializability of your program.</p>
+<h4 id="the-class-hierarchy" class="a_section" data-magellan-target="the-class-hierarchy">The class hierarchy<a class="a_hlink" href="#the-class-hierarchy"></a></h4>
+<p>Traditionally, class hierarchies have always be open. Open class hierarchies
+are handy and flexible for developers: they allow them to extend classes in any
+file or project they want (if they are <em>visible</em>). However, such flexibility
+hinders the static analysis of programs. For enabling this use case, we need to
+describe what closed class hierarchies are.</p>
+<div class="row"><div class="small-expand columns a_xscroll a_table"><table>
+<thead>
+<tr><th>Open class hierarchy</th><th>Closed class hierarchy</th></tr>
+</thead>
+<tbody>
+<tr><td><code class="language-scala"><span class="hljs-class"><span class="hljs-keyword">trait</span> <span class="hljs-title">Foo</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Serializable</span></td><td><code class="language-scala"><span class="hljs-keyword">sealed</span> <span class="hljs-class"><span class="hljs-keyword">trait</span> <span class="hljs-title">Foo</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Serializable</span></span></code></td></tr>
+<tr><td><code class="language-scala"> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Bar</span>(<span class="hljs-params">b: Int</span>) <span class="hljs-keyword">extends</span> <span class="hljs-title">Foo</span></span></code></td><td><code class="language-scala"><span class="hljs-keyword">final </span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Bar</span>(<span class="hljs-params">b: Int</span>) <span class="hljs-keyword">extends</span> <span class="hljs-title">Foo</span></span></code></td></tr>
+<tr><td><code class="language-scala"><span class="hljs-keyword">case</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Baz</span>(<span class="hljs-params">b: Int</span>) <span class="hljs-keyword">extends</span> <span class="hljs-title">Foo</span></span></code></td><td><code class="language-scala"><span class="hljs-keyword">final </span> <span class="hljs-keyword">case</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Baz</span>(<span class="hljs-params">b: Int</span>) <span class="hljs-keyword">extends</span> <span class="hljs-title">Foo</span></span></code></td></tr>
+</tbody>
+</table></div></div>
+<p>Closed class hierarchies are defines as open class hierarchies with extra modifiers.
+The rule of thumb is to define all the leafs as <code class="hljs">final</code>, and the root and intermediate traits
+and classes as <code class="hljs">sealed</code>. Therefore, whenever you try to extend a sealed trait/class
+or a <code class="hljs">final</code> class, the compiler will throw a happy error.</p>
+<h4 id="motivation-of-sealed-class-hierarchies" class="a_section" data-magellan-target="motivation-of-sealed-class-hierarchies">Motivation of sealed class hierarchies<a class="a_hlink" href="#motivation-of-sealed-class-hierarchies"></a></h4>
+<p>Transitive checking requires a full traversal of the class hierarchy. It needs to check
+both class and trait definitions and <em>all their members</em> to prove that no serialization issues
+can happen at runtime.</p>
+<p>So, why cannot we just use open class hierarchies?</p>
+<p>Because:</p>
+<ol>
+<li>Non-<code class="hljs">final</code> classes can be extended elsewhere. <code class="hljs">spores-serialization</code> could give false
+positives if these externally defined classes are not serializable.</li>
+<li>Intermediate super classes cannot be <code class="hljs">final</code>. Scala needs to guarantee that these classes
+are only defined in the current compilation unit, otherwise false positives could happen.</li>
+<li>The Scala compiler does not give us access to direct subclasses if the class hierarchy
+is not sealed. This is a well-known <a href="https://issues.scala-lang.org/browse/SI-7046">limitation</a> of the Scala typer
+and may have a <a href="https://github.com/scala/scala/pull/5284">bugfix soon</a>.</li>
+</ol>
 
               </main>
               
@@ -117,6 +162,38 @@ addCompilerPlugin(<span class="hljs-string">"ch.epfl.scala"</span> % <span class
     
        <a href="#quickstart">Quickstart</a> 
     
+    
+  </li>
+  
+  <li>
+    
+       <a href="#basics">Basics</a> 
+    
+    
+      <ul class="vertical menu">  
+  <li>
+    
+       <a href="#closed-class-hierarchies">Closed class hierarchies</a> 
+    
+    
+      <ul class="vertical menu">  
+  <li>
+    
+       <a href="#the-class-hierarchy">The class hierarchy</a> 
+    
+    
+  </li>
+  
+  <li>
+    
+       <a href="#motivation-of-sealed-class-hierarchies">Motivation of sealed class hierarchies</a> 
+    
+    
+  </li>
+  </ul>
+    
+  </li>
+  </ul>
     
   </li>
   </ul>
