@@ -22,8 +22,8 @@ sealed trait SporeBase extends Serializable {
 
   /** The abstract member prevents conversion to Scala SAM types in 2.12.0.
     *
-    * The existence of this member allows implicit conversion from
-    * a function to a spore to kick in instead.
+    * The existence of this member allows to kick in the implicit conversion
+    * from a function to a spore instead of converting it to a Scala SAM.
     */
   def skipScalaSamConversion: Nothing
 }

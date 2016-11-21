@@ -77,7 +77,8 @@ lazy val commonSettings = Seq(
   triggeredMessage in ThisBuild := Watched.clearWhenTriggered,
   watchSources += baseDirectory.value / "resources",
   scalacOptions in (Compile, console) ++= compilerOptions,
-  testOptions in Test += Tests.Argument("-v")
+  testOptions in Test ++=
+    List(Tests.Argument("-v"), Tests.Argument("-s"))
 )
 
 lazy val noPublish = Seq(

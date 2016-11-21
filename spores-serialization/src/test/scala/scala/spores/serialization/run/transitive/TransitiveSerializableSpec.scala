@@ -5,6 +5,7 @@ import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
 import scala.spores._
+import scala.spores.hierarchy.{JavaBar, JavaFoo}
 
 @RunWith(classOf[JUnit4])
 class TransitiveSerializableSpec {
@@ -119,5 +120,37 @@ class TransitiveSerializableSpec {
       }
     }
     assert(new Wrapper(CatchMe(new String(""), "Hello, World!", "")).wrapped.hehe == "Hello, World!")
+  }
+
+  @Test
+  def `Allow user to assume closed hierarchies for java/scala binaries in type parameters`(): Unit = {
+    class JavaWrapper[@assumeClosed T <: JavaFoo](val wrapped: T) {
+      spore {
+        val captured = wrapped
+        () => captured
+      }
+    }
+    assert(new JavaWrapper(new JavaBar("haha")).wrapped.getName == "haha")
+  }
+
+  @Test
+  def `Allow user to assume closed hierarchies for java/scala binaries in captured variables`(): Unit = {
+    val foo: JavaFoo = new JavaBar("Hello, World!")
+    spore {
+      val captured = foo: @assumeClosed
+      () => captured
+    }
+  }
+
+  @Test
+  def `Allow user to assume closed hierarchies for java/scala binaries in fields of captured variables`(): Unit = {
+    val foo: JavaFoo = new JavaBar("Hello, World!")
+    sealed class Wrapper(foo: JavaFoo @assumeClosed) extends Serializable
+
+    val wrapper: Wrapper = new Wrapper(foo)
+    spore {
+      val captured = wrapper
+      () => captured
+    }
   }
 }
