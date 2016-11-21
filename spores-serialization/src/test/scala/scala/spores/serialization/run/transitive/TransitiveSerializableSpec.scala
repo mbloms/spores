@@ -143,6 +143,18 @@ class TransitiveSerializableSpec {
   }
 
   @Test
+  def `Allow user to assume closed hierarchies for java/scala binaries in type parameters of captured variables`(): Unit = {
+    val foo: JavaFoo = new JavaBar("Hello, World!")
+    sealed class Wrapper[T <: java.io.Serializable](foo: T) extends Serializable
+
+    val wrapper = new Wrapper(foo: JavaFoo @assumeClosed)
+    spore {
+      val captured: Wrapper[JavaFoo @assumeClosed] = wrapper
+      () => captured
+    }
+  }
+
+  @Test
   def `Allow user to assume closed hierarchies for java/scala binaries in fields of captured variables`(): Unit = {
     val foo: JavaFoo = new JavaBar("Hello, World!")
     sealed class Wrapper(foo: JavaFoo @assumeClosed) extends Serializable

@@ -124,7 +124,7 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
               if (nonPrimitive(concreteFieldSymbol)) {
                 if (concreteFieldSymbol.isSerializable ||
                     canBeSerialized(members, concreteFieldType)) {
-                  val anns = concreteFieldSymbol.annotations
+                  val anns = concreteFieldType.annotations
                   analyzeClassHierarchy(concreteFieldSymbol, anns)
                 } else {
                   val (owner, tpe) =
