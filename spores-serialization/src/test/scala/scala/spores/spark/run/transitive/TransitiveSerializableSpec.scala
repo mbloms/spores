@@ -94,11 +94,30 @@ class TransitiveSerializableSpec {
     final case class Bar2(foo: String, bar2: Float) extends Foo
     final case class Baz(foo: String, damn: DamnHowSerializableIAm) extends Foo
 
-    class Wrapper[T <: Foo](wrapped: T) {
+    class Wrapper[T <: Foo](val wrapped: T) {
       spore {
         val captured = wrapped
         () => captured
       }
     }
+    assert(new Wrapper(Bar(new String(""), 11111)).wrapped.bar == 11111)
+  }
+
+  @Test
+  def `Ignore type parameters that are bounded with closed hierarchies in the presence of transitive parameters`(): Unit = {
+    final class DamnHowSerializableIAm extends Serializable
+    sealed trait Foo extends Serializable {val foo: String}
+    sealed class Bar2(val foo: String, val bar2: Float) extends Foo
+    final case class Baz(foo: String, damn: DamnHowSerializableIAm) extends Foo
+    sealed trait Bar3 extends Foo { val hehe: String }
+    final case class CatchMe(@transient a: Object, hehe: String, foo: String) extends Bar3
+
+    class Wrapper[T <: Foo](val wrapped: T) {
+      spore {
+          val captured = wrapped
+          () => captured
+      }
+    }
+    assert(new Wrapper(CatchMe(new String(""), "Hello, World!", "")).wrapped.hehe == "Hello, World!")
   }
 }
