@@ -73,13 +73,15 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
         * annotations that were captured in the concrete field definition. */
       def analyzeClassHierarchy(symbol: Symbol,
                                 anns: List[AnnotationInfo] = Nil): Unit = {
-        if (symbol.isSealed || hasAnnotations(anns, AssumeClosed)) {
-          val subclasses = symbol.asClass.knownDirectSubclasses
-          subclasses.foreach(analyzeClassHierarchy(_))
-          subclasses.foreach(checkMembers(_))
-        } else if (!symbol.isEffectivelyFinal) {
-          val msg = openClassHierarchy(symbol.toString)
-          report(config.forceClosedClassHierarchy, symbol.pos, msg)
+        if (!hasAnnotations(anns, AssumeClosed)) {
+          if (symbol.isSealed) {
+            val subclasses = symbol.asClass.knownDirectSubclasses
+            subclasses.foreach(analyzeClassHierarchy(_))
+            subclasses.foreach(checkMembers(_))
+          } else if (!symbol.isEffectivelyFinal) {
+            val msg = openClassHierarchy(symbol.toString)
+            report(config.forceClosedClassHierarchy, symbol.pos, msg)
+          }
         }
       }
       def checkMembers(symbol: Symbol,
