@@ -506,7 +506,7 @@ class TransitiveSerializableNegSpec {
         |final class DamnHowSerializableIAm extends Serializable
         |sealed trait Foo extends Serializable {val foo: String}
         |final case class Bar(foo: CatchMe, bar: Int) extends Foo
-        |class Bar2(foo: String, bar2: Float) extends Foo
+        |sealed class Bar2(foo: String, bar2: Float) extends Foo
         |final case class Baz(foo: String, damn: DamnHowSerializableIAm) extends Foo
         |final case class CatchMe(a: Object) extends Bar2("", 1.0.toFloat)
         |
@@ -527,7 +527,7 @@ class TransitiveSerializableNegSpec {
         |final class DamnHowSerializableIAm extends Serializable
         |sealed trait Foo extends Serializable {val foo: String}
         |final case class Bar(foo: CatchMe, bar: Int) extends Foo
-        |sealed class Bar2(foo: String, bar2: Float) extends Foo
+        |class Bar2(foo: String, bar2: Float) extends Foo
         |final case class Baz(foo: String, damn: DamnHowSerializableIAm) extends Foo
         |final case class CatchMe(a: Object) extends Bar2("", 1.0.toFloat)
         |
@@ -550,7 +550,7 @@ class TransitiveSerializableNegSpec {
         |final case class Bar(foo: CatchMe, bar: Int) extends Foo
         |class Bar2(foo: String, bar2: Float) extends Foo
         |final case class Baz(foo: String, damn: DamnHowSerializableIAm) extends Foo
-        |class Bar3(foo: String, bar2: Float) extends Bar2(foo, bar2)
+        |sealed class Bar3(foo: String, bar2: Float) extends Bar2(foo, bar2)
         |final case class CatchMe(a: Object) extends Bar3("", 1.0.toFloat)
         |
         |class Wrapper[T <: Foo](wrapped: T) {
@@ -572,7 +572,7 @@ class TransitiveSerializableNegSpec {
         |final case class Bar(foo: CatchMe, bar: Int) extends Foo
         |sealed class Bar2(foo: String, bar2: Float) extends Foo
         |final case class Baz(foo: String, damn: DamnHowSerializableIAm) extends Foo
-        |sealed class Bar3(foo: String, bar2: Float) extends Bar2(foo, bar2)
+        |class Bar3(foo: String, bar2: Float) extends Bar2(foo, bar2)
         |final case class CatchMe(a: Object) extends Bar3("", 1.0.toFloat)
         |
         |class Wrapper[T <: Foo](wrapped: T) {
