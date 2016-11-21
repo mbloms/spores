@@ -61,9 +61,10 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
 
     /** Transitively check that the types of the fields are Serializable. */
     override def traverse(tree: Tree): Unit = {
-      def analyzeClassHierarchy(symbol: Symbol) = {
+      def analyzeClassHierarchy(symbol: Symbol): Unit = {
         if (symbol.isSealed) {
           val subclasses = symbol.asClass.knownDirectSubclasses
+          subclasses.foreach(analyzeClassHierarchy)
           subclasses.foreach(checkMembers(_))
         } else if (!symbol.isEffectivelyFinal) {
           val msg = openClassHierarchy(symbol.toString)
