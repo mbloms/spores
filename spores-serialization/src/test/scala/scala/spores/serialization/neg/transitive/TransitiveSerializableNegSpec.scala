@@ -1,10 +1,10 @@
-package scala.spores.spark.run.transitive
+package scala.spores.serialization.run.transitive
 
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-import scala.spores.spark.TestUtil._
+import scala.spores.serialization.TestUtil._
 import scala.spores.util.PluginFeedback._
 
 @RunWith(classOf[JUnit4])

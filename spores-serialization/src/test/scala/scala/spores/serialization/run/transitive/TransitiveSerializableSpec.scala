@@ -1,4 +1,4 @@
-package scala.spores.spark.run.transitive
+package scala.spores.serialization.run.transitive
 
 import org.junit.Test
 import org.junit.runner.RunWith

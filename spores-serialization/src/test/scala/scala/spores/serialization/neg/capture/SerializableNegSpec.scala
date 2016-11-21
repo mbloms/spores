@@ -1,10 +1,10 @@
-package scala.spores.spark.neg.capture
+package scala.spores.serialization.neg.capture
 
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-import scala.spores.spark.TestUtil._
+import scala.spores.serialization.TestUtil._
 import scala.spores.util.PluginFeedback.nonSerializableType
 
 @RunWith(classOf[JUnit4])

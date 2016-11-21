@@ -1,4 +1,4 @@
-package scala.spores.spark.run.defined
+package scala.spores.serialization.run.capture
 
 import java.io.{Externalizable, ObjectInput, ObjectOutput}
 
@@ -15,8 +15,7 @@ class SerializableSpec {
     final case class A(number: Int)
     val a = A(1)
     val s = spore {
-      val captured = a
-      () => captured
+      () => capture(a)
     }
     assert(s() == a)
   }
@@ -26,8 +25,7 @@ class SerializableSpec {
     case object A { val s = 1 }
     val a = A
     val s = spore {
-      val captured = a
-      () => captured
+      () => capture(a)
     }
     assert(s() == a)
   }
@@ -37,8 +35,7 @@ class SerializableSpec {
     object A extends Serializable { val s = 1 }
     val a = A
     val s = spore {
-      val captured = a
-      () => captured
+      () => capture(a)
     }
     assert(s() == a)
   }
@@ -48,8 +45,7 @@ class SerializableSpec {
     sealed abstract class A extends Serializable { val i: Int }
     val a = new A { val i = 1 }
     val s = spore {
-      val captured = a
-      () => captured
+      () => capture(a)
     }
     assert(s() == a)
   }
@@ -59,8 +55,7 @@ class SerializableSpec {
     sealed class A(val i: Int) extends Serializable
     val a = new A(1)
     val s = spore {
-      val captured = a
-      () => captured
+      () => capture(a)
     }
     assert(s() == a)
   }
@@ -75,8 +70,7 @@ class SerializableSpec {
     }
     val a = A
     val s = spore {
-      val captured = a
-      () => captured
+      () => capture(a)
     }
     assert(s() == a)
   }
@@ -91,8 +85,7 @@ class SerializableSpec {
       override def writeExternal(objectOutput: ObjectOutput): Unit = ???
     }
     val s = spore {
-      val captured = a
-      () => captured
+      () => capture(a)
     }
     assert(s() == a)
   }
@@ -106,8 +99,7 @@ class SerializableSpec {
     }
     val a = new A(1)
     val s = spore {
-      val captured = a
-      () => captured
+      () => capture(a)
     }
     assert(s() == a)
   }

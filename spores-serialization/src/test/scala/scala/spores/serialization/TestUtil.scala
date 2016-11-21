@@ -1,4 +1,4 @@
-package scala.spores.spark
+package scala.spores.serialization
 
 import scala.reflect._
 
