@@ -308,6 +308,12 @@ they involve the creation of anonymous functions. Some examples are:
 As these examples are not well-known in the Scala community and still persist,
 `spores-serialization` could warn when it detects them inside the spore bodies.
 
+### Kryo support
+
+There may be some missing pieces for working Kryo support. Spark users that
+use Kryo instead of Java serialization could get a lot of benefits from using
+`spores` and `spores-serialization`.
+
 ### Dealing with other serialization issues
 
 Serialization issues may happen when some classes are not in the classloaders,
