@@ -158,6 +158,8 @@ lazy val `spores-serialization` = project
         s"-Jdummy=${compiledPlugin.lastModified}"
       )
     },
+    initialCommands in console in Compile := "import scala.spores._",
+    scalacOptions in console in Compile ++= (scalacOptions in Test).value,
     resourceGenerators in Test += Def.task {
       val extraOptions = (scalacOptions in Test).value.mkString(" ")
       val resourceDir = (resourceDirectory in Test).value
@@ -166,7 +168,6 @@ lazy val `spores-serialization` = project
       List(extraOptionsFile.getAbsoluteFile)
     }.taskValue
   )
-
 
 lazy val makeDocs = taskKey[Unit]("Make the process.")
 lazy val createProcessIndex = taskKey[Unit]("Create index.html.")
@@ -216,10 +217,12 @@ lazy val docs: Project = project
     },
     GhPagesKeys.synchLocal :=
       GhPagesKeys.synchLocal.dependsOn(createProcessIndex).value,
-    publishDocs := Def.sequential(
-      makeDocs,
-      GhPagesKeys.cleanSite,
-      GhPagesKeys.synchLocal,
-      GhPagesKeys.pushSite
-    ).value
+    publishDocs := Def
+      .sequential(
+        makeDocs,
+        GhPagesKeys.cleanSite,
+        GhPagesKeys.synchLocal,
+        GhPagesKeys.pushSite
+      )
+      .value
   )
