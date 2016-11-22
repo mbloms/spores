@@ -58,12 +58,18 @@ addCompilerPlugin(<span class="hljs-string">"ch.epfl.scala"</span> % <span class
 </code></pre>
 </div>
 <h2 id="quickstart" class="a_section" data-magellan-target="quickstart">Quickstart<a class="a_hlink" href="#quickstart"></a></h2>
-<p>Essentially, anything that you capture in a spore is checked to be serializable.</p>
+<p>Spores allow you to control the environment of a closure. To ensure that spores
+are serializable-safe, all the captured variables are checked to be serializable.</p>
 <p>This compiler plugin requires you to:</p>
 <ol>
-<li>Extend <code class="hljs">scala.Serializable</code> in the super class of the classes that you capture.</li>
+<li>Extend <code class="hljs">scala.Serializable</code> in the classes of all the captured types.</li>
 <li>Close the class hierarchy of all the custom classes that you capture (<a href="java-serialization.html#closed-class-hierarchies">what is this?</a>).</li>
 </ol>
+<p>With these requirements, <code class="hljs">spores-serialization</code> will make its best to prove the
+correct serializability of your spores.</p>
+<h3 id="simple-example" class="a_section" data-magellan-target="simple-example">Simple example<a class="a_hlink" href="#simple-example"></a></h3>
+<p>Primitives,</p>
+<h3 id="abstracting-over-the-logic" class="a_section" data-magellan-target="abstracting-over-the-logic">Abstracting over the logic<a class="a_hlink" href="#abstracting-over-the-logic"></a></h3>
 <h2 id="basics" class="a_section" data-magellan-target="basics">Basics<a class="a_hlink" href="#basics"></a></h2>
 <h3 id="closed-class-hierarchies" class="a_section" data-magellan-target="closed-class-hierarchies">Closed class hierarchies<a class="a_hlink" href="#closed-class-hierarchies"></a></h3>
 <p>Closed class hierarchies play a key role in Scala because:</p>
@@ -108,7 +114,7 @@ positives if these externally defined classes are not serializable.</li>
 are only defined in the current compilation unit, otherwise false positives could happen.</li>
 <li>The Scala compiler does not give us access to direct subclasses if the class hierarchy
 is not sealed. This is a well-known <a href="https://issues.scala-lang.org/browse/SI-7046">limitation</a> of the Scala typer
-and may have a <a href="https://github.com/scala/scala/pull/5284">partial bugfix soon</a>.</li>
+and may have a <a href="https://github.com/scala/scala/pull/5284">partial fix soon</a>.</li>
 </ol>
 <h4 id="the-class-metamorphosis" class="a_section" data-magellan-target="the-class-metamorphosis">The class Metamorphosis<a class="a_hlink" href="#the-class-metamorphosis"></a></h4>
 <p>So what should you do to make <code class="hljs">spores-serialization</code> transitively check all your program?
@@ -146,9 +152,9 @@ output the following error:</p>
 </code></pre>
 </div>
 <p>Notice that capturing subclasses like <code class="hljs">Bar</code> or <code class="hljs">Baz</code> will never cause an error
-because they are final. In this case, no subclass analysis is performed.</p>
+because they are final and, by definition, have no subclass.</p>
 <h4 id="the-escape-hatch" class="a_section" data-magellan-target="the-escape-hatch">The escape hatch<a class="a_hlink" href="#the-escape-hatch"></a></h4>
-<p>The annotation <code class="hljs">@assumeClosed</code> is a escape hatch for users that for some reason cannot
+<p>The annotation <code class="hljs">@assumeClosed</code> is a escape hatch for users that <em>for some reason</em> cannot
 turn their class hierarchy closed. It tells the compiler to assume that the class you're
 capturing is closed, but unfortunately no analysis of the subclasses will be performed (SI-7046).
 Therefore, its use is discouraged and only left for intrepid developers that like risk.</p>
@@ -160,12 +166,56 @@ Therefore, its use is discouraged and only left for intrepid developers that lik
 
 <span class="hljs-comment">// Force cast to Foo</span>
 <span class="hljs-keyword">val</span> riskyFoo: <span class="hljs-type">Foo</span> = <span class="hljs-type">Baz</span>(<span class="hljs-number">1</span>)
-spore {
+<span class="hljs-keyword">val</span> s = spore {
   <span class="hljs-keyword">val</span> capturedFoo = (riskyFoo: <span class="hljs-type">Foo</span> <span class="hljs-meta">@assumeClosed</span>)
   (...) =&gt; <span class="hljs-comment">// spore logic</span>
 }
 </code></pre>
 </div>
+<h3 id="transient-fields" class="a_section" data-magellan-target="transient-fields">Transient fields<a class="a_hlink" href="#transient-fields"></a></h3>
+<p>In Java, variables may be marked <code class="hljs">transient</code> to indicate that they are not part of the persistent
+state of an object and therefore will not be serialized (see <a href="https://en.wikibooks.org/wiki/Java_Programming/Keywords/transient">this</a> and the <a href="http://docs.oracle.com/javase/specs/jls/se8/html/jls-8.html#jls-8.3.1.3">Java Language Specification</a>).</p>
+<p>In Scala, you can achieve the same goal by annotating the fields with <code class="hljs">@transient</code>.
+When <code class="hljs">spores-serialization</code> stumbles upon a transient field, it will ignore its type.</p>
+<h3 id="making-value-classes-serializable" class="a_section" data-magellan-target="making-value-classes-serializable">Making value classes serializable<a class="a_hlink" href="#making-value-classes-serializable"></a></h3>
+<p>By definition, value classes can <em>only</em> extend <code class="hljs">AnyVal</code>, which means they cannot be <code class="hljs">{java.io, scala}.Serializable</code>.
+To overcome this limitation, the compiler plugin uses implicits to prove that a value class <code class="hljs">Foo</code> is serializable.
+For proving it, you need to provide an implicit <code class="hljs">CanBeSerialized[Foo]</code> in the scope of
+the spore definition.</p>
+<div class="row">
+<pre class="hljs small-expand columns a_xscroll"><code class="language-scala"><span class="hljs-keyword">import</span> scala.spores._
+
+<span class="hljs-comment">// Value class definition somewhere</span>
+<span class="hljs-keyword">case</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Foo</span>(<span class="hljs-params">i: <span class="hljs-type">Int</span></span>) <span class="hljs-keyword">extends</span> <span class="hljs-title">AnyVal</span></span>
+<span class="hljs-class"><span class="hljs-keyword">object</span> <span class="hljs-title">Foo</span> </span>{
+  <span class="hljs-keyword">implicit</span> <span class="hljs-class"><span class="hljs-keyword">object</span> <span class="hljs-title">FooIsSerializable</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">scala</span>.<span class="hljs-title">spores</span>.<span class="hljs-title">CanBeSerialized</span>[<span class="hljs-type">Foo</span>]</span>
+}
+
+<span class="hljs-comment">// Spore definition somewhere else</span>
+<span class="hljs-keyword">import</span> <span class="hljs-type">Foo</span>._
+<span class="hljs-keyword">val</span> foo = <span class="hljs-type">Foo</span>(<span class="hljs-number">5</span>)
+<span class="hljs-keyword">val</span> s = spore {
+  <span class="hljs-keyword">val</span> captured = foo
+  (...) =&gt; <span class="hljs-comment">// spore logic</span>
+}
+</code></pre>
+</div>
+<p>Thanks to the definition of <code class="hljs">FooIsSerializable</code> and the <code class="hljs">import Foo._</code> in the spore
+definition, the compiler plugin is able to prove that <code class="hljs">Foo</code> is indeed serializable.</p>
+<blockquote class="warning">
+<p>Value classes are not safe to serialize. Its serialization fails when they require
+allocation inside the spore body, because they need to be <a href="http://docs.scala-lang.org/overviews/core/value-classes.html">instantiated as a class <code class="hljs">Foo</code>
+instead of avoiding the runtime object allocation</a>. This happens when:</p>
+<ol>
+<li>a value class is treated as another type.</li>
+<li>a value class is assigned to an array.</li>
+<li>doing runtime type tests, such as pattern matching.</li>
+</ol>
+<p>Therefore, you cannot use value classes if you use them in any situation that requires boxing.
+This is a fundamental limitation of value classes that may be fixed in the future. For now,
+the compiler plugin does not catch the misuse of value classes inside spores, so if you decide
+to use them, be careful.</p>
+</blockquote>
 
               </main>
               
@@ -226,6 +276,22 @@ spore {
        <a href="#quickstart">Quickstart</a> 
     
     
+      <ul class="vertical menu">  
+  <li>
+    
+       <a href="#simple-example">Simple example</a> 
+    
+    
+  </li>
+  
+  <li>
+    
+       <a href="#abstracting-over-the-logic">Abstracting over the logic</a> 
+    
+    
+  </li>
+  </ul>
+    
   </li>
   
   <li>
@@ -268,6 +334,20 @@ spore {
     
   </li>
   </ul>
+    
+  </li>
+  
+  <li>
+    
+       <a href="#transient-fields">Transient fields</a> 
+    
+    
+  </li>
+  
+  <li>
+    
+       <a href="#making-value-classes-serializable">Making value classes serializable</a> 
+    
     
   </li>
   </ul>
