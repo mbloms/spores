@@ -237,7 +237,11 @@ But this results in the following warning:
 TBD
 ```
 
-TBD.
+Generally, proving that a type parameter extends `scala.Serializable` is not enough
+for ensuring the lack of type members because "serializable" classes may have fields
+that are not. The previous code snippet is **not the recommended way** to use `spores-serialization`.
+It's better to allow the compiler plugin to do all the work if you don't necessarily
+like debugging a runtime serialization error a Sunday night.
 
 ### Transient fields
 
@@ -247,6 +251,9 @@ In Scala, you can achieve the same goal by annotating the fields with `@transien
 
 By definition, transient fields are not part of the analyzed field, and
 `spores-serialization` will ignore its type even if it's not serializable.
+Under the hood, when Java does initialize the unserialized class, a transient
+field will hold no value so make sure that transient fields are not used in the
+logic of your program.
 
 ### Serializable value classes
 
