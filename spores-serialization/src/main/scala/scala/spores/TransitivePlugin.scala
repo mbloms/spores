@@ -24,6 +24,9 @@ class TransitivePlugin(val global: Global) extends Plugin {
     override val global: checker.global.type = checker.global
     override val phaseName: String = "spores-transitive-checker"
     override val runsAfter: List[String] = List("typer")
+    val loggerPhases = global.settings.log.value
+    global.settings.log.value = phaseName :: loggerPhases
+
     override def newPhase(prev: Phase): Phase = {
       new StdPhase(prev) {
         override def apply(unit: global.CompilationUnit): Unit = {

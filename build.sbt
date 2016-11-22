@@ -155,13 +155,15 @@ lazy val `spores-serialization` = project
       val compiledPlugin = assembly.value
       Seq(
         s"-Xplugin:${compiledPlugin.getAbsolutePath}",
-        s"-Jdummy=${compiledPlugin.lastModified}"
+        s"-Jdummy=${compiledPlugin.lastModified}",
+        "-Ydebug"
       )
     },
     initialCommands in console in Compile := "import scala.spores._",
     scalacOptions in console in Compile ++= (scalacOptions in Test).value,
     resourceGenerators in Test += Def.task {
-      val extraOptions = (scalacOptions in Test).value.mkString(" ")
+      val options = (scalacOptions in Test).value
+      val extraOptions = options.filterNot(_ == "-Ydebug").mkString(" ")
       val resourceDir = (resourceDirectory in Test).value
       val extraOptionsFile = resourceDir / "toolbox.extra"
       IO.write(extraOptionsFile, extraOptions)

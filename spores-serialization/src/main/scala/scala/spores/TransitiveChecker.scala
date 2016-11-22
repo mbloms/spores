@@ -12,6 +12,15 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
   val sporesBaseSymbol = global.rootMirror.symbolOf[scala.spores.SporeBase]
   val alreadyAnalyzed = new scala.collection.mutable.HashSet[Symbol]()
 
+  def debug[T](es: sourcecode.Text[T]*)(implicit line: sourcecode.Line,
+                                        file: sourcecode.File): Unit = {
+    es.foreach { e =>
+      val filename = file.value.replaceAll(".*/", "")
+      val header = Console.GREEN + s"$filename:${line.value}"
+      debuglog(s"$header ${Console.RESET}${e.value}")
+    }
+  }
+
   class TransitiveTraverser(unit: CompilationUnit, config: PluginConfig)
       extends Traverser {
     @inline private def isTransientInJava(sym: Symbol): Boolean = {
@@ -98,6 +107,7 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
           val termMembers = members.filter(onlyTerm)
           val currentTypeParams = symbolInfo.typeParams.map(_.tpe)
           val numberCurrentTypeParams = currentTypeParams.length
+          debug(s"Checking the member $symbol")
 
           // Get the members of base classes with already applied type params
           val tparamsBaseClassMembers = symbolInfo.baseClasses.filter { bc =>
@@ -117,6 +127,7 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
 
           noTransientFields.foreach { field =>
             val fieldSymbol = field.info.typeSymbol
+            debug(s"Inspecting field $fieldSymbol")
             if (fieldSymbol.isClass) {
               if (!fieldSymbol.asClass.isPrimitive) {
                 if (!field.isSerializable) reportError(field)
@@ -176,6 +187,7 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
 
       tree match {
         case cls: ClassDef if cls.symbol.tpe <:< sporesBaseSymbol.tpe =>
+          debug(s"First target of transitive analysis: $cls")
           checkMembers(cls.symbol, isSpore = true)
           super.traverse(tree)
         case _ => super.traverse(tree)
