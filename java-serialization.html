@@ -159,7 +159,7 @@ spore {
   <span class="hljs-keyword">val</span> capturedFoo1 = foo1
   <span class="hljs-keyword">val</span> capturedFoo2 = foo2
   <span class="hljs-keyword">val</span> capturedBar = bar
-  () =&gt; <span class="hljs-comment">// spore logic</span>
+  () =&gt; <span class="hljs-comment">// spore logic using `capturedFoo1`, `capturedFoo2` and `capturedBar`</span>
 }
 </code></pre>
 </div>
@@ -177,7 +177,7 @@ output the following error:</p>
 </div>
 <p>Notice that capturing subclasses like <code class="hljs">Bar</code> or <code class="hljs">Baz</code> will never cause an error
 because they are final and, by definition, have no subclass.</p>
-<h4 id="the-escape-hatch" class="a_section" data-magellan-target="the-escape-hatch">The escape hatch<a class="a_hlink" href="#the-escape-hatch"></a></h4>
+<h4 id="a-escape-hatch" class="a_section" data-magellan-target="a-escape-hatch">A escape hatch<a class="a_hlink" href="#a-escape-hatch"></a></h4>
 <p>The annotation <code class="hljs">@assumeClosed</code> is a escape hatch for users that <em>for some reason</em> cannot
 turn their class hierarchy closed. It tells the compiler to assume that the class you're
 capturing is closed, but unfortunately no analysis of the subclasses will be performed (SI-7046).
@@ -207,7 +207,7 @@ the captured types are not fully defined.</p>
 <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Wrapper</span>[<span class="hljs-type">T</span> &lt;: <span class="hljs-type">Foo</span>](<span class="hljs-params">val wrapped: <span class="hljs-type">List</span>[<span class="hljs-type">T</span>]</span>) </span>{
   <span class="hljs-keyword">val</span> zippingSpore = spore {
     <span class="hljs-keyword">val</span> captured = wrapped
-    (xs: <span class="hljs-type">List</span>[<span class="hljs-type">Int</span>]) =&gt; xs.zip(wrapped)
+    (xs: <span class="hljs-type">List</span>[<span class="hljs-type">Int</span>]) =&gt; xs.zip(captured)
   }
 }
 </code></pre>
@@ -219,14 +219,14 @@ the captured types are not fully defined.</p>
 <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Wrapper</span>[<span class="hljs-type">T</span> &lt;: <span class="hljs-type">Foo</span>](<span class="hljs-params">val wrapped: <span class="hljs-type">List</span>[<span class="hljs-type">T</span>]</span>) <span class="hljs-keyword">extends</span> <span class="hljs-title">Serializable</span> </span>{
   <span class="hljs-keyword">val</span> zippingSpore = spore {
     <span class="hljs-keyword">val</span> captured = wrapped
-    (xs: <span class="hljs-type">List</span>[<span class="hljs-type">Int</span>]) =&gt; xs.zip(wrapped)
+    (xs: <span class="hljs-type">List</span>[<span class="hljs-type">Int</span>]) =&gt; xs.zip(captured)
   }
 }
 
 <span class="hljs-keyword">val</span> wrapper = <span class="hljs-keyword">new</span> <span class="hljs-type">Wrapper</span>(<span class="hljs-type">List</span>(<span class="hljs-string">"Hello"</span>, <span class="hljs-string">"Hello"</span>))
 <span class="hljs-keyword">val</span> s = spore {
   <span class="hljs-keyword">val</span> serializedWrapper = wrapper
-  () =&gt; wrapper
+  () =&gt; serializedWrapper
 }
 </code></pre>
 </div>
@@ -240,7 +240,7 @@ the type parameter and <code class="hljs">Foo</code> is a closed class hierarchy
 <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Wrapper</span>[<span class="hljs-type">T</span> &lt;: <span class="hljs-type">Serializable</span>](<span class="hljs-params">val wrapped: <span class="hljs-type">List</span>[<span class="hljs-type">T</span>]</span>) </span>{
   <span class="hljs-keyword">val</span> zippingSpore = spore {
     <span class="hljs-keyword">val</span> captured = wrapped
-    (xs: <span class="hljs-type">List</span>[<span class="hljs-type">Int</span>]) =&gt; xs.zip(wrapped)
+    (xs: <span class="hljs-type">List</span>[<span class="hljs-type">Int</span>]) =&gt; xs.zip(captured)
   }
 }
 </code></pre>
@@ -253,9 +253,10 @@ the type parameter and <code class="hljs">Foo</code> is a closed class hierarchy
 <p>TBD.</p>
 <h3 id="transient-fields" class="a_section" data-magellan-target="transient-fields">Transient fields<a class="a_hlink" href="#transient-fields"></a></h3>
 <p>In Java, variables may be marked <code class="hljs">transient</code> to indicate that they are not part of the persistent
-state of an object and therefore will not be serialized (see <a href="https://en.wikibooks.org/wiki/Java_Programming/Keywords/transient">this</a> and the <a href="http://docs.oracle.com/javase/specs/jls/se8/html/jls-8.html#jls-8.3.1.3">Java Language Specification</a>).</p>
-<p>In Scala, you can achieve the same goal by annotating the fields with <code class="hljs">@transient</code>.
-When <code class="hljs">spores-serialization</code> stumbles upon a transient field, it will ignore its type.</p>
+state of an object and therefore will not be serialized (see <a href="https://en.wikibooks.org/wiki/Java_Programming/Keywords/transient">this</a> and the <a href="http://docs.oracle.com/javase/specs/jls/se8/html/jls-8.html#jls-8.3.1.3">Java Language Specification</a>).
+In Scala, you can achieve the same goal by annotating the fields with <code class="hljs">@transient</code>.</p>
+<p>By definition, transient fields are not part of the analyzed field, and
+<code class="hljs">spores-serialization</code> will ignore its type even if it's not serializable.</p>
 <h3 id="serializable-value-classes" class="a_section" data-magellan-target="serializable-value-classes">Serializable value classes<a class="a_hlink" href="#serializable-value-classes"></a></h3>
 <p>By definition, value classes can <em>only</em> extend <code class="hljs">AnyVal</code>, which means they cannot be <code class="hljs">{java.io, scala}.Serializable</code>.
 To overcome this limitation, the compiler plugin uses implicits to prove that a value class <code class="hljs">Foo</code> is serializable.
@@ -275,7 +276,7 @@ the spore definition.</p>
 <span class="hljs-keyword">val</span> foo = <span class="hljs-type">Foo</span>(<span class="hljs-number">5</span>)
 <span class="hljs-keyword">val</span> s = spore {
   <span class="hljs-keyword">val</span> captured = foo
-  () =&gt; <span class="hljs-comment">// spore logic</span>
+  () =&gt; <span class="hljs-comment">// spore logic using `captured`</span>
 }
 </code></pre>
 </div>
@@ -295,18 +296,25 @@ This is a fundamental limitation of value classes that may be fixed in the futur
 the compiler plugin does not catch the misuse of value classes inside spores, so if you decide
 to use them, be careful.</p>
 </blockquote>
-<h3 id="warning-against-the-use-of-well-known-non-serializable-methods" class="a_section" data-magellan-target="warning-against-the-use-of-well-known-non-serializable-methods">Warning against the use of well-known non-serializable methods<a class="a_hlink" href="#warning-against-the-use-of-well-known-non-serializable-methods"></a></h3>
-<blockquote class="warning">
-<p>This section is not yet implemented. The idea is to provide a limited set
-of non-serializable methods, and then let the Community easily add more
-discovered methods.</p>
-</blockquote>
+<h2 id="future-ideas" class="a_section" data-magellan-target="future-ideas">Future ideas<a class="a_hlink" href="#future-ideas"></a></h2>
+<p>As a compiler plugin, <code class="hljs">spores-serialization</code> is capable of doing more than just
+static type analysis. Here are some ideas for the future that may be considered
+to be implemented depending on the community's response. Come to discuss them
+at <a href="https://contributors.scala-lang.org/">Discourse</a> (<strong>TBD</strong>).</p>
+<h3 id="warning-against-the-use-of-well-known-lazy-methods" class="a_section" data-magellan-target="warning-against-the-use-of-well-known-lazy-methods">Warning against the use of well-known 'lazy' methods<a class="a_hlink" href="#warning-against-the-use-of-well-known-lazy-methods"></a></h3>
+<p>Methods whose implementation is lazy are generally not serializable because
+they involve the creation of anonymous functions. Some examples are:</p>
 <ol>
 <li><a href="https://issues.scala-lang.org/browse/SI-5018"><code class="hljs">Map.withDefault</code></a></li>
 <li><a href="https://issues.scala-lang.org/browse/SI-6654"><code class="hljs">Map.filterKeys</code></a></li>
-<li><a href="https://issues.scala-lang.org/browse/SI-9777?jql=status%20=%20Open%20AND%20labels%20=%20serialization">SI-9777</a></li>
 <li><a href="https://issues.scala-lang.org/browse/SI-5048?jql=status%20=%20Open%20AND%20labels%20=%20serialization">Closures in initializer of structural types break serialization</a></li>
 </ol>
+<p>As these examples are not well-known in the Scala community and still persist,
+<code class="hljs">spores-serialization</code> could warn when it detects them inside the spore bodies.</p>
+<h3 id="dealing-with-other-serialization-issues" class="a_section" data-magellan-target="dealing-with-other-serialization-issues">Dealing with other serialization issues<a class="a_hlink" href="#dealing-with-other-serialization-issues"></a></h3>
+<p>Serialization issues may happen when some classes are not in the classloaders,
+like <a href="https://issues.scala-lang.org/browse/SI-9777?jql=status%20=%20Open%20AND%20labels%20=%20serialization">SI-9777</a>.
+Is there <em>something</em> we can do to detect these errors before they happen?</p>
 
               </main>
               
@@ -413,7 +421,7 @@ discovered methods.</p>
   
   <li>
     
-       <a href="#the-escape-hatch">The escape hatch</a> 
+       <a href="#a-escape-hatch">A escape hatch</a> 
     
     
   </li>
@@ -441,10 +449,26 @@ discovered methods.</p>
     
     
   </li>
+  </ul>
+    
+  </li>
   
   <li>
     
-       <a href="#warning-against-the-use-of-well-known-non-serializable-methods">Warning against the use of well-known non-serializable methods</a> 
+       <a href="#future-ideas">Future ideas</a> 
+    
+    
+      <ul class="vertical menu">  
+  <li>
+    
+       <a href="#warning-against-the-use-of-well-known-lazy-methods">Warning against the use of well-known &#x27;lazy&#x27; methods</a> 
+    
+    
+  </li>
+  
+  <li>
+    
+       <a href="#dealing-with-other-serialization-issues">Dealing with other serialization issues</a> 
     
     
   </li>
