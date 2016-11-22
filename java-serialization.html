@@ -250,13 +250,20 @@ the type parameter and <code class="hljs">Foo</code> is a closed class hierarchy
 <pre class="hljs small-expand columns a_xscroll"><code>TBD
 </code></pre>
 </div>
-<p>TBD.</p>
+<p>Generally, proving that a type parameter extends <code class="hljs">scala.Serializable</code> is not enough
+for ensuring the lack of type members because &quot;serializable&quot; classes may have fields
+that are not. The previous code snippet is <strong>not the recommended way</strong> to use <code class="hljs">spores-serialization</code>.
+It's better to allow the compiler plugin to do all the work if you don't necessarily
+like debugging a runtime serialization error a Sunday night.</p>
 <h3 id="transient-fields" class="a_section" data-magellan-target="transient-fields">Transient fields<a class="a_hlink" href="#transient-fields"></a></h3>
 <p>In Java, variables may be marked <code class="hljs">transient</code> to indicate that they are not part of the persistent
 state of an object and therefore will not be serialized (see <a href="https://en.wikibooks.org/wiki/Java_Programming/Keywords/transient">this</a> and the <a href="http://docs.oracle.com/javase/specs/jls/se8/html/jls-8.html#jls-8.3.1.3">Java Language Specification</a>).
 In Scala, you can achieve the same goal by annotating the fields with <code class="hljs">@transient</code>.</p>
 <p>By definition, transient fields are not part of the analyzed field, and
-<code class="hljs">spores-serialization</code> will ignore its type even if it's not serializable.</p>
+<code class="hljs">spores-serialization</code> will ignore its type even if it's not serializable.
+Under the hood, when Java does initialize the unserialized class, a transient
+field will hold no value so make sure that transient fields are not used in the
+logic of your program.</p>
 <h3 id="serializable-value-classes" class="a_section" data-magellan-target="serializable-value-classes">Serializable value classes<a class="a_hlink" href="#serializable-value-classes"></a></h3>
 <p>By definition, value classes can <em>only</em> extend <code class="hljs">AnyVal</code>, which means they cannot be <code class="hljs">{java.io, scala}.Serializable</code>.
 To overcome this limitation, the compiler plugin uses implicits to prove that a value class <code class="hljs">Foo</code> is serializable.
