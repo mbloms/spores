@@ -30,14 +30,40 @@ This compiler plugin requires you to:
 1. Extend `scala.Serializable` in the classes of all the captured types.
 1. Close the class hierarchy of all the custom classes that you capture ([what is this?](#closed-class-hierarchies)).
 
-With these requirements, `spores-serialization` will make its best to prove the
+With these requirements, `spores-serialization` makes its best to prove the
 correct serializability of your spores.
 
-### Simple example
+### An example
 
-Primitives, 
+```scala
+import scala.spores._
+val s = spore {
+  val capturedInt = 8
+  val capturedString = "Hello, World!"
+  val capturedList = List(1,2,3,4)
+  (i: Int) => {
+    println(capturedString)
+    capturedList.map(_ + i).contains(capturedInt)
+  }
+}
+```
 
-### Abstracting over the logic
+This code snippet compiles because primitives and `{Scala, Java}` collections are serializable.
+In it, we capture an `Int`, a `String` and a `List[Int]` which can be successfully
+sent over the wire.
+
+But, why? The compiler plugin inspects the type of `capturedInt`, `capturedString` and
+`capturedList`. In this case, `Int` is a primitive, `String` extends `java.io.Serializable`
+and `List[Int]` is a closed class hierarchy with a primitive (and serializable) type parameter
+whose subclasses are safely serializable.
+
+The compiler plugin performs a similar reasoning to the one explained before
+to prove that certain types are serializable. Since Scala is very flexible and
+allows user to abstract over their logic, `spores-serialization` is able to perform
+such analysis in more sophisticated situations.
+
+Before introducing them, let's understand the underlying concepts and guarantees
+that the transitive checks provide.
 
 ## Basics
 
@@ -109,7 +135,7 @@ spore {
   val capturedFoo1 = foo1
   val capturedFoo2 = foo2
   val capturedBar = bar
-  (...) => // spore logic
+  () => // spore logic using `capturedFoo1`, `capturedFoo2` and `capturedBar`
 }
 ```
 
@@ -129,7 +155,7 @@ output the following error:
 Notice that capturing subclasses like `Bar` or `Baz` will never cause an error
 because they are final and, by definition, have no subclass.
 
-#### The escape hatch
+#### A escape hatch
 
 The annotation `@assumeClosed` is a escape hatch for users that *for some reason* cannot
 turn their class hierarchy closed. It tells the compiler to assume that the class you're
@@ -146,19 +172,83 @@ final case class Baz(b: Int) extends Foo
 val riskyFoo: Foo = Baz(1)
 val s = spore {
   val capturedFoo = (riskyFoo: Foo @assumeClosed)
-  (...) => // spore logic
+  () => // spore logic
 }
 ```
+
+### Abstracting over the logic
+
+Sooner or later, your logic may become repetitive. `spores-serialization` is capable
+of allowing users to abstract over their logic and define spores at places where
+the captured types are not fully defined.
+
+For the following code snippet, assume that `Foo` is a closed class hierarchy.
+
+```scala
+import scala.spores._
+
+class Wrapper[T <: Foo](val wrapped: List[T]) {
+  val zippingSpore = spore {
+    val captured = wrapped
+    (xs: List[Int]) => xs.zip(captured)
+  }
+}
+```
+
+And if the wrapper is `Serializable`, you can even send it accross the wire:
+
+```scala
+import scala.spores._
+
+class Wrapper[T <: Foo](val wrapped: List[T]) extends Serializable {
+  val zippingSpore = spore {
+    val captured = wrapped
+    (xs: List[Int]) => xs.zip(captured)
+  }
+}
+
+val wrapper = new Wrapper(List("Hello", "Hello"))
+val s = spore {
+  val serializedWrapper = wrapper
+  () => serializedWrapper
+}
+```
+
+Why are these working examples? Because `Foo` is ensured to be a high bound of
+the type parameter and `Foo` is a closed class hierarchy.
+
+While the previous examples work, users can also set the high bound to be
+`Serializable`:
+
+```scala
+import scala.spores._
+
+class Wrapper[T <: Serializable](val wrapped: List[T]) {
+  val zippingSpore = spore {
+    val captured = wrapped
+    (xs: List[Int]) => xs.zip(captured)
+  }
+}
+```
+
+But this results in the following warning:
+
+```
+TBD
+```
+
+TBD.
 
 ### Transient fields
 
 In Java, variables may be marked `transient` to indicate that they are not part of the persistent
 state of an object and therefore will not be serialized (see [this](https://en.wikibooks.org/wiki/Java_Programming/Keywords/transient) and the [Java Language Specification](http://docs.oracle.com/javase/specs/jls/se8/html/jls-8.html#jls-8.3.1.3)).
-
 In Scala, you can achieve the same goal by annotating the fields with `@transient`.
-When `spores-serialization` stumbles upon a transient field, it will ignore its type.
 
-### Making value classes serializable
+By definition, transient fields are not part of the analyzed field, and
+`spores-serialization` will ignore its type even if it's not serializable.
+
+### Serializable value classes
 
 By definition, value classes can *only* extend `AnyVal`, which means they cannot be `{java.io, scala}.Serializable`.
 To overcome this limitation, the compiler plugin uses implicits to prove that a value class `Foo` is serializable.
@@ -171,7 +261,7 @@ import scala.spores._
 // Value class definition somewhere
 case class Foo(i: Int) extends AnyVal
 object Foo {
-  implicit object FooIsSerializable extends scala.spores.CanBeSerialized[Foo]
+  implicit object FooIsSerializable extends CanBeSerialized[Foo]
 }
 
 // Spore definition somewhere else
@@ -179,15 +269,15 @@ import Foo._
 val foo = Foo(5)
 val s = spore {
   val captured = foo
-  (...) => // spore logic
+  () => // spore logic using `captured`
 }
 ```
 
 Thanks to the definition of `FooIsSerializable` and the `import Foo._` in the spore
-definition, the compiler plugin is able to prove that `Foo` is indeed serializable.
+definition, the compiler plugin is able to prove that the use of `Foo` is safe.
 
-> {.warning}
-> Value classes are not safe to serialize. Its serialization fails when they require
+> {.note}
+> Value classes *may* be non-serializable. Its serialization fails when they require
 > allocation inside the spore body, because they need to be [instantiated as a class `Foo`
 > instead of avoiding the runtime object allocation](http://docs.scala-lang.org/overviews/core/value-classes.html). This happens when:
 > 1. a value class is treated as another type.
@@ -199,4 +289,27 @@ definition, the compiler plugin is able to prove that `Foo` is indeed serializab
 > the compiler plugin does not catch the misuse of value classes inside spores, so if you decide
 > to use them, be careful.
 
+## Future ideas
 
+As a compiler plugin, `spores-serialization` is capable of doing more than just
+static type analysis. Here are some ideas for the future that may be considered
+to be implemented depending on the community's response. Come to discuss them
+at [Discourse](https://contributors.scala-lang.org/) (**TBD**).
+
+### Warning against the use of well-known 'lazy' methods
+
+Methods whose implementation is lazy are generally not serializable because
+they involve the creation of anonymous functions. Some examples are:
+
+1. [`Map.withDefault`](https://issues.scala-lang.org/browse/SI-5018)
+1. [`Map.filterKeys`](https://issues.scala-lang.org/browse/SI-6654)
+1. [Closures in initializer of structural types break serialization](https://issues.scala-lang.org/browse/SI-5048?jql=status%20=%20Open%20AND%20labels%20=%20serialization)
+
+As these examples are not well-known in the Scala community and still persist,
+`spores-serialization` could warn when it detects them inside the spore bodies.
+
+### Dealing with other serialization issues
+
+Serialization issues may happen when some classes are not in the classloaders,
+like [SI-9777](https://issues.scala-lang.org/browse/SI-9777?jql=status%20=%20Open%20AND%20labels%20=%20serialization).
+Is there *something* we can do to detect these errors before they happen?
