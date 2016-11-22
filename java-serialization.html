@@ -65,11 +65,35 @@ are serializable-safe, all the captured variables are checked to be serializable
 <li>Extend <code class="hljs">scala.Serializable</code> in the classes of all the captured types.</li>
 <li>Close the class hierarchy of all the custom classes that you capture (<a href="java-serialization.html#closed-class-hierarchies">what is this?</a>).</li>
 </ol>
-<p>With these requirements, <code class="hljs">spores-serialization</code> will make its best to prove the
+<p>With these requirements, <code class="hljs">spores-serialization</code> makes its best to prove the
 correct serializability of your spores.</p>
-<h3 id="simple-example" class="a_section" data-magellan-target="simple-example">Simple example<a class="a_hlink" href="#simple-example"></a></h3>
-<p>Primitives,</p>
-<h3 id="abstracting-over-the-logic" class="a_section" data-magellan-target="abstracting-over-the-logic">Abstracting over the logic<a class="a_hlink" href="#abstracting-over-the-logic"></a></h3>
+<h3 id="an-example" class="a_section" data-magellan-target="an-example">An example<a class="a_hlink" href="#an-example"></a></h3>
+<div class="row">
+<pre class="hljs small-expand columns a_xscroll"><code class="language-scala"><span class="hljs-keyword">import</span> scala.spores._
+<span class="hljs-keyword">val</span> s = spore {
+  <span class="hljs-keyword">val</span> capturedInt = <span class="hljs-number">8</span>
+  <span class="hljs-keyword">val</span> capturedString = <span class="hljs-string">"Hello, World!"</span>
+  <span class="hljs-keyword">val</span> capturedList = <span class="hljs-type">List</span>(<span class="hljs-number">1</span>,<span class="hljs-number">2</span>,<span class="hljs-number">3</span>,<span class="hljs-number">4</span>)
+  (i: <span class="hljs-type">Int</span>) =&gt; {
+    println(capturedString)
+    capturedList.map(_ + i).contains(capturedInt)
+  }
+}
+</code></pre>
+</div>
+<p>This code snippet compiles because primitives and <code class="hljs">{Scala, Java}</code> collections are serializable.
+In it, we capture an <code class="hljs">Int</code>, a <code class="hljs">String</code> and a <code class="hljs">List[Int]</code> which can be successfully
+sent over the wire.</p>
+<p>But, why? The compiler plugin inspects the type of <code class="hljs">capturedInt</code>, <code class="hljs">capturedString</code> and
+<code class="hljs">capturedList</code>. In this case, <code class="hljs">Int</code> is a primitive, <code class="hljs">String</code> extends <code class="hljs">java.io.Serializable</code>
+and <code class="hljs">List[Int]</code> is a closed class hierarchy with a primitive (and serializable) type parameter
+whose subclasses are safely serializable.</p>
+<p>The compiler plugin performs a similar reasoning to the one explained before
+to prove that certain types are serializable. Since Scala is very flexible and
+allows user to abstract over their logic, <code class="hljs">spores-serialization</code> is able to perform
+such analysis in more sophisticated situations.</p>
+<p>Before introducing them, let's understand the underlying concepts and guarantees
+that the transitive checks provide.</p>
 <h2 id="basics" class="a_section" data-magellan-target="basics">Basics<a class="a_hlink" href="#basics"></a></h2>
 <h3 id="closed-class-hierarchies" class="a_section" data-magellan-target="closed-class-hierarchies">Closed class hierarchies<a class="a_hlink" href="#closed-class-hierarchies"></a></h3>
 <p>Closed class hierarchies play a key role in Scala because:</p>
@@ -135,7 +159,7 @@ spore {
   <span class="hljs-keyword">val</span> capturedFoo1 = foo1
   <span class="hljs-keyword">val</span> capturedFoo2 = foo2
   <span class="hljs-keyword">val</span> capturedBar = bar
-  (...) =&gt; <span class="hljs-comment">// spore logic</span>
+  () =&gt; <span class="hljs-comment">// spore logic</span>
 }
 </code></pre>
 </div>
@@ -168,16 +192,71 @@ Therefore, its use is discouraged and only left for intrepid developers that lik
 <span class="hljs-keyword">val</span> riskyFoo: <span class="hljs-type">Foo</span> = <span class="hljs-type">Baz</span>(<span class="hljs-number">1</span>)
 <span class="hljs-keyword">val</span> s = spore {
   <span class="hljs-keyword">val</span> capturedFoo = (riskyFoo: <span class="hljs-type">Foo</span> <span class="hljs-meta">@assumeClosed</span>)
-  (...) =&gt; <span class="hljs-comment">// spore logic</span>
+  () =&gt; <span class="hljs-comment">// spore logic</span>
 }
 </code></pre>
 </div>
+<h3 id="abstracting-over-the-logic" class="a_section" data-magellan-target="abstracting-over-the-logic">Abstracting over the logic<a class="a_hlink" href="#abstracting-over-the-logic"></a></h3>
+<p>Sooner or later, your logic may become repetitive. <code class="hljs">spores-serialization</code> is capable
+of allowing users to abstract over their logic and define spores at places where
+the captured types are not fully defined.</p>
+<p>For the following code snippet, assume that <code class="hljs">Foo</code> is a closed class hierarchy.</p>
+<div class="row">
+<pre class="hljs small-expand columns a_xscroll"><code class="language-scala"><span class="hljs-keyword">import</span> scala.spores._
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Wrapper</span>[<span class="hljs-type">T</span> &lt;: <span class="hljs-type">Foo</span>](<span class="hljs-params">val wrapped: <span class="hljs-type">List</span>[<span class="hljs-type">T</span>]</span>) </span>{
+  <span class="hljs-keyword">val</span> zippingSpore = spore {
+    <span class="hljs-keyword">val</span> captured = wrapped
+    (xs: <span class="hljs-type">List</span>[<span class="hljs-type">Int</span>]) =&gt; xs.zip(wrapped)
+  }
+}
+</code></pre>
+</div>
+<p>And if the wrapper is <code class="hljs">Serializable</code>, you can even send it accross the wire:</p>
+<div class="row">
+<pre class="hljs small-expand columns a_xscroll"><code class="language-scala"><span class="hljs-keyword">import</span> scala.spores._
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Wrapper</span>[<span class="hljs-type">T</span> &lt;: <span class="hljs-type">Foo</span>](<span class="hljs-params">val wrapped: <span class="hljs-type">List</span>[<span class="hljs-type">T</span>]</span>) <span class="hljs-keyword">extends</span> <span class="hljs-title">Serializable</span> </span>{
+  <span class="hljs-keyword">val</span> zippingSpore = spore {
+    <span class="hljs-keyword">val</span> captured = wrapped
+    (xs: <span class="hljs-type">List</span>[<span class="hljs-type">Int</span>]) =&gt; xs.zip(wrapped)
+  }
+}
+
+<span class="hljs-keyword">val</span> wrapper = <span class="hljs-keyword">new</span> <span class="hljs-type">Wrapper</span>(<span class="hljs-type">List</span>(<span class="hljs-string">"Hello"</span>, <span class="hljs-string">"Hello"</span>))
+<span class="hljs-keyword">val</span> s = spore {
+  <span class="hljs-keyword">val</span> serializedWrapper = wrapper
+  () =&gt; wrapper
+}
+</code></pre>
+</div>
+<p>Why are these working examples? Because <code class="hljs">Foo</code> is ensured to be a high bound of
+the type parameter and <code class="hljs">Foo</code> is a closed class hierarchy.</p>
+<p>While the previous examples work, users can also set the high bound to be
+<code class="hljs">Serializable</code>:</p>
+<div class="row">
+<pre class="hljs small-expand columns a_xscroll"><code class="language-scala"><span class="hljs-keyword">import</span> scala.spores._
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Wrapper</span>[<span class="hljs-type">T</span> &lt;: <span class="hljs-type">Serializable</span>](<span class="hljs-params">val wrapped: <span class="hljs-type">List</span>[<span class="hljs-type">T</span>]</span>) </span>{
+  <span class="hljs-keyword">val</span> zippingSpore = spore {
+    <span class="hljs-keyword">val</span> captured = wrapped
+    (xs: <span class="hljs-type">List</span>[<span class="hljs-type">Int</span>]) =&gt; xs.zip(wrapped)
+  }
+}
+</code></pre>
+</div>
+<p>But this results in the following warning:</p>
+<div class="row">
+<pre class="hljs small-expand columns a_xscroll"><code>TBD
+</code></pre>
+</div>
+<p>TBD.</p>
 <h3 id="transient-fields" class="a_section" data-magellan-target="transient-fields">Transient fields<a class="a_hlink" href="#transient-fields"></a></h3>
 <p>In Java, variables may be marked <code class="hljs">transient</code> to indicate that they are not part of the persistent
 state of an object and therefore will not be serialized (see <a href="https://en.wikibooks.org/wiki/Java_Programming/Keywords/transient">this</a> and the <a href="http://docs.oracle.com/javase/specs/jls/se8/html/jls-8.html#jls-8.3.1.3">Java Language Specification</a>).</p>
 <p>In Scala, you can achieve the same goal by annotating the fields with <code class="hljs">@transient</code>.
 When <code class="hljs">spores-serialization</code> stumbles upon a transient field, it will ignore its type.</p>
-<h3 id="making-value-classes-serializable" class="a_section" data-magellan-target="making-value-classes-serializable">Making value classes serializable<a class="a_hlink" href="#making-value-classes-serializable"></a></h3>
+<h3 id="serializable-value-classes" class="a_section" data-magellan-target="serializable-value-classes">Serializable value classes<a class="a_hlink" href="#serializable-value-classes"></a></h3>
 <p>By definition, value classes can <em>only</em> extend <code class="hljs">AnyVal</code>, which means they cannot be <code class="hljs">{java.io, scala}.Serializable</code>.
 To overcome this limitation, the compiler plugin uses implicits to prove that a value class <code class="hljs">Foo</code> is serializable.
 For proving it, you need to provide an implicit <code class="hljs">CanBeSerialized[Foo]</code> in the scope of
@@ -188,7 +267,7 @@ the spore definition.</p>
 <span class="hljs-comment">// Value class definition somewhere</span>
 <span class="hljs-keyword">case</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Foo</span>(<span class="hljs-params">i: <span class="hljs-type">Int</span></span>) <span class="hljs-keyword">extends</span> <span class="hljs-title">AnyVal</span></span>
 <span class="hljs-class"><span class="hljs-keyword">object</span> <span class="hljs-title">Foo</span> </span>{
-  <span class="hljs-keyword">implicit</span> <span class="hljs-class"><span class="hljs-keyword">object</span> <span class="hljs-title">FooIsSerializable</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">scala</span>.<span class="hljs-title">spores</span>.<span class="hljs-title">CanBeSerialized</span>[<span class="hljs-type">Foo</span>]</span>
+  <span class="hljs-keyword">implicit</span> <span class="hljs-class"><span class="hljs-keyword">object</span> <span class="hljs-title">FooIsSerializable</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">CanBeSerialized</span>[<span class="hljs-type">Foo</span>]</span>
 }
 
 <span class="hljs-comment">// Spore definition somewhere else</span>
@@ -196,14 +275,14 @@ the spore definition.</p>
 <span class="hljs-keyword">val</span> foo = <span class="hljs-type">Foo</span>(<span class="hljs-number">5</span>)
 <span class="hljs-keyword">val</span> s = spore {
   <span class="hljs-keyword">val</span> captured = foo
-  (...) =&gt; <span class="hljs-comment">// spore logic</span>
+  () =&gt; <span class="hljs-comment">// spore logic</span>
 }
 </code></pre>
 </div>
 <p>Thanks to the definition of <code class="hljs">FooIsSerializable</code> and the <code class="hljs">import Foo._</code> in the spore
-definition, the compiler plugin is able to prove that <code class="hljs">Foo</code> is indeed serializable.</p>
+definition, the compiler plugin is able to prove that the use of <code class="hljs">Foo</code> is safe.</p>
 <blockquote class="warning">
-<p>Value classes are not safe to serialize. Its serialization fails when they require
+<p>Value classes <em>may</em> be non-serializable. Its serialization fails when they require
 allocation inside the spore body, because they need to be <a href="http://docs.scala-lang.org/overviews/core/value-classes.html">instantiated as a class <code class="hljs">Foo</code>
 instead of avoiding the runtime object allocation</a>. This happens when:</p>
 <ol>
@@ -216,6 +295,18 @@ This is a fundamental limitation of value classes that may be fixed in the futur
 the compiler plugin does not catch the misuse of value classes inside spores, so if you decide
 to use them, be careful.</p>
 </blockquote>
+<h3 id="warning-against-the-use-of-well-known-non-serializable-methods" class="a_section" data-magellan-target="warning-against-the-use-of-well-known-non-serializable-methods">Warning against the use of well-known non-serializable methods<a class="a_hlink" href="#warning-against-the-use-of-well-known-non-serializable-methods"></a></h3>
+<blockquote class="warning">
+<p>This section is not yet implemented. The idea is to provide a limited set
+of non-serializable methods, and then let the Community easily add more
+discovered methods.</p>
+</blockquote>
+<ol>
+<li><a href="https://issues.scala-lang.org/browse/SI-5018"><code class="hljs">Map.withDefault</code></a></li>
+<li><a href="https://issues.scala-lang.org/browse/SI-6654"><code class="hljs">Map.filterKeys</code></a></li>
+<li><a href="https://issues.scala-lang.org/browse/SI-9777?jql=status%20=%20Open%20AND%20labels%20=%20serialization">SI-9777</a></li>
+<li><a href="https://issues.scala-lang.org/browse/SI-5048?jql=status%20=%20Open%20AND%20labels%20=%20serialization">Closures in initializer of structural types break serialization</a></li>
+</ol>
 
               </main>
               
@@ -279,14 +370,7 @@ to use them, be careful.</p>
       <ul class="vertical menu">  
   <li>
     
-       <a href="#simple-example">Simple example</a> 
-    
-    
-  </li>
-  
-  <li>
-    
-       <a href="#abstracting-over-the-logic">Abstracting over the logic</a> 
+       <a href="#an-example">An example</a> 
     
     
   </li>
@@ -339,6 +423,13 @@ to use them, be careful.</p>
   
   <li>
     
+       <a href="#abstracting-over-the-logic">Abstracting over the logic</a> 
+    
+    
+  </li>
+  
+  <li>
+    
        <a href="#transient-fields">Transient fields</a> 
     
     
@@ -346,7 +437,14 @@ to use them, be careful.</p>
   
   <li>
     
-       <a href="#making-value-classes-serializable">Making value classes serializable</a> 
+       <a href="#serializable-value-classes">Serializable value classes</a> 
+    
+    
+  </li>
+  
+  <li>
+    
+       <a href="#warning-against-the-use-of-well-known-non-serializable-methods">Warning against the use of well-known non-serializable methods</a> 
     
     
   </li>
