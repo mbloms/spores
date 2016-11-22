@@ -311,6 +311,10 @@ they involve the creation of anonymous functions. Some examples are:</p>
 </ol>
 <p>As these examples are not well-known in the Scala community and still persist,
 <code class="hljs">spores-serialization</code> could warn when it detects them inside the spore bodies.</p>
+<h3 id="kryo-support" class="a_section" data-magellan-target="kryo-support">Kryo support<a class="a_hlink" href="#kryo-support"></a></h3>
+<p>There may be some missing pieces for working Kryo support. Spark users that
+use Kryo instead of Java serialization could get a lot of benefits from using
+<code class="hljs">spores</code> and <code class="hljs">spores-serialization</code>.</p>
 <h3 id="dealing-with-other-serialization-issues" class="a_section" data-magellan-target="dealing-with-other-serialization-issues">Dealing with other serialization issues<a class="a_hlink" href="#dealing-with-other-serialization-issues"></a></h3>
 <p>Serialization issues may happen when some classes are not in the classloaders,
 like <a href="https://issues.scala-lang.org/browse/SI-9777?jql=status%20=%20Open%20AND%20labels%20=%20serialization">SI-9777</a>.
@@ -462,6 +466,13 @@ Is there <em>something</em> we can do to detect these errors before they happen?
   <li>
     
        <a href="#warning-against-the-use-of-well-known-lazy-methods">Warning against the use of well-known &#x27;lazy&#x27; methods</a> 
+    
+    
+  </li>
+  
+  <li>
+    
+       <a href="#kryo-support">Kryo support</a> 
     
     
   </li>
