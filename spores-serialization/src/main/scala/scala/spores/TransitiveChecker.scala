@@ -71,8 +71,9 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
 
       /** Analyze a class hierarchy based on its symbol info and the
         * annotations that were captured in the concrete field definition. */
-      def analyzeClassHierarchy(symbol: Symbol,
+      def analyzeClassHierarchy(sym: Symbol,
                                 anns: List[AnnotationInfo] = Nil): Unit = {
+        val symbol = sym
         if (!hasAnnotations(anns, AssumeClosed)) {
           if (symbol.isSealed) {
             val subclasses = symbol.asClass.knownDirectSubclasses
@@ -84,9 +85,10 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
           }
         }
       }
-      def checkMembers(symbol: Symbol,
+      def checkMembers(sym: Symbol,
                        concreteType0: Option[Type] = None,
                        isSpore: Boolean = false): Unit = {
+        val symbol = sym.initialize
         if (!symbol.isSerializable) reportError(symbol)
         else {
           val symbolInfo = symbol.info
