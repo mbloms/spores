@@ -79,4 +79,76 @@ class PrimitiveSerializableSpec {
     }
     assert(s() == number.toString)
   }
+
+  @Test
+  def `A captured list of String is serializable`(): Unit = {
+    val greeting = List("Hello, World!")
+    val s = spore {
+      () => s"${capture(greeting)}"
+    }
+    assert(s() == greeting.toString)
+  }
+
+  @Test
+  def `A captured list of Int is serializable`(): Unit = {
+    val number = List(1)
+    val s = spore {
+      () => s"${capture(number)}"
+    }
+    assert(s() == number.toString)
+  }
+
+  @Test
+  def `A captured list of Byte is serializable`(): Unit = {
+    val number = List(1.toByte)
+    val s = spore {
+      () => s"${capture(number)}"
+    }
+    assert(s() == number.toString)
+  }
+
+  @Test
+  def `A captured list of Char is serializable`(): Unit = {
+    val char = List(1.toChar)
+    val s = spore {
+      () => s"${capture(char)}"
+    }
+    assert(s() == char.toString)
+  }
+
+  @Test
+  def `A captured list of Short is serializable`(): Unit = {
+    val number = List(1.toShort)
+    val s = spore {
+      () => s"${capture(number)}"
+    }
+    assert(s() == number.toString)
+  }
+
+  @Test
+  def `A captured list of Long is serializable`(): Unit = {
+    val number = List(1.toLong)
+    val s = spore {
+      () => s"${capture(number)}"
+    }
+    assert(s() == number.toString)
+  }
+
+  @Test
+  def `A captured list of Float is serializable`(): Unit = {
+    val number = List(1.toFloat)
+    val s = spore {
+      () => s"${capture(number)}"
+    }
+    assert(s() == number.toString)
+  }
+
+  @Test
+  def `A captured list of Double is serializable`(): Unit = {
+    val number = List(1.0)
+    val s = spore {
+      () => s"${capture(number)}"
+    }
+    assert(s() == number.toString)
+  }
 }
