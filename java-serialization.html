@@ -45,7 +45,7 @@ While they can be used by implicit-based libraries like <a href="https://github.
 <a href="https://github.com/lihaoyi/upickle-pprint">uPickle</a>,
 <a href="https://github.com/travisbrown/circe">Circe</a> or
 <a href="https://github.com/ochrons/boopickle">BooPickle</a>, this tutorial only considers
-the integration with <code class="hljs">{java, scala}.util.Serializable</code>-based libraries.</p>
+the integration with <code class="hljs">{java.io, scala}.Serializable</code>-based libraries.</p>
 <h2 id="goal" class="a_section" data-magellan-target="goal">Goal<a class="a_hlink" href="#goal"></a></h2>
 <p>Help Spark users identify serialization issues at compile-time rather than
 runtime. Concretely, this translates into addressing <a href="http://www.cakesolutions.net/teamblogs/demystifying-spark-serialisation-error">common</a> [1]
@@ -58,6 +58,12 @@ addCompilerPlugin(<span class="hljs-string">"ch.epfl.scala"</span> % <span class
 </code></pre>
 </div>
 <h2 id="quickstart" class="a_section" data-magellan-target="quickstart">Quickstart<a class="a_hlink" href="#quickstart"></a></h2>
+<p>Essentially, anything that you capture in a spore is checked to be serializable.</p>
+<p>This compiler plugin requires you to:</p>
+<ol>
+<li>Extend <code class="hljs">scala.Serializable</code> in the super class of the classes that you capture.</li>
+<li>Close the class hierarchy of all the custom classes that you capture (<a href="java-serialization.html#closed-class-hierarchies">what is this?</a>).</li>
+</ol>
 <h2 id="basics" class="a_section" data-magellan-target="basics">Basics<a class="a_hlink" href="#basics"></a></h2>
 <h3 id="closed-class-hierarchies" class="a_section" data-magellan-target="closed-class-hierarchies">Closed class hierarchies<a class="a_hlink" href="#closed-class-hierarchies"></a></h3>
 <p>Closed class hierarchies play a key role in Scala because:</p>
@@ -72,8 +78,8 @@ serializability of your program.</p>
 <p>Traditionally, class hierarchies have always be open. Open class hierarchies
 are handy and flexible for developers: they allow them to extend classes in any
 file or project they want (if they are <em>visible</em>). However, such flexibility
-hinders the static analysis of programs. For enabling this use case, we need to
-describe what closed class hierarchies are.</p>
+hinders the static analysis of programs. For overcoming this limitation, we use
+closed class hierarchies.</p>
 <div class="row"><div class="small-expand columns a_xscroll a_table"><table>
 <thead>
 <tr><th>Open class hierarchy</th><th>Closed class hierarchy</th></tr>
@@ -84,10 +90,11 @@ describe what closed class hierarchies are.</p>
 <tr><td><code class="language-scala"><span class="hljs-keyword">case</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Baz</span>(<span class="hljs-params">b: Int</span>) <span class="hljs-keyword">extends</span> <span class="hljs-title">Foo</span></span></code></td><td><code class="language-scala"><span class="hljs-keyword">final </span> <span class="hljs-keyword">case</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Baz</span>(<span class="hljs-params">b: Int</span>) <span class="hljs-keyword">extends</span> <span class="hljs-title">Foo</span></span></code></td></tr>
 </tbody>
 </table></div></div>
-<p>Closed class hierarchies are defines as open class hierarchies with extra modifiers.
+<p>A closed class hierarchy is a finite set of classes that share same hierarchy and are defined
+in the same Scala file. They are defined as their counterpart except for the use of extra modifiers.
 The rule of thumb is to define all the leafs as <code class="hljs">final</code>, and the root and intermediate traits
 and classes as <code class="hljs">sealed</code>. Therefore, whenever you try to extend a sealed trait/class
-or a <code class="hljs">final</code> class, the compiler will throw a happy error.</p>
+or a <code class="hljs">final</code> class, the compiler will throw a happy error at you.</p>
 <h4 id="motivation-of-sealed-class-hierarchies" class="a_section" data-magellan-target="motivation-of-sealed-class-hierarchies">Motivation of sealed class hierarchies<a class="a_hlink" href="#motivation-of-sealed-class-hierarchies"></a></h4>
 <p>Transitive checking requires a full traversal of the class hierarchy. It needs to check
 both class and trait definitions and <em>all their members</em> to prove that no serialization issues
@@ -101,8 +108,64 @@ positives if these externally defined classes are not serializable.</li>
 are only defined in the current compilation unit, otherwise false positives could happen.</li>
 <li>The Scala compiler does not give us access to direct subclasses if the class hierarchy
 is not sealed. This is a well-known <a href="https://issues.scala-lang.org/browse/SI-7046">limitation</a> of the Scala typer
-and may have a <a href="https://github.com/scala/scala/pull/5284">bugfix soon</a>.</li>
+and may have a <a href="https://github.com/scala/scala/pull/5284">partial bugfix soon</a>.</li>
 </ol>
+<h4 id="the-class-metamorphosis" class="a_section" data-magellan-target="the-class-metamorphosis">The class Metamorphosis<a class="a_hlink" href="#the-class-metamorphosis"></a></h4>
+<p>So what should you do to make <code class="hljs">spores-serialization</code> transitively check all your program?
+Ensure that all the captured variables in your spores are serializable and closed. If you
+have scattered class definitions across different packages, bring them to the same file
+and baptise the class hierarchy with <code class="hljs">sealed</code> and <code class="hljs">final</code> as described before.</p>
+<div class="row">
+<pre class="hljs small-expand columns a_xscroll"><code class="language-scala"><span class="hljs-keyword">import</span> scala.spores._
+<span class="hljs-keyword">sealed</span> <span class="hljs-class"><span class="hljs-keyword">trait</span> <span class="hljs-title">Foo</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Serializable</span></span>
+<span class="hljs-keyword">final</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Bar</span>(<span class="hljs-params">b: <span class="hljs-type">Int</span></span>) <span class="hljs-keyword">extends</span> <span class="hljs-title">Foo</span></span>
+<span class="hljs-keyword">final</span> <span class="hljs-keyword">case</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Baz</span>(<span class="hljs-params">b: <span class="hljs-type">Int</span></span>) <span class="hljs-keyword">extends</span> <span class="hljs-title">Foo</span></span>
+
+<span class="hljs-comment">// Force cast to Foo</span>
+<span class="hljs-keyword">val</span> foo1: <span class="hljs-type">Foo</span> = <span class="hljs-type">Baz</span>(<span class="hljs-number">1</span>)
+<span class="hljs-keyword">val</span> foo2: <span class="hljs-type">Foo</span> = <span class="hljs-keyword">new</span> <span class="hljs-type">Bar</span>(<span class="hljs-number">2</span>)
+<span class="hljs-keyword">val</span> bar = <span class="hljs-keyword">new</span> <span class="hljs-type">Bar</span>(<span class="hljs-number">2</span>)
+spore {
+  <span class="hljs-keyword">val</span> capturedFoo1 = foo1
+  <span class="hljs-keyword">val</span> capturedFoo2 = foo2
+  <span class="hljs-keyword">val</span> capturedBar = bar
+  (...) =&gt; <span class="hljs-comment">// spore logic</span>
+}
+</code></pre>
+</div>
+<p>The previous example compiles. If you don't seal the hierarchy, <code class="hljs">spores-serialization</code> will
+output the following error:</p>
+<div class="row">
+<pre class="hljs small-expand columns a_xscroll"><code class="language-scala">[warn] /your/path/<span class="hljs-type">File</span>.scala:<span class="hljs-number">93</span>: <span class="hljs-type">Detected</span> open <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">hierarchy</span> <span class="hljs-title">in</span> `<span class="hljs-title">trait</span> <span class="hljs-title">Foo</span>`.</span>
+[warn]   <span class="hljs-type">Transitive</span> inspection cannot ensure that <span class="hljs-class"><span class="hljs-keyword">trait</span> <span class="hljs-title">Foo</span> <span class="hljs-title">is</span> <span class="hljs-title">not</span> <span class="hljs-title">being</span> <span class="hljs-title">extended</span> <span class="hljs-title">somewhere</span> <span class="hljs-title">else</span>. <span class="hljs-title">For</span> <span class="hljs-title">a</span> <span class="hljs-title">complete</span> <span class="hljs-title">serializable</span> <span class="hljs-title">check</span>, <span class="hljs-title">class</span> <span class="hljs-title">hierarchies</span> <span class="hljs-title">need</span> <span class="hljs-title">to</span> <span class="hljs-title">be</span> <span class="hljs-title">closed</span>.</span>
+[warn] 
+[warn] <span class="hljs-type">Solution</span>: <span class="hljs-type">Close</span> the <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">hierarchy</span> <span class="hljs-title">by</span> <span class="hljs-title">marking</span> <span class="hljs-title">super</span> <span class="hljs-title">classes</span> <span class="hljs-title">as</span> `<span class="hljs-title">sealed</span>` <span class="hljs-title">and</span> <span class="hljs-title">sub</span> <span class="hljs-title">classes</span> <span class="hljs-title">as</span> `<span class="hljs-title">final</span>`.</span>
+[warn]      
+[warn]     <span class="hljs-class"><span class="hljs-keyword">trait</span> <span class="hljs-title">Foo</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Serializable</span> </span>{<span class="hljs-keyword">val</span> foo: <span class="hljs-type">String</span>}
+[warn]           ^
+</code></pre>
+</div>
+<p>Notice that capturing subclasses like <code class="hljs">Bar</code> or <code class="hljs">Baz</code> will never cause an error
+because they are final. In this case, no subclass analysis is performed.</p>
+<h4 id="the-escape-hatch" class="a_section" data-magellan-target="the-escape-hatch">The escape hatch<a class="a_hlink" href="#the-escape-hatch"></a></h4>
+<p>The annotation <code class="hljs">@assumeClosed</code> is a escape hatch for users that for some reason cannot
+turn their class hierarchy closed. It tells the compiler to assume that the class you're
+capturing is closed, but unfortunately no analysis of the subclasses will be performed (SI-7046).
+Therefore, its use is discouraged and only left for intrepid developers that like risk.</p>
+<div class="row">
+<pre class="hljs small-expand columns a_xscroll"><code class="language-scala"><span class="hljs-keyword">import</span> scala.spores._
+<span class="hljs-class"><span class="hljs-keyword">trait</span> <span class="hljs-title">Foo</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Serializable</span></span>
+<span class="hljs-keyword">final</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Bar</span>(<span class="hljs-params">b: <span class="hljs-type">Int</span></span>) <span class="hljs-keyword">extends</span> <span class="hljs-title">Foo</span></span>
+<span class="hljs-keyword">final</span> <span class="hljs-keyword">case</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Baz</span>(<span class="hljs-params">b: <span class="hljs-type">Int</span></span>) <span class="hljs-keyword">extends</span> <span class="hljs-title">Foo</span></span>
+
+<span class="hljs-comment">// Force cast to Foo</span>
+<span class="hljs-keyword">val</span> riskyFoo: <span class="hljs-type">Foo</span> = <span class="hljs-type">Baz</span>(<span class="hljs-number">1</span>)
+spore {
+  <span class="hljs-keyword">val</span> capturedFoo = (riskyFoo: <span class="hljs-type">Foo</span> <span class="hljs-meta">@assumeClosed</span>)
+  (...) =&gt; <span class="hljs-comment">// spore logic</span>
+}
+</code></pre>
+</div>
 
               </main>
               
@@ -187,6 +250,20 @@ and may have a <a href="https://github.com/scala/scala/pull/5284">bugfix soon</a
   <li>
     
        <a href="#motivation-of-sealed-class-hierarchies">Motivation of sealed class hierarchies</a> 
+    
+    
+  </li>
+  
+  <li>
+    
+       <a href="#the-class-metamorphosis">The class Metamorphosis</a> 
+    
+    
+  </li>
+  
+  <li>
+    
+       <a href="#the-escape-hatch">The escape hatch</a> 
     
     
   </li>
