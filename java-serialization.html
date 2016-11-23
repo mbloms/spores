@@ -53,10 +53,16 @@ runtime. Concretely, this translates into addressing <a href="http://www.cakesol
 <h2 id="installation" class="a_section" data-magellan-target="installation">Installation<a class="a_hlink" href="#installation"></a></h2>
 <p>Add the following sbt settings to your <code class="hljs">build.sbt</code>:</p>
 <div class="row">
-<pre class="hljs small-expand columns a_xscroll"><code class="language-scala">libraryDependencies += <span class="hljs-string">"ch.epfl.scala"</span> % <span class="hljs-string">"spores"</span> %% <span class="hljs-string">"0.4-M1"</span>
-addCompilerPlugin(<span class="hljs-string">"ch.epfl.scala"</span> % <span class="hljs-string">"spores-serialization"</span> %% <span class="hljs-string">"0.4-M1"</span>)
+<pre class="hljs small-expand columns a_xscroll"><code class="language-scala">resolvers += <span class="hljs-type">Resolver</span>.bintrayRepo(<span class="hljs-string">"scalacenter"</span>, <span class="hljs-string">"releases"</span>)
+libraryDependencies += <span class="hljs-string">"ch.epfl.scala"</span> %% <span class="hljs-string">"spores"</span> % <span class="hljs-string">"0.4.0-M3"</span>
+addCompilerPlugin(<span class="hljs-string">"ch.epfl.scala"</span> %% <span class="hljs-string">"spores-serialization"</span> % <span class="hljs-string">"0.4.0-M3"</span>)
 </code></pre>
 </div>
+<blockquote class="note">
+<p>These artifacts are only compatible with Scala 2.11.x.
+A <a href="https://issues.scala-lang.org/browse/SI-10009">bug in 2.12.0</a> prevents us from releasing
+a compatible version. <code class="hljs">spores</code> will be probably released for 2.12.1.</p>
+</blockquote>
 <h2 id="quickstart" class="a_section" data-magellan-target="quickstart">Quickstart<a class="a_hlink" href="#quickstart"></a></h2>
 <p>Spores allow you to control the environment of a closure. To ensure that spores
 are serializable-safe, all the captured variables are checked to be serializable.</p>
