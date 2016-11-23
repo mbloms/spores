@@ -291,7 +291,7 @@ Thanks to the definition of `FooIsSerializable` and the `import Foo._` in the sp
 definition, the compiler plugin is able to prove that the use of `Foo` is safe.
 
 > {.note}
-> Value classes *may* be non-serializable. Its serialization fails when they require
+> Non-primitive value classes *may* be non-serializable. Its serialization fails when they require
 > allocation inside the spore body, because they need to be [instantiated as a class `Foo`
 > instead of avoiding the runtime object allocation](http://docs.scala-lang.org/overviews/core/value-classes.html). This happens when:
 > 1. a value class is treated as another type.
