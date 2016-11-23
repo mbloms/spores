@@ -27,7 +27,6 @@ references can be avoided.
 In the following example, an Akka actor spawns a future to concurrently
 process incoming requests.
 
-**Example 1:**
 ```scala
 def receive = {
   case Request(data) =>
@@ -50,8 +49,6 @@ message of the future might be sent to the wrong receiver.
 The following example uses Java Serialization to serialize a closure. However,
 serialization fails with a `NotSerializableException` due to the unintended
 capture of a reference to an enclosing object.
-
-**Example 2:**
 
 ```scala
 case class Helper(name: String)
