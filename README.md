@@ -4,4 +4,4 @@
 
 Scala Spores, safe mobile closures: [SIP-21](http://docs.scala-lang.org/sips/pending/spores.html).
 
-[Documentation](https://github.com/jvican/spores).
+[Documentation](https://jvican.github.com/spores).
