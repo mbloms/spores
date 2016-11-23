@@ -2,24 +2,21 @@ package scala.spores
 
 import java.net.URLClassLoader
 
+import scala.reflect.ClassTag
 import scala.spores.util.PluginFeedback._
+import scala.spores.util.CheckerUtils
 
-class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
+class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
+    extends CheckerUtils[G] {
   import global._
+
   private val classPath = global.classPath.asURLs
   val JavaClassLoader = new URLClassLoader(classPath.toArray)
-  val AssumeClosed = global.rootMirror.requiredClass[scala.spores.assumeClosed]
-  val sporesBaseSymbol = global.rootMirror.symbolOf[scala.spores.SporeBase]
+  implicit val sb = lifeVest(implicitly[ClassTag[scala.spores.SporeBase]])
+  implicit val ac = lifeVest(implicitly[ClassTag[scala.spores.assumeClosed]])
+  val sporeBaseType = rootMirror.requiredClass[scala.spores.SporeBase].tpe
+  val assumeClosed = rootMirror.requiredClass[scala.spores.assumeClosed]
   val alreadyAnalyzed = new scala.collection.mutable.HashSet[Symbol]()
-
-  def debug[T](es: sourcecode.Text[T]*)(implicit line: sourcecode.Line,
-                                        file: sourcecode.File): Unit = {
-    es.foreach { e =>
-      val filename = file.value.replaceAll(".*/", "")
-      val header = Console.GREEN + s"$filename:${line.value}"
-      debuglog(s"$header ${Console.RESET}${e.value}")
-    }
-  }
 
   class TransitiveTraverser(unit: CompilationUnit, config: PluginConfig)
       extends Traverser {
@@ -84,7 +81,7 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
                                 anns: List[AnnotationInfo] = Nil): Unit = {
         val symbol = sym.initialize
         if (!alreadyAnalyzed.contains(symbol) &&
-            !hasAnnotations(anns, AssumeClosed)) {
+            !hasAnnotations(anns, assumeClosed)) {
           alreadyAnalyzed += symbol
           if (symbol.isSealed) {
             val subclasses = symbol.asClass.knownDirectSubclasses
@@ -127,7 +124,7 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
 
           noTransientFields.foreach { field =>
             val fieldSymbol = field.info.typeSymbol
-            debug(s"Inspecting field $fieldSymbol")
+            debug(s"Inspecting field of type $fieldSymbol")
             if (fieldSymbol.isClass) {
               if (!fieldSymbol.asClass.isPrimitive) {
                 if (!field.isSerializable) reportError(field)
@@ -186,7 +183,7 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G) {
       }
 
       tree match {
-        case cls: ClassDef if cls.symbol.tpe <:< sporesBaseSymbol.tpe =>
+        case cls: ClassDef if cls.symbol.tpe <:< sporeBaseType =>
           debug(s"First target of transitive analysis: $cls")
           checkMembers(cls.symbol, isSpore = true)
           super.traverse(tree)

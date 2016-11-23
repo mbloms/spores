@@ -144,13 +144,9 @@ lazy val `spores-serialization` = project
     libraryDependencies +=
       "org.scala-lang" % "scala-compiler" % scalaVersion.value,
     test in assembly := {},
-    assemblyExcludedJars in assembly := {
-      // Make sure that only fansi is shipped with the compiler
-      val includedDependencies = List("sourcecode", "fansi")
-      val cp = (fullClasspath in assembly).value
-      cp.filter(jar =>
-        !includedDependencies.exists(i => jar.data.getName.contains(i)))
-    },
+    assemblyOption in assembly :=
+      (assemblyOption in assembly).value
+        .copy(includeScala = false, includeDependency = true),
     scalacOptions in Test ++= {
       val compiledPlugin = assembly.value
       Seq(
@@ -169,6 +165,15 @@ lazy val `spores-serialization` = project
       IO.write(extraOptionsFile, extraOptions)
       List(extraOptionsFile.getAbsoluteFile)
     }.taskValue
+  )
+
+lazy val playground = project
+  .settings(allSettings)
+  .settings(
+    libraryDependencies ++= Seq(
+      "ch.epfl.scala" %% "spores" % version.value,
+      "ch.epfl.scala" %% "spores-serialization" % version.value
+    )
   )
 
 lazy val makeDocs = taskKey[Unit]("Make the process.")

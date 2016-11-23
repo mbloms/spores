@@ -30,7 +30,8 @@ object PluginFeedback {
     s"""${BoldRed(s"Detected open class hierarchy in `$openClass`.")}
        |  Transitive inspection cannot ensure that ${Color.Red(openClass)} is not being extended somewhere else. For a complete serializable check, class hierarchies need to be closed.
        |
-       |${SolutionTemplate(s"Close the class hierarchy by marking super classes as `sealed` and sub classes as `final`.")}
+       |${SolutionTemplate(
+         s"Close the class hierarchy by marking super classes as `sealed` and sub classes as `final`.")}
      """.stripMargin
   }
 
@@ -40,6 +41,23 @@ object PluginFeedback {
        |
        |${SolutionTemplate(
          s"Define `$tparam` as `$tparam <: Serializable` or extend $tparam with the most precise serializable super class.")}
+     """.stripMargin
+  }
+}
+
+object NoDependencyPluginFeedback {
+  private def noDependencyBoldRed(msg: String) =
+    Console.BOLD + Console.RED + msg + Console.RESET
+  private def noDependencySolutionTemplate(msg: String) =
+    Console.BOLD + Console.GREEN + msg + Console.RESET
+
+  def missingClass(cls: String) = {
+    s"""${noDependencyBoldRed(
+      s"The `spores` macro library is not in the classpath: $cls could not be found.")}
+       |
+       |${noDependencySolutionTemplate(
+      s"""Add to your `build.sbt` file:
+         |    libraryDependencies += "ch.epfl.scala" % "spores" %% version""".stripMargin)}
      """.stripMargin
   }
 }
