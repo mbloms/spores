@@ -8,8 +8,8 @@ import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
 @RunWith(classOf[JUnit4])
-class CaptureSpec {
-  @Test def `Example in serialization tutorial` = {
+class Collections {
+  @Test def `Example in serialization tutorial`: Unit = {
     val s = spore {
       val capturedInt = 8
       val capturedString = "Hello, World!"
