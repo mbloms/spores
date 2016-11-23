@@ -16,10 +16,14 @@ runtime. Concretely, this translates into addressing [common](http://www.cakesol
 ## Installation
 
 Add the following sbt settings to your `build.sbt`:
+
 ```scala
-libraryDependencies += "ch.epfl.scala" % "spores" %% "0.4-M1"
-addCompilerPlugin("ch.epfl.scala" % "spores-serialization" %% "0.4-M1")
+resolvers += Resolver.bintrayRepo("scalacenter", "releases")
+libraryDependencies += "ch.epfl.scala" %% "spores" % "0.4.0-M2"
+addCompilerPlugin("ch.epfl.scala" %% "spores-serialization" % "0.4.0-M2")
 ```
+
+These artifacts are compatible with Scala 2.11.
 
 ## Quickstart
 
