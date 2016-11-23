@@ -177,12 +177,12 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
       }
   }
 
-  /** Inspect the body of a tree and check that all the trees in the body
-    * suit the spores contract, that is, there are no invalid references to
+  /** Inspect a tree and check that all the trees in the body suit the
+    * spores contract, that is, there are no invalid references to
     * non-captured symbols or external expressions like lazy vals.
     */
   private class ReferenceInspector extends Traverser {
-    def checkStaticSelectOnObject(innerFun: Tree, outerSelect: Select) = {
+    def checkStaticSelectOnObject(innerFun: Tree, outerSelect: Select): Unit = {
       innerFun match {
         case Select(qual: SymTree, _) =>
           if (isSymbolChildOfSpore(qual.symbol)) {
@@ -196,10 +196,9 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
                         Feedback.NonStaticInvocation(innerFun.toString))
             }
           }
-        case s: Select => () // Selector doesn't have a `Symbol`
+        case _: Select => () // Selector doesn't have a `Symbol`
         case _ => // TODO(jvican): Add test for this case
-          ctx.abort(outerSelect.pos,
-                    Feedback.NonStaticInvocation(innerFun.toString))
+          traverse(innerFun)
       }
     }
 
