@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spark integration</title>
+    <title>Serializing spores</title>
     <link rel="stylesheet" href="_theme/css/foundation.min.css">
     <link rel="stylesheet" href="_theme/css/app.css">
      <link rel="stylesheet" href="_theme/css/highlight.js/styles/github-gist.css"> 
@@ -39,13 +39,11 @@
             <div class="row">
               
               <main class="columns large-order-2 sections" id="_sections">
-                <h1 id="spark-integration" class="a_section" data-magellan-target="spark-integration">Spark integration<a class="a_hlink" href="#spark-integration"></a></h1>
-<p>Spores can be integrated with Spark to provide a safer use of closure.
-While they can be used by implicit-based libraries like <a href="https://github.com/scala/pickling">Scala Pickling</a>,
-<a href="https://github.com/lihaoyi/upickle-pprint">uPickle</a>,
-<a href="https://github.com/travisbrown/circe">Circe</a> or
-<a href="https://github.com/ochrons/boopickle">BooPickle</a>, this tutorial only considers
-the integration with <code class="hljs">{java.io, scala}.Serializable</code>-based libraries.</p>
+                <h1 id="serializing-spores" class="a_section" data-magellan-target="serializing-spores">Serializing spores<a class="a_hlink" href="#serializing-spores"></a></h1>
+<p>Spores can be serialized using two mechanisms: implicit-based pickling libraries
+or <code class="hljs">{java.io, scala}.Serializable</code>-based libraries. In this tutorial, we will
+explore the integration of spores with Java-based serialization alternatives,
+and show how they can be used in Spark to provide a safer use of closures.</p>
 <h2 id="goal" class="a_section" data-magellan-target="goal">Goal<a class="a_hlink" href="#goal"></a></h2>
 <p>Help Spark users identify serialization issues at compile-time rather than
 runtime. Concretely, this translates into addressing <a href="http://www.cakesolutions.net/teamblogs/demystifying-spark-serialisation-error">common</a> [1]
@@ -296,7 +294,7 @@ the spore definition.</p>
 <p>Thanks to the definition of <code class="hljs">FooIsSerializable</code> and the <code class="hljs">import Foo._</code> in the spore
 definition, the compiler plugin is able to prove that the use of <code class="hljs">Foo</code> is safe.</p>
 <blockquote class="note">
-<p>Value classes <em>may</em> be non-serializable. Its serialization fails when they require
+<p>Non-primitive value classes <em>may</em> be non-serializable. Its serialization fails when they require
 allocation inside the spore body, because they need to be <a href="http://docs.scala-lang.org/overviews/core/value-classes.html">instantiated as a class <code class="hljs">Foo</code>
 instead of avoiding the runtime object allocation</a>. This happens when:</p>
 <ol>
@@ -350,7 +348,7 @@ Is there <em>something</em> we can do to detect these errors before they happen?
   
   <li  class="a_thispage" >
     
-      <a href="java-serialization.html">Spark integration</a>
+      <a href="java-serialization.html">Serializing spores</a>
     
     
   </li>
@@ -369,7 +367,7 @@ Is there <em>something</em> we can do to detect these errors before they happen?
                        
   <li>
     
-       <a href="#spark-integration">Spark integration</a> 
+       <a href="#serializing-spores">Serializing spores</a> 
     
     
       <ul class="vertical menu">  
