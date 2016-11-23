@@ -23,7 +23,10 @@ libraryDependencies += "ch.epfl.scala" %% "spores" % "0.4.0-M3"
 addCompilerPlugin("ch.epfl.scala" %% "spores-serialization" % "0.4.0-M3")
 ```
 
-These artifacts are compatible with Scala 2.11.
+> {.note}
+> These artifacts are only compatible with Scala 2.11.x.
+> A [bug in 2.12.0](https://issues.scala-lang.org/browse/SI-10009) prevents us from releasing
+> a compatible version. `spores` will be probably released for 2.12.1.
 
 ## Quickstart
 
