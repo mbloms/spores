@@ -1,11 +1,9 @@
-# Spark integration
+# Serializing spores
 
-Spores can be integrated with Spark to provide a safer use of closure.
-While they can be used by implicit-based libraries like [Scala Pickling](https://github.com/scala/pickling),
-[uPickle](https://github.com/lihaoyi/upickle-pprint),
-[Circe](https://github.com/travisbrown/circe) or
-[BooPickle](https://github.com/ochrons/boopickle), this tutorial only considers
-the integration with `{java.io, scala}.Serializable`-based libraries.
+Spores can be serialized using two mechanisms: implicit-based pickling libraries
+or `{java.io, scala}.Serializable`-based libraries. In this tutorial, we will
+explore the integration of spores with Java-based serialization alternatives,
+and show how they can be used in Spark to provide a safer use of closures.
 
 ## Goal
 
