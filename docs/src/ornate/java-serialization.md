@@ -19,8 +19,8 @@ Add the following sbt settings to your `build.sbt`:
 
 ```scala
 resolvers += Resolver.bintrayRepo("scalacenter", "releases")
-libraryDependencies += "ch.epfl.scala" %% "spores" % "0.4.0-M2"
-addCompilerPlugin("ch.epfl.scala" %% "spores-serialization" % "0.4.0-M2")
+libraryDependencies += "ch.epfl.scala" %% "spores" % "0.4.0-M3"
+addCompilerPlugin("ch.epfl.scala" %% "spores-serialization" % "0.4.0-M3")
 ```
 
 These artifacts are compatible with Scala 2.11.
