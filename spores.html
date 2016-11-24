@@ -49,17 +49,65 @@ of functions based on types, having more control over the function's environment
 of the captured variables. Captured variables are terms defined outside of the function
 definition and used throughout the closure body. <code class="hljs">Spores</code> are designed to be composable
 in both logic and properties.</p>
-<h2 id="why-should-i-use-them" class="a_section" data-magellan-target="why-should-i-use-them">Why should I use them?<a class="a_hlink" href="#why-should-i-use-them"></a></h2>
-<p>Because of these features, spores are naturally useful in different programming domains.
-A classic example is function serialization where RDD-like APIs require the closure to
-be serialized and sent across the wire. Spores strive to make error detection happen at
-compile-time rather than runtime, and thus save time and increase developer productivity.</p>
+<h2 id="introduction" class="a_section" data-magellan-target="introduction">Introduction<a class="a_hlink" href="#introduction"></a></h2>
+<p>Functional programming languages are regularly touted as an enabling force, as
+an increasing number of applications become concurrent and distributed.
+However, managing closures in a concurrent or distributed environment, or
+writing APIs to be used by clients in such an environment, remains
+considerably precarious-- complicated environments can be captured by these
+closures, which regularly leads to a whole host of potential hazards across
+libraries/frameworks in Scala's standard library and its ecosystem.</p>
+<p>Potential hazards when using closures incorrectly:</p>
+<ul>
+<li>Memory leaks</li>
+<li>Race conditions, due to capturing mutable references</li>
+<li>Runtime serialization errors, due to unintended capture of references</li>
+</ul>
+<p>This SIP outlines an abstraction, called <em>spores</em>, which enables safer use of
+closures in concurrent and distributed environments. This is achieved by
+controlling the environment which a spore can capture. Using an
+<em>assignment-on-capture</em> semantics, certain concurrency bugs due to capturing mutable
+references can be avoided.</p>
+<h2 id="motivation" class="a_section" data-magellan-target="motivation">Motivation<a class="a_hlink" href="#motivation"></a></h2>
+<h3 id="serialization" class="a_section" data-magellan-target="serialization">Serialization<a class="a_hlink" href="#serialization"></a></h3>
+<p>The following example uses Java Serialization to serialize a closure. However,
+serialization fails with a <code class="hljs">NotSerializableException</code> due to the unintended
+capture of a reference to an enclosing object.</p>
+<div class="row">
+<pre class="hljs small-expand columns a_xscroll"><code class="language-scala"><span class="hljs-keyword">case</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Helper</span>(<span class="hljs-params">name: <span class="hljs-type">String</span></span>)</span>
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Main</span> </span>{
+  <span class="hljs-keyword">val</span> helper = <span class="hljs-type">Helper</span>(<span class="hljs-string">"the helper"</span>)
+
+  <span class="hljs-keyword">val</span> fun: <span class="hljs-type">Int</span> =&gt; <span class="hljs-type">Unit</span> = (x: <span class="hljs-type">Int</span>) =&gt; {
+    <span class="hljs-keyword">val</span> result = x + <span class="hljs-string">" "</span> + helper.toString
+    println(<span class="hljs-string">"The result is: "</span> + result)
+  }
+}
+</code></pre>
+</div>
+<p>Given the above class definitions, serializing the <code class="hljs">fun</code> member of an instance
+of <code class="hljs">Main</code> throws a <code class="hljs">NotSerializableException</code>. This is unexpected, since <code class="hljs">fun</code>
+refers only to serializable objects: <code class="hljs">x</code> (an <code class="hljs">Int</code>) and <code class="hljs">helper</code> (an instance
+of a case class).</p>
+<p>Here is an explanation of why the serialization of <code class="hljs">fun</code> fails: since <code class="hljs">helper</code>
+is a field, it is not actually copied when it is captured by the closure.
+Instead, when accessing helper its getter is invoked. This can be made
+explicit by replacing <code class="hljs">helper.toString</code> by the invocation of its getter,
+<code class="hljs">this.helper.toString</code>. Consequently, the <code class="hljs">fun</code> closure captures <code class="hljs">this</code>, not
+just a copy of <code class="hljs">helper</code>. However, <code class="hljs">this</code> is a reference to class <code class="hljs">Main</code> which
+is not serializable.</p>
+<p>The above example is not the only possible situation in which a closure can
+capture a reference to <code class="hljs">this</code> or to an enclosing object in an unintended way.
+Thus, runtime errors when serializing closures are common.</p>
+<h2 id="getting-started" class="a_section" data-magellan-target="getting-started">Getting started<a class="a_hlink" href="#getting-started"></a></h2>
+<p>Start reading the <a href="getting-started.html">Getting Started section</a>.</p>
 <h2 id="about" class="a_section" data-magellan-target="about">About<a class="a_hlink" href="#about"></a></h2>
-<p>Spores is a research project by <a href="https://heather.miller.am">Heather Miller</a> and <a href="http://lampwww.epfl.ch/~phaller/">Philipp Haller</a>.
-If you want to read more about the underlying theory, check the paper <a href="https://infoscience.epfl.ch/record/191239/files/spores_1.pdf">Spores: A Type-based Foundation
-for Closures in the Age of Concurrency and Distribution</a>.</p>
 <p>The Scala Center is supporting this project under the <a href="https://github.com/scalacenter/advisoryboard/blob/master/proposals/006-compile-time-serializibility-check.md">Advisory Board proposal submitted
-by IBM</a>.</p>
+by IBM</a>.
+If you want to read more about the underlying theory, check the paper <a href="https://infoscience.epfl.ch/record/191239/files/spores_1.pdf">Spores: A Type-based Foundation
+for Closures in the Age of Concurrency and Distribution</a>
+by <a href="https://heather.miller.am">Heather Miller</a> and <a href="http://lampwww.epfl.ch/~phaller/">Philipp Haller</a>.</p>
 
               </main>
               
@@ -110,7 +158,30 @@ by IBM</a>.</p>
       <ul class="vertical menu">  
   <li>
     
-       <a href="#why-should-i-use-them">Why should I use them?</a> 
+       <a href="#introduction">Introduction</a> 
+    
+    
+  </li>
+  
+  <li>
+    
+       <a href="#motivation">Motivation</a> 
+    
+    
+      <ul class="vertical menu">  
+  <li>
+    
+       <a href="#serialization">Serialization</a> 
+    
+    
+  </li>
+  </ul>
+    
+  </li>
+  
+  <li>
+    
+       <a href="#getting-started">Getting started</a> 
     
     
   </li>

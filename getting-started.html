@@ -40,75 +40,6 @@
               
               <main class="columns large-order-2 sections" id="_sections">
                 <h1 id="getting-started" class="a_section" data-magellan-target="getting-started">Getting started<a class="a_hlink" href="#getting-started"></a></h1>
-<p>Functional programming languages are regularly touted as an enabling force, as
-an increasing number of applications become concurrent and distributed.
-However, managing closures in a concurrent or distributed environment, or
-writing APIs to be used by clients in such an environment, remains
-considerably precarious-- complicated environments can be captured by these
-closures, which regularly leads to a whole host of potential hazards across
-libraries/frameworks in Scala's standard library and its ecosystem.</p>
-<p>Potential hazards when using closures incorrectly:</p>
-<ul>
-<li>Memory leaks</li>
-<li>Race conditions, due to capturing mutable references</li>
-<li>Runtime serialization errors, due to unintended capture of references</li>
-</ul>
-<p>This SIP outlines an abstraction, called <em>spores</em>, which enables safer use of
-closures in concurrent and distributed environments. This is achieved by
-controlling the environment which a spore can capture. Using an
-<em>assignment-on-capture</em> semantics, certain concurrency bugs due to capturing mutable
-references can be avoided.</p>
-<h2 id="motivating-examples" class="a_section" data-magellan-target="motivating-examples">Motivating Examples<a class="a_hlink" href="#motivating-examples"></a></h2>
-<h3 id="futures-and-akka-actors" class="a_section" data-magellan-target="futures-and-akka-actors">Futures and Akka Actors<a class="a_hlink" href="#futures-and-akka-actors"></a></h3>
-<p>In the following example, an Akka actor spawns a future to concurrently
-process incoming requests.</p>
-<div class="row">
-<pre class="hljs small-expand columns a_xscroll"><code class="language-scala"><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">receive</span> </span>= {
-  <span class="hljs-keyword">case</span> <span class="hljs-type">Request</span>(data) =&gt;
-    <span class="hljs-type">Future</span> {
-      <span class="hljs-keyword">val</span> result = transform(data)
-      sender ! <span class="hljs-type">Response</span>(result)
-    }
-}
-</code></pre>
-</div>
-<p>Capturing <code class="hljs">sender</code> in the above example is problematic, since it does not
-return a stable value. It is possible that the future's body is executed at a
-time when the actor has started processing the next <code class="hljs">Request</code> message which
-could be originating from a different actor. As a result, the <code class="hljs">Response</code>
-message of the future might be sent to the wrong receiver.</p>
-<h3 id="serialization" class="a_section" data-magellan-target="serialization">Serialization<a class="a_hlink" href="#serialization"></a></h3>
-<p>The following example uses Java Serialization to serialize a closure. However,
-serialization fails with a <code class="hljs">NotSerializableException</code> due to the unintended
-capture of a reference to an enclosing object.</p>
-<div class="row">
-<pre class="hljs small-expand columns a_xscroll"><code class="language-scala"><span class="hljs-keyword">case</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Helper</span>(<span class="hljs-params">name: <span class="hljs-type">String</span></span>)</span>
-
-<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Main</span> </span>{
-  <span class="hljs-keyword">val</span> helper = <span class="hljs-type">Helper</span>(<span class="hljs-string">"the helper"</span>)
-
-  <span class="hljs-keyword">val</span> fun: <span class="hljs-type">Int</span> =&gt; <span class="hljs-type">Unit</span> = (x: <span class="hljs-type">Int</span>) =&gt; {
-    <span class="hljs-keyword">val</span> result = x + <span class="hljs-string">" "</span> + helper.toString
-    println(<span class="hljs-string">"The result is: "</span> + result)
-  }
-}
-</code></pre>
-</div>
-<p>Given the above class definitions, serializing the <code class="hljs">fun</code> member of an instance
-of <code class="hljs">Main</code> throws a <code class="hljs">NotSerializableException</code>. This is unexpected, since <code class="hljs">fun</code>
-refers only to serializable objects: <code class="hljs">x</code> (an <code class="hljs">Int</code>) and <code class="hljs">helper</code> (an instance
-of a case class).</p>
-<p>Here is an explanation of why the serialization of <code class="hljs">fun</code> fails: since <code class="hljs">helper</code>
-is a field, it is not actually copied when it is captured by the closure.
-Instead, when accessing helper its getter is invoked. This can be made
-explicit by replacing <code class="hljs">helper.toString</code> by the invocation of its getter,
-<code class="hljs">this.helper.toString</code>. Consequently, the <code class="hljs">fun</code> closure captures <code class="hljs">this</code>, not
-just a copy of <code class="hljs">helper</code>. However, <code class="hljs">this</code> is a reference to class <code class="hljs">Main</code> which
-is not serializable.</p>
-<p>The above example is not the only possible situation in which a closure can
-capture a reference to <code class="hljs">this</code> or to an enclosing object in an unintended way.
-Thus, runtime errors when serializing closures are common.</p>
-<h2 id="basic-usage" class="a_section" data-magellan-target="basic-usage">Basic Usage<a class="a_hlink" href="#basic-usage"></a></h2>
 <p>Spores have a few modes of usage. The simplest form is:</p>
 <div class="row">
 <pre class="hljs small-expand columns a_xscroll"><code class="language-scala"><span class="hljs-keyword">val</span> s = spore {
@@ -454,36 +385,6 @@ SAMs in general to achieve type inference for spores.</p>
     
     
       <ul class="vertical menu">  
-  <li>
-    
-       <a href="#motivating-examples">Motivating Examples</a> 
-    
-    
-      <ul class="vertical menu">  
-  <li>
-    
-       <a href="#futures-and-akka-actors">Futures and Akka Actors</a> 
-    
-    
-  </li>
-  
-  <li>
-    
-       <a href="#serialization">Serialization</a> 
-    
-    
-  </li>
-  </ul>
-    
-  </li>
-  
-  <li>
-    
-       <a href="#basic-usage">Basic Usage</a> 
-    
-    
-  </li>
-  
   <li>
     
        <a href="#design">Design</a> 
