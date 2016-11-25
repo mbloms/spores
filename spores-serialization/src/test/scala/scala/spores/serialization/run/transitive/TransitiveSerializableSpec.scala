@@ -165,4 +165,38 @@ class TransitiveSerializableSpec {
       () => captured
     }
   }
+
+  @Test
+  def `Compile a concrete instantiated closed class hierarchy`(): Unit = {
+    sealed trait Foo[T] extends Serializable {val foo: T}
+    final case class Bar[T](foo: T) extends Foo[T]
+    val foo = Bar("muahaha")
+    spore {
+      val captured = foo
+      () => captured
+    }
+  }
+
+  @Test
+  def `Compile a HK closed class hierarchy whose subclass defines more type parameters`(): Unit = {
+    sealed trait Foo[T] extends Serializable {val foo: T}
+    final case class ExtraBar[T, U](foo: T, bar: U) extends Foo[T]
+    val foo = ExtraBar("muahaha", new Integer(1))
+    spore {
+      val captured = foo
+      () => captured
+    }
+  }
+
+
+  @Test
+  def `Compile a HK closed class hierarchy whose subclass defines more type parameters and applies them in a reverse way`(): Unit = {
+    sealed trait Foo[T] extends Serializable
+    final case class ReversedExtraBar[T, U](foo: T, bar: U) extends Foo[U]
+    val foo = ReversedExtraBar("muahaha", new Integer(1))
+    spore {
+      val captured = foo
+      () => captured
+    }
+  }
 }

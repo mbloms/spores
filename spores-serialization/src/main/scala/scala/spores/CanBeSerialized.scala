@@ -14,4 +14,6 @@ trait SerializationWitnesses {
   implicit object FloatWitness extends CanBeSerialized[Float]
 }
 
-object PrimitiveSerializationWitnesses extends SerializationWitnesses
+object PrimitiveSerializationWitnesses extends SerializationWitnesses {
+  implicit object StringWitness extends CanBeSerialized[String]
+}

@@ -78,15 +78,25 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
       /** Analyze a class hierarchy based on its symbol info and the
         * annotations that were captured in the concrete field definition. */
       def analyzeClassHierarchy(sym: Symbol,
-                                anns: List[AnnotationInfo] = Nil): Unit = {
+                                anns: List[AnnotationInfo] = Nil,
+                                concreteType: Option[Type] = None,
+                                typeArgs: List[Symbol] = Nil): Unit = {
         val symbol = sym.initialize
         if (!alreadyAnalyzed.contains(symbol) &&
             !hasAnnotations(anns, assumeClosed)) {
           alreadyAnalyzed += symbol
           if (symbol.isSealed) {
             val subclasses = symbol.asClass.knownDirectSubclasses
-            subclasses.foreach(analyzeClassHierarchy(_))
-            subclasses.foreach(checkMembers(_))
+            subclasses.foreach(analyzeClassHierarchy(_, anns, concreteType))
+            subclasses.foreach { subclass =>
+              if (subclass.typeParams.nonEmpty) {
+                val concreteTypeArgs = concreteType
+                  .map(_.typeArgs.map(_.typeSymbol))
+                  .getOrElse(typeArgs)
+                debug(s"Pass concrete type args... $concreteTypeArgs")
+                checkMembers(subclass, concreteType, concreteTypeArgs)
+              } else checkMembers(subclass, concreteType)
+            }
           } else if (!symbol.isEffectivelyFinal) {
             val msg = openClassHierarchy(symbol.toString)
             report(config.forceClosedClassHierarchy, symbol.pos, msg)
@@ -95,16 +105,17 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
       }
       def checkMembers(sym: Symbol,
                        concreteType0: Option[Type] = None,
+                       concreteTypeArgs: List[Symbol] = Nil,
                        isSpore: Boolean = false): Unit = {
         val symbol = sym.initialize
         if (!symbol.isSerializable) reportError(symbol)
         else {
+          debug(s"Checking member $symbol (${sym.tpe}) from $concreteType0")
           val symbolInfo = symbol.info
           val members = symbolInfo.members
           val termMembers = members.filter(onlyTerm)
           val currentTypeParams = symbolInfo.typeParams.map(_.tpe)
           val numberCurrentTypeParams = currentTypeParams.length
-          debug(s"Checking the member $symbol")
 
           // Get the members of base classes with already applied type params
           val tparamsBaseClassMembers = symbolInfo.baseClasses.filter { bc =>
@@ -112,34 +123,68 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
             numberTypeParams > 0 &&
             numberTypeParams > numberCurrentTypeParams
           }.flatMap(_.info.members.filter(onlyTerm))
+          debug(s"-> Type params from base classes: $tparamsBaseClassMembers")
 
           val allMembers = (termMembers ++ tparamsBaseClassMembers).toList
           val noTransientFields = pruneScope(newScopeWith(allMembers: _*))
 
           // Spores are not final => Excluded conversion macro
           if (!isSpore && nonPrimitive(symbol)) {
-            val definedAnnotations = concreteType0.map(_.annotations)
-            analyzeClassHierarchy(symbol, definedAnnotations.toList.flatten)
+            val definedAnns = concreteType0.map(_.annotations).toList.flatten
+            analyzeClassHierarchy(symbol, definedAnns, concreteType0)
+          }
+
+          // Preparing base type args for HK type analysis
+          val maybeMappedBaseTypeArgs = concreteType0.map { concreteType =>
+            val concreteTypeSym = concreteType.typeSymbol
+            val baseTypeArgs = symbolInfo.baseType(concreteTypeSym).typeArgs
+            debug(s"Base type args are $baseTypeArgs")
+            val concreteTypeParams = concreteTypeSym.info.typeParams
+            val mapped = baseTypeArgs.zip(concreteTypeParams)
+            debug(s"Mapped base type args are $mapped")
+            mapped
           }
 
           noTransientFields.foreach { field =>
             val fieldSymbol = field.info.typeSymbol
-            debug(s"Inspecting field of type $fieldSymbol")
+            debug(s"Inspecting field of ${fieldSymbol.tpe}")
             if (fieldSymbol.isClass) {
               if (!fieldSymbol.asClass.isPrimitive) {
                 if (!field.isSerializable) reportError(field)
-                else checkMembers(fieldSymbol, Some(field.tpe))
+                else {
+                  val typeArgs = field.info.typeArgs.map(_.typeSymbol)
+                  debug(field.info.typeParams)
+                  if (concreteTypeArgs.isEmpty ||
+                      typeArgs.nonEmpty && typeArgs.forall(!_.isTypeParameter))
+                    checkMembers(fieldSymbol, Some(field.info))
+                  else {
+                    debug(s"Making $typeArgs concrete with $concreteTypeArgs")
+                    val concretized = field.tpe.instantiateTypeParams(
+                      typeArgs,
+                      concreteTypeArgs.map(_.tpe))
+                    debug(s"Concrete result is $concretized")
+                    checkMembers(concretized.typeSymbol, Some(concretized))
+                  }
+                }
               }
             } else if (fieldSymbol.isTypeParameter) {
+              // Get the most concrete type possible from the defn site
               val concreteType = concreteType0.getOrElse(field.tpe)
-              val concreteFieldType = concreteType.memberType(fieldSymbol)
+              val concreteFieldType = maybeMappedBaseTypeArgs.map { ts =>
+                val mapped = ts.find(_._1 == field.tpe).map(_._2)
+                concreteType.memberType(mapped.getOrElse(fieldSymbol))
+              }.getOrElse(field.tpe)
               val concreteFieldSymbol = concreteFieldType.typeSymbol
+              debug(s"Computed $concreteFieldSymbol from $concreteType")
 
               if (nonPrimitive(concreteFieldSymbol)) {
                 if (concreteFieldSymbol.isSerializable ||
                     canBeSerialized(members, concreteFieldType)) {
+                  debug(s"Symbol $concreteFieldSymbol can be serialized")
                   val anns = concreteFieldType.annotations
-                  analyzeClassHierarchy(concreteFieldSymbol, anns)
+                  analyzeClassHierarchy(concreteFieldSymbol,
+                                        anns,
+                                        Some(concreteFieldType))
                 } else {
                   val (owner, tpe) =
                     (fieldSymbol.owner.decodedName.trim,
@@ -162,8 +207,9 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
                     canBeSerialized(members, hiBounds.tpe)
 
                 if (deservesFurtherAnalysis && canBeProvedSerializable) {
-                  val anns = concreteFieldSymbol.annotations
-                  analyzeClassHierarchy(hiBounds, anns)
+                  debug(s"Symbol $hiBounds can be proven serializable")
+                  val as = concreteFieldSymbol.annotations
+                  analyzeClassHierarchy(hiBounds, as, Some(concreteFieldType))
                 } else if (concreteFieldSymbol.isSerializable ||
                            canBeSerialized(members, concreteFieldType)) {
                   val concrete = Some(concreteType.toString)
@@ -179,12 +225,13 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
               report(true, field.pos, unhandledType(unhandled))
             }
           }
+          debug(s"Finished analysis of $symbol")
         }
       }
 
       tree match {
         case cls: ClassDef if cls.symbol.tpe <:< sporeBaseType =>
-          debug(s"First target of transitive analysis: $cls")
+          debug(s"First target of transitive analysis: ${cls.symbol}")
           checkMembers(cls.symbol, isSpore = true)
           super.traverse(tree)
         case _ => super.traverse(tree)
