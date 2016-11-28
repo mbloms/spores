@@ -57,7 +57,7 @@ object NoDependencyPluginFeedback {
        |
        |${noDependencySolutionTemplate(
       s"""Add to your `build.sbt` file:
-         |    libraryDependencies += "ch.epfl.scala" % "spores" %% version""".stripMargin)}
+         |    libraryDependencies += "ch.epfl.scala" %% "spores" % version""".stripMargin)}
      """.stripMargin
   }
 }
