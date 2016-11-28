@@ -12,6 +12,14 @@ of the captured variables. Captured variables are terms defined outside of the f
 definition and used throughout the closure body. `Spores` are designed to be composable
 in both logic and properties.
 
+> {.note}
+> ##### Expectations
+> You can expect a beta-quality version of spores and the serialization transitive checker.
+> As the projects have not been tested in production yet and they depend on fragile
+> parts of the Scala compiler, there may be some bugs or misbehaviours.
+>
+> Please, help us improve and file any issue you may encounter [here](https://github.com/jvican/spores/issues/new)!
+
 ## Introduction
 
 Functional programming languages are regularly touted as an enabling force, as

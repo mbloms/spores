@@ -303,31 +303,12 @@ definition, the compiler plugin is able to prove that the use of `Foo` is safe.
 
 ## Future ideas
 
+Do you want `spores-serialization` to be smarter? To support a use case that it's
+not yet implemented?
+
 As a compiler plugin, `spores-serialization` is capable of doing more than just
-static type analysis. Here are some ideas for the future that may be considered
-to be implemented depending on the community's response. Come to discuss them
-at [Discourse](https://contributors.scala-lang.org/) (**TBD**).
+static type analysis. [Here are some ideas for the future](https://github.com/jvican/spores/issues)
+that may be considered to be implemented depending on the community's response. Come to discuss them
+at [Discourse](https://contributors.scala-lang.org/)(**TBD**) or the issue tracker,
+and propose your ideas to make everyone's life easier.
 
-### Warning against the use of well-known 'lazy' methods
-
-Methods whose implementation is lazy are generally not serializable because
-they involve the creation of anonymous functions. Some examples are:
-
-1. [`Map.withDefault`](https://issues.scala-lang.org/browse/SI-5018)
-1. [`Map.filterKeys`](https://issues.scala-lang.org/browse/SI-6654)
-1. [Closures in initializer of structural types break serialization](https://issues.scala-lang.org/browse/SI-5048?jql=status%20=%20Open%20AND%20labels%20=%20serialization)
-
-As these examples are not well-known in the Scala community and still persist,
-`spores-serialization` could warn when it detects them inside the spore bodies.
-
-### Kryo support
-
-There may be some missing pieces for working Kryo support. Spark users that
-use Kryo instead of Java serialization could get a lot of benefits from using
-`spores` and `spores-serialization`.
-
-### Dealing with other serialization issues
-
-Serialization issues may happen when some classes are not in the classloaders,
-like [SI-9777](https://issues.scala-lang.org/browse/SI-9777?jql=status%20=%20Open%20AND%20labels%20=%20serialization).
-Is there *something* we can do to detect these errors before they happen?
