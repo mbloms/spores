@@ -169,6 +169,7 @@ lazy val `spores-serialization` = project
 lazy val playground = project
   .settings(allSettings)
   .settings(
+    scalacOptions in Compile += "-Ydebug",
     initialCommands in console in Compile := "import scala.spores._",
     libraryDependencies ++= Seq(
       "ch.epfl.scala" %% "spores" % version.value,

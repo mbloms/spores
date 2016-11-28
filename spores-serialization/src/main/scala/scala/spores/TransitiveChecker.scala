@@ -11,9 +11,12 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
 
   private val classPath = global.classPath.asURLs
   val JavaClassLoader = new URLClassLoader(classPath.toArray)
-  val sporeBaseType = lifeVest(symbolOf[scala.spores.SporeBase].asClass.tpe)
-  val assumeClosed = lifeVest(symbolOf[scala.spores.assumeClosed].asClass)
   val alreadyAnalyzed = new scala.collection.mutable.HashSet[Symbol]()
+
+  def classOf[T: WeakTypeTag] = symbolOf[T].asClass
+  val sporeBaseType = lifeVest(classOf[scala.spores.SporeBase].tpe)
+  val assumeClosed = lifeVest(classOf[scala.spores.assumeClosed])
+  val deprecatedInheritance = classOf[scala.deprecatedInheritance]
 
   class TransitiveTraverser(unit: CompilationUnit, config: PluginConfig)
       extends Traverser {
@@ -26,8 +29,10 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
       java.lang.reflect.Modifier.isTransient(field.getModifiers)
     }
 
-    def hasAnnotations(anns: List[AnnotationInfo], target: ClassSymbol) =
-      anns.exists(_.tpe.typeSymbol == target)
+    def hasAnnotations(anns: List[AnnotationInfo], targets: ClassSymbol*) = {
+      debuglog(s"Checking annotations $targets in $anns")
+      anns.exists(ann => targets.contains(ann.tpe.typeSymbol))
+    }
 
     @inline def isTransient(sym: Symbol) = {
       hasAnnotations(sym.annotations, definitions.TransientAttr) ||
@@ -75,12 +80,14 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
       /** Analyze a class hierarchy based on its symbol info and the
         * annotations that were captured in the concrete field definition. */
       def analyzeClassHierarchy(sym: Symbol,
-                                anns: List[AnnotationInfo] = Nil,
+                                anns0: List[AnnotationInfo] = Nil,
                                 concreteType: Option[Type] = None,
                                 typeArgs: List[Symbol] = Nil): Unit = {
         val symbol = sym.initialize
+        val definitionAnns = concreteType.map(_.typeSymbol.annotations)
+        val anns = (anns0 ++ definitionAnns.toList.flatten).distinct
         if (!alreadyAnalyzed.contains(symbol) &&
-            !hasAnnotations(anns, assumeClosed)) {
+            !hasAnnotations(anns, assumeClosed, deprecatedInheritance)) {
           alreadyAnalyzed += symbol
           if (symbol.isSealed) {
             val subclasses = symbol.asClass.knownDirectSubclasses
@@ -120,7 +127,7 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
             numberTypeParams > 0 &&
             numberTypeParams > numberCurrentTypeParams
           }.flatMap(_.info.members.filter(onlyTerm))
-          debuglog(s"-> Type params from base classes: $tparamsBaseClassMembers")
+          debuglog(s"Type params from base classes: $tparamsBaseClassMembers")
 
           val allMembers = (termMembers ++ tparamsBaseClassMembers).toList
           val noTransientFields = pruneScope(newScopeWith(allMembers: _*))
@@ -155,7 +162,8 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
                       typeArgs.nonEmpty && typeArgs.forall(!_.isTypeParameter))
                     checkMembers(fieldSymbol, Some(field.info))
                   else {
-                    debuglog(s"Making $typeArgs concrete with $concreteTypeArgs")
+                    debuglog(
+                      s"Making $typeArgs concrete with $concreteTypeArgs")
                     val concretized = field.tpe.instantiateTypeParams(
                       typeArgs,
                       concreteTypeArgs.map(_.tpe))
