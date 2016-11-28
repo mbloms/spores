@@ -308,28 +308,13 @@ the compiler plugin does not catch the misuse of value classes inside spores, so
 to use them, be careful.</p>
 </blockquote>
 <h2 id="future-ideas" class="a_section" data-magellan-target="future-ideas">Future ideas<a class="a_hlink" href="#future-ideas"></a></h2>
+<p>Do you want <code class="hljs">spores-serialization</code> to be smarter? To support a use case that it's
+not yet implemented?</p>
 <p>As a compiler plugin, <code class="hljs">spores-serialization</code> is capable of doing more than just
-static type analysis. Here are some ideas for the future that may be considered
-to be implemented depending on the community's response. Come to discuss them
-at <a href="https://contributors.scala-lang.org/">Discourse</a> (<strong>TBD</strong>).</p>
-<h3 id="warning-against-the-use-of-well-known-lazy-methods" class="a_section" data-magellan-target="warning-against-the-use-of-well-known-lazy-methods">Warning against the use of well-known 'lazy' methods<a class="a_hlink" href="#warning-against-the-use-of-well-known-lazy-methods"></a></h3>
-<p>Methods whose implementation is lazy are generally not serializable because
-they involve the creation of anonymous functions. Some examples are:</p>
-<ol>
-<li><a href="https://issues.scala-lang.org/browse/SI-5018"><code class="hljs">Map.withDefault</code></a></li>
-<li><a href="https://issues.scala-lang.org/browse/SI-6654"><code class="hljs">Map.filterKeys</code></a></li>
-<li><a href="https://issues.scala-lang.org/browse/SI-5048?jql=status%20=%20Open%20AND%20labels%20=%20serialization">Closures in initializer of structural types break serialization</a></li>
-</ol>
-<p>As these examples are not well-known in the Scala community and still persist,
-<code class="hljs">spores-serialization</code> could warn when it detects them inside the spore bodies.</p>
-<h3 id="kryo-support" class="a_section" data-magellan-target="kryo-support">Kryo support<a class="a_hlink" href="#kryo-support"></a></h3>
-<p>There may be some missing pieces for working Kryo support. Spark users that
-use Kryo instead of Java serialization could get a lot of benefits from using
-<code class="hljs">spores</code> and <code class="hljs">spores-serialization</code>.</p>
-<h3 id="dealing-with-other-serialization-issues" class="a_section" data-magellan-target="dealing-with-other-serialization-issues">Dealing with other serialization issues<a class="a_hlink" href="#dealing-with-other-serialization-issues"></a></h3>
-<p>Serialization issues may happen when some classes are not in the classloaders,
-like <a href="https://issues.scala-lang.org/browse/SI-9777?jql=status%20=%20Open%20AND%20labels%20=%20serialization">SI-9777</a>.
-Is there <em>something</em> we can do to detect these errors before they happen?</p>
+static type analysis. <a href="https://github.com/jvican/spores/issues">Here are some ideas for the future</a>
+that may be considered to be implemented depending on the community's response. Come to discuss them
+at <a href="https://contributors.scala-lang.org/">Discourse</a>(<strong>TBD</strong>) or the issue tracker,
+and propose your ideas to make everyone's life easier.</p>
 
               </main>
               
@@ -479,29 +464,6 @@ Is there <em>something</em> we can do to detect these errors before they happen?
     
        <a href="#future-ideas">Future ideas</a> 
     
-    
-      <ul class="vertical menu">  
-  <li>
-    
-       <a href="#warning-against-the-use-of-well-known-lazy-methods">Warning against the use of well-known &#x27;lazy&#x27; methods</a> 
-    
-    
-  </li>
-  
-  <li>
-    
-       <a href="#kryo-support">Kryo support</a> 
-    
-    
-  </li>
-  
-  <li>
-    
-       <a href="#dealing-with-other-serialization-issues">Dealing with other serialization issues</a> 
-    
-    
-  </li>
-  </ul>
     
   </li>
   </ul>
