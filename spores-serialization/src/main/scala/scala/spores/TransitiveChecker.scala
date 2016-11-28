@@ -2,7 +2,6 @@ package scala.spores
 
 import java.net.URLClassLoader
 
-import scala.reflect.ClassTag
 import scala.spores.util.PluginFeedback._
 import scala.spores.util.CheckerUtils
 
@@ -12,10 +11,8 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
 
   private val classPath = global.classPath.asURLs
   val JavaClassLoader = new URLClassLoader(classPath.toArray)
-  implicit val sb = lifeVest(implicitly[ClassTag[scala.spores.SporeBase]])
-  implicit val ac = lifeVest(implicitly[ClassTag[scala.spores.assumeClosed]])
-  val sporeBaseType = rootMirror.requiredClass[scala.spores.SporeBase].tpe
-  val assumeClosed = rootMirror.requiredClass[scala.spores.assumeClosed]
+  val sporeBaseType = lifeVest(symbolOf[scala.spores.SporeBase].asClass.tpe)
+  val assumeClosed = lifeVest(symbolOf[scala.spores.assumeClosed].asClass)
   val alreadyAnalyzed = new scala.collection.mutable.HashSet[Symbol]()
 
   class TransitiveTraverser(unit: CompilationUnit, config: PluginConfig)
@@ -93,7 +90,7 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
                 val concreteTypeArgs = concreteType
                   .map(_.typeArgs.map(_.typeSymbol))
                   .getOrElse(typeArgs)
-                debug(s"Pass concrete type args... $concreteTypeArgs")
+                debuglog(s"Pass concrete type args... $concreteTypeArgs")
                 checkMembers(subclass, concreteType, concreteTypeArgs)
               } else checkMembers(subclass, concreteType)
             }
@@ -110,7 +107,7 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
         val symbol = sym.initialize
         if (!symbol.isSerializable) reportError(symbol)
         else {
-          debug(s"Checking member $symbol (${sym.tpe}) from $concreteType0")
+          debuglog(s"Checking member $symbol (${sym.tpe}) from $concreteType0")
           val symbolInfo = symbol.info
           val members = symbolInfo.members
           val termMembers = members.filter(onlyTerm)
@@ -123,7 +120,7 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
             numberTypeParams > 0 &&
             numberTypeParams > numberCurrentTypeParams
           }.flatMap(_.info.members.filter(onlyTerm))
-          debug(s"-> Type params from base classes: $tparamsBaseClassMembers")
+          debuglog(s"-> Type params from base classes: $tparamsBaseClassMembers")
 
           val allMembers = (termMembers ++ tparamsBaseClassMembers).toList
           val noTransientFields = pruneScope(newScopeWith(allMembers: _*))
@@ -138,31 +135,31 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
           val maybeMappedBaseTypeArgs = concreteType0.map { concreteType =>
             val concreteTypeSym = concreteType.typeSymbol
             val baseTypeArgs = symbolInfo.baseType(concreteTypeSym).typeArgs
-            debug(s"Base type args are $baseTypeArgs")
+            debuglog(s"Base type args are $baseTypeArgs")
             val concreteTypeParams = concreteTypeSym.info.typeParams
             val mapped = baseTypeArgs.zip(concreteTypeParams)
-            debug(s"Mapped base type args are $mapped")
+            debuglog(s"Mapped base type args are $mapped")
             mapped
           }
 
           noTransientFields.foreach { field =>
             val fieldSymbol = field.info.typeSymbol
-            debug(s"Inspecting field of ${fieldSymbol.tpe}")
+            debuglog(s"Inspecting field of ${fieldSymbol.tpe}")
             if (fieldSymbol.isClass) {
               if (!fieldSymbol.asClass.isPrimitive) {
                 if (!field.isSerializable) reportError(field)
                 else {
                   val typeArgs = field.info.typeArgs.map(_.typeSymbol)
-                  debug(field.info.typeParams)
+                  debuglog(field.info.typeParams.mkString)
                   if (concreteTypeArgs.isEmpty ||
                       typeArgs.nonEmpty && typeArgs.forall(!_.isTypeParameter))
                     checkMembers(fieldSymbol, Some(field.info))
                   else {
-                    debug(s"Making $typeArgs concrete with $concreteTypeArgs")
+                    debuglog(s"Making $typeArgs concrete with $concreteTypeArgs")
                     val concretized = field.tpe.instantiateTypeParams(
                       typeArgs,
                       concreteTypeArgs.map(_.tpe))
-                    debug(s"Concrete result is $concretized")
+                    debuglog(s"Concrete result is $concretized")
                     checkMembers(concretized.typeSymbol, Some(concretized))
                   }
                 }
@@ -175,12 +172,12 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
                 concreteType.memberType(mapped.getOrElse(fieldSymbol))
               }.getOrElse(field.tpe)
               val concreteFieldSymbol = concreteFieldType.typeSymbol
-              debug(s"Computed $concreteFieldSymbol from $concreteType")
+              debuglog(s"Computed $concreteFieldSymbol from $concreteType")
 
               if (nonPrimitive(concreteFieldSymbol)) {
                 if (concreteFieldSymbol.isSerializable ||
                     canBeSerialized(members, concreteFieldType)) {
-                  debug(s"Symbol $concreteFieldSymbol can be serialized")
+                  debuglog(s"Symbol $concreteFieldSymbol can be serialized")
                   val anns = concreteFieldType.annotations
                   analyzeClassHierarchy(concreteFieldSymbol,
                                         anns,
@@ -207,7 +204,7 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
                     canBeSerialized(members, hiBounds.tpe)
 
                 if (deservesFurtherAnalysis && canBeProvedSerializable) {
-                  debug(s"Symbol $hiBounds can be proven serializable")
+                  debuglog(s"Symbol $hiBounds can be proven serializable")
                   val as = concreteFieldSymbol.annotations
                   analyzeClassHierarchy(hiBounds, as, Some(concreteFieldType))
                 } else if (concreteFieldSymbol.isSerializable ||
@@ -225,13 +222,13 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
               report(true, field.pos, unhandledType(unhandled))
             }
           }
-          debug(s"Finished analysis of $symbol")
+          debuglog(s"Finished analysis of $symbol")
         }
       }
 
       tree match {
         case cls: ClassDef if cls.symbol.tpe <:< sporeBaseType =>
-          debug(s"First target of transitive analysis: ${cls.symbol}")
+          debuglog(s"First target of transitive analysis: ${cls.symbol}")
           checkMembers(cls.symbol, isSpore = true)
           super.traverse(tree)
         case _ => super.traverse(tree)

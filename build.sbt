@@ -134,14 +134,13 @@ lazy val `spores-pickling` = project
 
 lazy val `spores-serialization` = project
   .settings(allSettings)
-  .settings(baseDependencies)
   .dependsOn(`spores-core`)
   .settings(
     // Make sure that java classes are in the classpath
     compileOrder := CompileOrder.JavaThenScala,
     resourceDirectories in Test +=
       (resourceDirectory in Compile in `spores-core`).value,
-    libraryDependencies +=
+    libraryDependencies ++= testDependencies :+
       "org.scala-lang" % "scala-compiler" % scalaVersion.value,
     test in assembly := {},
     assemblyOption in assembly :=
@@ -170,9 +169,10 @@ lazy val `spores-serialization` = project
 lazy val playground = project
   .settings(allSettings)
   .settings(
+    initialCommands in console in Compile := "import scala.spores._",
     libraryDependencies ++= Seq(
       "ch.epfl.scala" %% "spores" % version.value,
-      "ch.epfl.scala" %% "spores-serialization" % version.value
+      compilerPlugin("ch.epfl.scala" %% "spores-serialization" % version.value)
     )
   )
 
