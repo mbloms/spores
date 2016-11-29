@@ -45,7 +45,9 @@ protected class SporeAnalysis[C <: whitebox.Context with Singleton](val ctx: C) 
       case th: This => true
       /* Super is not present in paths because of SI-1938 */
       // case supr: Super => true
-      case _ => false
+      case _ =>
+        debug(s"isPathWith fails with $t")
+        false
     }
   }
 
@@ -107,7 +109,7 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
     * @param owner the owner symbol that we try to find
     * @return      whether `owner` is a direct or indirect owner of `sym`
     */
-  private def isOwner(sym: Symbol, owner: Symbol): Boolean = {
+  @inline private def isOwner(sym: Symbol, owner: Symbol): Boolean = {
     sym != null && (sym.owner == owner || {
       sym.owner != NoSymbol && isOwner(sym.owner, owner)
     })
@@ -116,7 +118,7 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
   /** Check whether `member` is selected from a static selector, or
     * whether its selector is transitively selected from a static symbol.
     */
-  private def isStaticSelector(member: Tree): Boolean = member match {
+  @inline private def isStaticSelector(member: Tree): Boolean = member match {
     case Select(selector, member0) =>
       val selStatic = selector.symbol.isStatic
       debug(s"Checking whether $selector is static...$selStatic")
@@ -124,8 +126,10 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
     case _ => false
   }
 
-  private def isSymbolChildOfSpore(childSym: Symbol) =
+  @inline private def isSymbolChildOfSpore(childSym: Symbol) =
     funSymbol.exists(sym => isOwner(childSym, sym.asInstanceOf[Symbol]))
+
+  @inline def isStaticPath(s: Symbol) = !s.isClass && s.isStatic
 
   /** Check the validity of symbols. Spores allow refs to symbols if:
     *
@@ -140,13 +144,14 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
     * @param s Symbol of a given tree inside a spore.
     * @return Whether the symbol is valid or not.
     */
-  private def isSymbolValid(s: Symbol): Boolean = {
+  @inline private def isSymbolValid(s: Symbol): Boolean = {
     env.contains(s) ||
     capturedSymbols.contains(s) ||
     isSymbolChildOfSpore(s) ||
     declaredSymbols.contains(s) ||
     s == NoSymbol ||
-    !s.isClass && s.isStatic ||
+    isStaticPath(s) ||
+    s == definitions.PredefModule ||
     s.owner == definitions.PredefModule
   }
 

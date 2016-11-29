@@ -76,7 +76,8 @@ lazy val compilerOptions = Seq(
 lazy val commonSettings = Seq(
   triggeredMessage in ThisBuild := Watched.clearWhenTriggered,
   watchSources += baseDirectory.value / "resources",
-  javaOptions in Test += "-Dspores.debug=true",
+  javaOptions += "-Dspores.debug=true",
+  initialCommands in console in Compile := "import scala.spores._",
   scalacOptions in (Compile, console) ++= compilerOptions,
   testOptions in Test ++=
     List(Tests.Argument("-v"), Tests.Argument("-s"))
@@ -155,7 +156,6 @@ lazy val `spores-serialization` = project
         "-Ydebug"
       )
     },
-    initialCommands in console in Compile := "import scala.spores._",
     scalacOptions in console in Compile ++= (scalacOptions in Test).value,
     javaOptions in console in Compile ++= (javaOptions in Test).value,
     resourceGenerators in Test += Def.task {
