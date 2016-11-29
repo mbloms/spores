@@ -62,6 +62,7 @@ package object spores extends Versioning {
     */
   def spore[T, R](fun: T => R): Spore[T, R] = macro sporeImpl[T, R]
 
+  // FORMAT: OFF
   def spore[T1, T2, R](fun: (T1, T2) => R): Spore2[T1, T2, R] =
     macro spore2Impl[T1, T2, R]
 
@@ -84,6 +85,71 @@ package object spores extends Versioning {
       fun: (T1, T2, T3, T4, T5, T6,
             T7) => R): Spore7[T1, T2, T3, T4, T5, T6, T7, R] =
     macro spore7Impl[T1, T2, T3, T4, T5, T6, T7, R]
+
+  def spore[T1, T2, T3, T4, T5, T6, T7, T8, R](
+      fun: (T1, T2, T3, T4, T5, T6, T7,
+            T8) => R): Spore8[T1, T2, T3, T4, T5, T6, T7, T8, R] =
+    macro spore8Impl[T1, T2, T3, T4, T5, T6, T7, T8, R]
+
+  def spore[T1, T2, T3, T4, T5, T6, T7, T8, T9, R](
+      fun: (T1, T2, T3, T4, T5, T6, T7, T8,
+            T9) => R): Spore9[T1, T2, T3, T4, T5, T6, T7, T8, T9, R] =
+    macro spore9Impl[T1, T2, T3, T4, T5, T6, T7, T8, T9, R]
+
+  def spore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, R](
+      fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9,
+            T10) => R): Spore10[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, R] =
+    macro spore10Impl[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, R]
+
+  def spore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, R](
+      fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11) => R): Spore11[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, R] =
+    macro spore11Impl[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, R]
+
+  def spore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, R](
+      fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12) => R): Spore12[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, R] =
+  macro spore12Impl[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, R]
+
+  def spore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, R](
+      fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13) => R): Spore13[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, R] =
+  macro spore13Impl[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, R]
+
+  def spore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, R](
+      fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14) => R): Spore14[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, R] =
+  macro spore14Impl[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, R]
+
+  def spore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, R](
+      fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15) => R): Spore15[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, R] =
+  macro spore15Impl[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, R]
+
+  def spore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, R](
+      fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16) => R): Spore16[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, R] =
+  macro spore16Impl[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, R]
+
+  def spore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, R](
+      fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17) => R): Spore17[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, R] =
+  macro spore17Impl[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, R]
+
+  def spore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, R](
+      fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18) => R): Spore18[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, R] =
+  macro spore18Impl[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, R]
+
+  def spore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, R](
+      fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19) => R): Spore19[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, R] =
+  macro spore19Impl[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, R]
+
+  def spore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, R](
+      fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20) => R): Spore20[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, R] =
+  macro spore20Impl[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, R]
+
+  def spore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, R](
+      fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21) => R): Spore21[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, R] =
+  macro spore21Impl[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, R]
+
+  def spore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, R](
+      fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22) => R): Spore22[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, R] =
+  macro spore22Impl[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, R]
+
+  // FORMAT: ON
 
   def spore[R](fun: () => R): NullarySpore[R] = macro nullarySporeImpl[R]
 
@@ -218,5 +284,630 @@ package object spores extends Versioning {
            weakTypeOf[R])
     val tree = impl.createSpore(fun.tree, targs)
     ctx.Expr[Spore7[T1, T2, T3, T4, T5, T6, T7, R]](tree)
+  }
+
+  def spore8Impl[T1: ctx.WeakTypeTag,
+                 T2: ctx.WeakTypeTag,
+                 T3: ctx.WeakTypeTag,
+                 T4: ctx.WeakTypeTag,
+                 T5: ctx.WeakTypeTag,
+                 T6: ctx.WeakTypeTag,
+                 T7: ctx.WeakTypeTag,
+                 T8: ctx.WeakTypeTag,
+                 R: ctx.WeakTypeTag](ctx: whitebox.Context)(
+      fun: ctx.Expr[(T1, T2, T3, T4, T5, T6, T7, T8) => R])
+    : ctx.Expr[Spore8[T1, T2, T3, T4, T5, T6, T7, T8, R]] = {
+    import ctx.universe._
+    val impl = new MacroModule[ctx.type](ctx)
+    val targs =
+      List(weakTypeOf[T1],
+           weakTypeOf[T2],
+           weakTypeOf[T3],
+           weakTypeOf[T4],
+           weakTypeOf[T5],
+           weakTypeOf[T6],
+           weakTypeOf[T7],
+           weakTypeOf[T8],
+           weakTypeOf[R])
+    val tree = impl.createSpore(fun.tree, targs)
+    ctx.Expr[Spore8[T1, T2, T3, T4, T5, T6, T7, T8, R]](tree)
+  }
+
+  def spore9Impl[T1: ctx.WeakTypeTag,
+                 T2: ctx.WeakTypeTag,
+                 T3: ctx.WeakTypeTag,
+                 T4: ctx.WeakTypeTag,
+                 T5: ctx.WeakTypeTag,
+                 T6: ctx.WeakTypeTag,
+                 T7: ctx.WeakTypeTag,
+                 T8: ctx.WeakTypeTag,
+                 T9: ctx.WeakTypeTag,
+                 R: ctx.WeakTypeTag](ctx: whitebox.Context)(
+      fun: ctx.Expr[(T1, T2, T3, T4, T5, T6, T7, T8, T9) => R])
+    : ctx.Expr[Spore9[T1, T2, T3, T4, T5, T6, T7, T8, T9, R]] = {
+    import ctx.universe._
+    val impl = new MacroModule[ctx.type](ctx)
+    val targs =
+      List(weakTypeOf[T1],
+           weakTypeOf[T2],
+           weakTypeOf[T3],
+           weakTypeOf[T4],
+           weakTypeOf[T5],
+           weakTypeOf[T6],
+           weakTypeOf[T7],
+           weakTypeOf[T8],
+           weakTypeOf[T9],
+           weakTypeOf[R])
+    val tree = impl.createSpore(fun.tree, targs)
+    ctx.Expr[Spore9[T1, T2, T3, T4, T5, T6, T7, T8, T9, R]](tree)
+  }
+
+  def spore10Impl[T1: ctx.WeakTypeTag,
+                  T2: ctx.WeakTypeTag,
+                  T3: ctx.WeakTypeTag,
+                  T4: ctx.WeakTypeTag,
+                  T5: ctx.WeakTypeTag,
+                  T6: ctx.WeakTypeTag,
+                  T7: ctx.WeakTypeTag,
+                  T8: ctx.WeakTypeTag,
+                  T9: ctx.WeakTypeTag,
+                  T10: ctx.WeakTypeTag,
+                  R: ctx.WeakTypeTag](ctx: whitebox.Context)(
+      fun: ctx.Expr[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10) => R])
+    : ctx.Expr[Spore10[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, R]] = {
+    import ctx.universe._
+    val impl = new MacroModule[ctx.type](ctx)
+    val targs =
+      List(weakTypeOf[T1],
+           weakTypeOf[T2],
+           weakTypeOf[T3],
+           weakTypeOf[T4],
+           weakTypeOf[T5],
+           weakTypeOf[T6],
+           weakTypeOf[T7],
+           weakTypeOf[T8],
+           weakTypeOf[T9],
+           weakTypeOf[T10],
+           weakTypeOf[R])
+    val tree = impl.createSpore(fun.tree, targs)
+    ctx.Expr[Spore10[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, R]](tree)
+  }
+
+  def spore11Impl[T1: ctx.WeakTypeTag,
+                  T2: ctx.WeakTypeTag,
+                  T3: ctx.WeakTypeTag,
+                  T4: ctx.WeakTypeTag,
+                  T5: ctx.WeakTypeTag,
+                  T6: ctx.WeakTypeTag,
+                  T7: ctx.WeakTypeTag,
+                  T8: ctx.WeakTypeTag,
+                  T9: ctx.WeakTypeTag,
+                  T10: ctx.WeakTypeTag,
+                  T11: ctx.WeakTypeTag,
+                  R: ctx.WeakTypeTag](ctx: whitebox.Context)(
+      fun: ctx.Expr[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11) => R])
+    : ctx.Expr[Spore11[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, R]] = {
+    import ctx.universe._
+    val impl = new MacroModule[ctx.type](ctx)
+    val targs =
+      List(weakTypeOf[T1],
+           weakTypeOf[T2],
+           weakTypeOf[T3],
+           weakTypeOf[T4],
+           weakTypeOf[T5],
+           weakTypeOf[T6],
+           weakTypeOf[T7],
+           weakTypeOf[T8],
+           weakTypeOf[T9],
+           weakTypeOf[T10],
+           weakTypeOf[T11],
+           weakTypeOf[R])
+    val tree = impl.createSpore(fun.tree, targs)
+    ctx.Expr[Spore11[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, R]](tree)
+  }
+
+  def spore12Impl[T1: ctx.WeakTypeTag,
+                  T2: ctx.WeakTypeTag,
+                  T3: ctx.WeakTypeTag,
+                  T4: ctx.WeakTypeTag,
+                  T5: ctx.WeakTypeTag,
+                  T6: ctx.WeakTypeTag,
+                  T7: ctx.WeakTypeTag,
+                  T8: ctx.WeakTypeTag,
+                  T9: ctx.WeakTypeTag,
+                  T10: ctx.WeakTypeTag,
+                  T11: ctx.WeakTypeTag,
+                  T12: ctx.WeakTypeTag,
+                  R: ctx.WeakTypeTag](ctx: whitebox.Context)(
+    fun: ctx.Expr[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12) => R])
+  : ctx.Expr[Spore12[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, R]] = {
+    import ctx.universe._
+    val impl = new MacroModule[ctx.type](ctx)
+    val targs =
+      List(weakTypeOf[T1],
+        weakTypeOf[T2],
+        weakTypeOf[T3],
+        weakTypeOf[T4],
+        weakTypeOf[T5],
+        weakTypeOf[T6],
+        weakTypeOf[T7],
+        weakTypeOf[T8],
+        weakTypeOf[T9],
+        weakTypeOf[T10],
+        weakTypeOf[T11],
+        weakTypeOf[T12],
+        weakTypeOf[R])
+    val tree = impl.createSpore(fun.tree, targs)
+    ctx.Expr[Spore12[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, R]](tree)
+  }
+
+  def spore13Impl[T1: ctx.WeakTypeTag,
+                  T2: ctx.WeakTypeTag,
+                  T3: ctx.WeakTypeTag,
+                  T4: ctx.WeakTypeTag,
+                  T5: ctx.WeakTypeTag,
+                  T6: ctx.WeakTypeTag,
+                  T7: ctx.WeakTypeTag,
+                  T8: ctx.WeakTypeTag,
+                  T9: ctx.WeakTypeTag,
+                  T10: ctx.WeakTypeTag,
+                  T11: ctx.WeakTypeTag,
+                  T12: ctx.WeakTypeTag,
+                  T13: ctx.WeakTypeTag,
+                  R: ctx.WeakTypeTag](ctx: whitebox.Context)(
+    fun: ctx.Expr[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13) => R])
+  : ctx.Expr[Spore13[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, R]] = {
+    import ctx.universe._
+    val impl = new MacroModule[ctx.type](ctx)
+    val targs =
+      List(weakTypeOf[T1],
+        weakTypeOf[T2],
+        weakTypeOf[T3],
+        weakTypeOf[T4],
+        weakTypeOf[T5],
+        weakTypeOf[T6],
+        weakTypeOf[T7],
+        weakTypeOf[T8],
+        weakTypeOf[T9],
+        weakTypeOf[T10],
+        weakTypeOf[T11],
+        weakTypeOf[T11],
+        weakTypeOf[T12],
+        weakTypeOf[T13],
+        weakTypeOf[R])
+    val tree = impl.createSpore(fun.tree, targs)
+    ctx.Expr[Spore13[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, R]](tree)
+  }
+
+  def spore14Impl[T1: ctx.WeakTypeTag,
+                  T2: ctx.WeakTypeTag,
+                  T3: ctx.WeakTypeTag,
+                  T4: ctx.WeakTypeTag,
+                  T5: ctx.WeakTypeTag,
+                  T6: ctx.WeakTypeTag,
+                  T7: ctx.WeakTypeTag,
+                  T8: ctx.WeakTypeTag,
+                  T9: ctx.WeakTypeTag,
+                  T10: ctx.WeakTypeTag,
+                  T11: ctx.WeakTypeTag,
+                  T12: ctx.WeakTypeTag,
+                  T13: ctx.WeakTypeTag,
+                  T14: ctx.WeakTypeTag,
+                  R: ctx.WeakTypeTag](ctx: whitebox.Context)(
+    fun: ctx.Expr[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14) => R])
+  : ctx.Expr[Spore14[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, R]] = {
+    import ctx.universe._
+    val impl = new MacroModule[ctx.type](ctx)
+    val targs =
+      List(weakTypeOf[T1],
+        weakTypeOf[T2],
+        weakTypeOf[T3],
+        weakTypeOf[T4],
+        weakTypeOf[T5],
+        weakTypeOf[T6],
+        weakTypeOf[T7],
+        weakTypeOf[T8],
+        weakTypeOf[T9],
+        weakTypeOf[T10],
+        weakTypeOf[T11],
+        weakTypeOf[T11],
+        weakTypeOf[T12],
+        weakTypeOf[T13],
+        weakTypeOf[T14],
+        weakTypeOf[R])
+    val tree = impl.createSpore(fun.tree, targs)
+    ctx.Expr[Spore14[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, R]](tree)
+  }
+
+  def spore15Impl[T1: ctx.WeakTypeTag,
+                  T2: ctx.WeakTypeTag,
+                  T3: ctx.WeakTypeTag,
+                  T4: ctx.WeakTypeTag,
+                  T5: ctx.WeakTypeTag,
+                  T6: ctx.WeakTypeTag,
+                  T7: ctx.WeakTypeTag,
+                  T8: ctx.WeakTypeTag,
+                  T9: ctx.WeakTypeTag,
+                  T10: ctx.WeakTypeTag,
+                  T11: ctx.WeakTypeTag,
+                  T12: ctx.WeakTypeTag,
+                  T13: ctx.WeakTypeTag,
+                  T14: ctx.WeakTypeTag,
+                  T15: ctx.WeakTypeTag,
+                  R: ctx.WeakTypeTag](ctx: whitebox.Context)(
+    fun: ctx.Expr[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15) => R])
+  : ctx.Expr[Spore15[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, R]] = {
+    import ctx.universe._
+    val impl = new MacroModule[ctx.type](ctx)
+    val targs =
+      List(weakTypeOf[T1],
+        weakTypeOf[T2],
+        weakTypeOf[T3],
+        weakTypeOf[T4],
+        weakTypeOf[T5],
+        weakTypeOf[T6],
+        weakTypeOf[T7],
+        weakTypeOf[T8],
+        weakTypeOf[T9],
+        weakTypeOf[T10],
+        weakTypeOf[T11],
+        weakTypeOf[T11],
+        weakTypeOf[T12],
+        weakTypeOf[T13],
+        weakTypeOf[T14],
+        weakTypeOf[T15],
+        weakTypeOf[R])
+    val tree = impl.createSpore(fun.tree, targs)
+    ctx.Expr[Spore15[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, R]](tree)
+  }
+
+  def spore16Impl[T1: ctx.WeakTypeTag,
+                  T2: ctx.WeakTypeTag,
+                  T3: ctx.WeakTypeTag,
+                  T4: ctx.WeakTypeTag,
+                  T5: ctx.WeakTypeTag,
+                  T6: ctx.WeakTypeTag,
+                  T7: ctx.WeakTypeTag,
+                  T8: ctx.WeakTypeTag,
+                  T9: ctx.WeakTypeTag,
+                  T10: ctx.WeakTypeTag,
+                  T11: ctx.WeakTypeTag,
+                  T12: ctx.WeakTypeTag,
+                  T13: ctx.WeakTypeTag,
+                  T14: ctx.WeakTypeTag,
+                  T15: ctx.WeakTypeTag,
+                  T16: ctx.WeakTypeTag,
+                  R: ctx.WeakTypeTag](ctx: whitebox.Context)(
+    fun: ctx.Expr[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16) => R])
+  : ctx.Expr[Spore16[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, R]] = {
+    import ctx.universe._
+    val impl = new MacroModule[ctx.type](ctx)
+    val targs =
+      List(weakTypeOf[T1],
+        weakTypeOf[T2],
+        weakTypeOf[T3],
+        weakTypeOf[T4],
+        weakTypeOf[T5],
+        weakTypeOf[T6],
+        weakTypeOf[T7],
+        weakTypeOf[T8],
+        weakTypeOf[T9],
+        weakTypeOf[T10],
+        weakTypeOf[T11],
+        weakTypeOf[T11],
+        weakTypeOf[T12],
+        weakTypeOf[T13],
+        weakTypeOf[T14],
+        weakTypeOf[T15],
+        weakTypeOf[T16],
+        weakTypeOf[R])
+    val tree = impl.createSpore(fun.tree, targs)
+    ctx.Expr[Spore16[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, R]](tree)
+  }
+
+  def spore17Impl[T1: ctx.WeakTypeTag,
+                  T2: ctx.WeakTypeTag,
+                  T3: ctx.WeakTypeTag,
+                  T4: ctx.WeakTypeTag,
+                  T5: ctx.WeakTypeTag,
+                  T6: ctx.WeakTypeTag,
+                  T7: ctx.WeakTypeTag,
+                  T8: ctx.WeakTypeTag,
+                  T9: ctx.WeakTypeTag,
+                  T10: ctx.WeakTypeTag,
+                  T11: ctx.WeakTypeTag,
+                  T12: ctx.WeakTypeTag,
+                  T13: ctx.WeakTypeTag,
+                  T14: ctx.WeakTypeTag,
+                  T15: ctx.WeakTypeTag,
+                  T16: ctx.WeakTypeTag,
+                  T17: ctx.WeakTypeTag,
+                  R: ctx.WeakTypeTag](ctx: whitebox.Context)(
+    fun: ctx.Expr[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17) => R])
+  : ctx.Expr[Spore17[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, R]] = {
+    import ctx.universe._
+    val impl = new MacroModule[ctx.type](ctx)
+    val targs =
+      List(weakTypeOf[T1],
+        weakTypeOf[T2],
+        weakTypeOf[T3],
+        weakTypeOf[T4],
+        weakTypeOf[T5],
+        weakTypeOf[T6],
+        weakTypeOf[T7],
+        weakTypeOf[T8],
+        weakTypeOf[T9],
+        weakTypeOf[T10],
+        weakTypeOf[T11],
+        weakTypeOf[T11],
+        weakTypeOf[T12],
+        weakTypeOf[T13],
+        weakTypeOf[T14],
+        weakTypeOf[T15],
+        weakTypeOf[T16],
+        weakTypeOf[T17],
+        weakTypeOf[R])
+    val tree = impl.createSpore(fun.tree, targs)
+    ctx.Expr[Spore17[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, R]](tree)
+  }
+
+  def spore18Impl[T1: ctx.WeakTypeTag,
+                  T2: ctx.WeakTypeTag,
+                  T3: ctx.WeakTypeTag,
+                  T4: ctx.WeakTypeTag,
+                  T5: ctx.WeakTypeTag,
+                  T6: ctx.WeakTypeTag,
+                  T7: ctx.WeakTypeTag,
+                  T8: ctx.WeakTypeTag,
+                  T9: ctx.WeakTypeTag,
+                  T10: ctx.WeakTypeTag,
+                  T11: ctx.WeakTypeTag,
+                  T12: ctx.WeakTypeTag,
+                  T13: ctx.WeakTypeTag,
+                  T14: ctx.WeakTypeTag,
+                  T15: ctx.WeakTypeTag,
+                  T16: ctx.WeakTypeTag,
+                  T17: ctx.WeakTypeTag,
+                  T18: ctx.WeakTypeTag,
+                  R: ctx.WeakTypeTag](ctx: whitebox.Context)(
+    fun: ctx.Expr[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18) => R])
+  : ctx.Expr[Spore18[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, R]] = {
+    import ctx.universe._
+    val impl = new MacroModule[ctx.type](ctx)
+    val targs =
+      List(weakTypeOf[T1],
+        weakTypeOf[T2],
+        weakTypeOf[T3],
+        weakTypeOf[T4],
+        weakTypeOf[T5],
+        weakTypeOf[T6],
+        weakTypeOf[T7],
+        weakTypeOf[T8],
+        weakTypeOf[T9],
+        weakTypeOf[T10],
+        weakTypeOf[T11],
+        weakTypeOf[T11],
+        weakTypeOf[T12],
+        weakTypeOf[T13],
+        weakTypeOf[T14],
+        weakTypeOf[T15],
+        weakTypeOf[T16],
+        weakTypeOf[T17],
+        weakTypeOf[T18],
+        weakTypeOf[R])
+    val tree = impl.createSpore(fun.tree, targs)
+    ctx.Expr[Spore18[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, R]](tree)
+  }
+
+  def spore19Impl[T1: ctx.WeakTypeTag,
+                  T2: ctx.WeakTypeTag,
+                  T3: ctx.WeakTypeTag,
+                  T4: ctx.WeakTypeTag,
+                  T5: ctx.WeakTypeTag,
+                  T6: ctx.WeakTypeTag,
+                  T7: ctx.WeakTypeTag,
+                  T8: ctx.WeakTypeTag,
+                  T9: ctx.WeakTypeTag,
+                  T10: ctx.WeakTypeTag,
+                  T11: ctx.WeakTypeTag,
+                  T12: ctx.WeakTypeTag,
+                  T13: ctx.WeakTypeTag,
+                  T14: ctx.WeakTypeTag,
+                  T15: ctx.WeakTypeTag,
+                  T16: ctx.WeakTypeTag,
+                  T17: ctx.WeakTypeTag,
+                  T18: ctx.WeakTypeTag,
+                  T19: ctx.WeakTypeTag,
+                  R: ctx.WeakTypeTag](ctx: whitebox.Context)(
+    fun: ctx.Expr[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19) => R])
+  : ctx.Expr[Spore19[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, R]] = {
+    import ctx.universe._
+    val impl = new MacroModule[ctx.type](ctx)
+    val targs =
+      List(weakTypeOf[T1],
+        weakTypeOf[T2],
+        weakTypeOf[T3],
+        weakTypeOf[T4],
+        weakTypeOf[T5],
+        weakTypeOf[T6],
+        weakTypeOf[T7],
+        weakTypeOf[T8],
+        weakTypeOf[T9],
+        weakTypeOf[T10],
+        weakTypeOf[T11],
+        weakTypeOf[T11],
+        weakTypeOf[T12],
+        weakTypeOf[T13],
+        weakTypeOf[T14],
+        weakTypeOf[T15],
+        weakTypeOf[T16],
+        weakTypeOf[T17],
+        weakTypeOf[T18],
+        weakTypeOf[T19],
+        weakTypeOf[R])
+    val tree = impl.createSpore(fun.tree, targs)
+    ctx.Expr[Spore19[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, R]](tree)
+  }
+
+  def spore20Impl[T1: ctx.WeakTypeTag,
+                  T2: ctx.WeakTypeTag,
+                  T3: ctx.WeakTypeTag,
+                  T4: ctx.WeakTypeTag,
+                  T5: ctx.WeakTypeTag,
+                  T6: ctx.WeakTypeTag,
+                  T7: ctx.WeakTypeTag,
+                  T8: ctx.WeakTypeTag,
+                  T9: ctx.WeakTypeTag,
+                  T10: ctx.WeakTypeTag,
+                  T11: ctx.WeakTypeTag,
+                  T12: ctx.WeakTypeTag,
+                  T13: ctx.WeakTypeTag,
+                  T14: ctx.WeakTypeTag,
+                  T15: ctx.WeakTypeTag,
+                  T16: ctx.WeakTypeTag,
+                  T17: ctx.WeakTypeTag,
+                  T18: ctx.WeakTypeTag,
+                  T19: ctx.WeakTypeTag,
+                  T20: ctx.WeakTypeTag,
+                  R: ctx.WeakTypeTag](ctx: whitebox.Context)(
+    fun: ctx.Expr[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20) => R])
+  : ctx.Expr[Spore20[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, R]] = {
+    import ctx.universe._
+    val impl = new MacroModule[ctx.type](ctx)
+    val targs =
+      List(weakTypeOf[T1],
+        weakTypeOf[T2],
+        weakTypeOf[T3],
+        weakTypeOf[T4],
+        weakTypeOf[T5],
+        weakTypeOf[T6],
+        weakTypeOf[T7],
+        weakTypeOf[T8],
+        weakTypeOf[T9],
+        weakTypeOf[T10],
+        weakTypeOf[T11],
+        weakTypeOf[T11],
+        weakTypeOf[T12],
+        weakTypeOf[T13],
+        weakTypeOf[T14],
+        weakTypeOf[T15],
+        weakTypeOf[T16],
+        weakTypeOf[T17],
+        weakTypeOf[T18],
+        weakTypeOf[T19],
+        weakTypeOf[T20],
+        weakTypeOf[R])
+    val tree = impl.createSpore(fun.tree, targs)
+    ctx.Expr[Spore20[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, R]](tree)
+  }
+
+  def spore21Impl[T1: ctx.WeakTypeTag,
+                  T2: ctx.WeakTypeTag,
+                  T3: ctx.WeakTypeTag,
+                  T4: ctx.WeakTypeTag,
+                  T5: ctx.WeakTypeTag,
+                  T6: ctx.WeakTypeTag,
+                  T7: ctx.WeakTypeTag,
+                  T8: ctx.WeakTypeTag,
+                  T9: ctx.WeakTypeTag,
+                  T10: ctx.WeakTypeTag,
+                  T11: ctx.WeakTypeTag,
+                  T12: ctx.WeakTypeTag,
+                  T13: ctx.WeakTypeTag,
+                  T14: ctx.WeakTypeTag,
+                  T15: ctx.WeakTypeTag,
+                  T16: ctx.WeakTypeTag,
+                  T17: ctx.WeakTypeTag,
+                  T18: ctx.WeakTypeTag,
+                  T19: ctx.WeakTypeTag,
+                  T20: ctx.WeakTypeTag,
+                  T21: ctx.WeakTypeTag,
+                  R: ctx.WeakTypeTag](ctx: whitebox.Context)(
+    fun: ctx.Expr[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21) => R])
+  : ctx.Expr[Spore21[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, R]] = {
+    import ctx.universe._
+    val impl = new MacroModule[ctx.type](ctx)
+    val targs =
+      List(weakTypeOf[T1],
+        weakTypeOf[T2],
+        weakTypeOf[T3],
+        weakTypeOf[T4],
+        weakTypeOf[T5],
+        weakTypeOf[T6],
+        weakTypeOf[T7],
+        weakTypeOf[T8],
+        weakTypeOf[T9],
+        weakTypeOf[T10],
+        weakTypeOf[T11],
+        weakTypeOf[T11],
+        weakTypeOf[T12],
+        weakTypeOf[T13],
+        weakTypeOf[T14],
+        weakTypeOf[T15],
+        weakTypeOf[T16],
+        weakTypeOf[T17],
+        weakTypeOf[T18],
+        weakTypeOf[T19],
+        weakTypeOf[T20],
+        weakTypeOf[T21],
+        weakTypeOf[R])
+    val tree = impl.createSpore(fun.tree, targs)
+    ctx.Expr[Spore21[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, R]](tree)
+  }
+
+  def spore22Impl[T1: ctx.WeakTypeTag,
+                  T2: ctx.WeakTypeTag,
+                  T3: ctx.WeakTypeTag,
+                  T4: ctx.WeakTypeTag,
+                  T5: ctx.WeakTypeTag,
+                  T6: ctx.WeakTypeTag,
+                  T7: ctx.WeakTypeTag,
+                  T8: ctx.WeakTypeTag,
+                  T9: ctx.WeakTypeTag,
+                  T10: ctx.WeakTypeTag,
+                  T11: ctx.WeakTypeTag,
+                  T12: ctx.WeakTypeTag,
+                  T13: ctx.WeakTypeTag,
+                  T14: ctx.WeakTypeTag,
+                  T15: ctx.WeakTypeTag,
+                  T16: ctx.WeakTypeTag,
+                  T17: ctx.WeakTypeTag,
+                  T18: ctx.WeakTypeTag,
+                  T19: ctx.WeakTypeTag,
+                  T20: ctx.WeakTypeTag,
+                  T21: ctx.WeakTypeTag,
+                  T22: ctx.WeakTypeTag,
+                  R: ctx.WeakTypeTag](ctx: whitebox.Context)(
+    fun: ctx.Expr[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22) => R])
+  : ctx.Expr[Spore22[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, R]] = {
+    import ctx.universe._
+    val impl = new MacroModule[ctx.type](ctx)
+    val targs =
+      List(weakTypeOf[T1],
+        weakTypeOf[T2],
+        weakTypeOf[T3],
+        weakTypeOf[T4],
+        weakTypeOf[T5],
+        weakTypeOf[T6],
+        weakTypeOf[T7],
+        weakTypeOf[T8],
+        weakTypeOf[T9],
+        weakTypeOf[T10],
+        weakTypeOf[T11],
+        weakTypeOf[T11],
+        weakTypeOf[T12],
+        weakTypeOf[T13],
+        weakTypeOf[T14],
+        weakTypeOf[T15],
+        weakTypeOf[T16],
+        weakTypeOf[T17],
+        weakTypeOf[T18],
+        weakTypeOf[T19],
+        weakTypeOf[T20],
+        weakTypeOf[T21],
+        weakTypeOf[T22],
+        weakTypeOf[R])
+    val tree = impl.createSpore(fun.tree, targs)
+    ctx.Expr[Spore22[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, R]](tree)
   }
 }

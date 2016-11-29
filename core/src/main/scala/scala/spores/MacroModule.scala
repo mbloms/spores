@@ -69,6 +69,36 @@ private[spores] class MacroModule[C <: whitebox.Context](val c: C) {
           tq"$sporesPath.Spore6[..$targs]"
         else if (paramSyms.size == 7)
           tq"$sporesPath.Spore7[..$targs]"
+        else if (paramSyms.size == 8)
+          tq"$sporesPath.Spore8[..$targs]"
+        else if (paramSyms.size == 9)
+          tq"$sporesPath.Spore9[..$targs]"
+        else if (paramSyms.size == 10)
+          tq"$sporesPath.Spore10[..$targs]"
+        else if (paramSyms.size == 11)
+          tq"$sporesPath.Spore11[..$targs]"
+        else if (paramSyms.size == 12)
+          tq"$sporesPath.Spore12[..$targs]"
+        else if (paramSyms.size == 13)
+          tq"$sporesPath.Spore13[..$targs]"
+        else if (paramSyms.size == 14)
+          tq"$sporesPath.Spore14[..$targs]"
+        else if (paramSyms.size == 15)
+          tq"$sporesPath.Spore15[..$targs]"
+        else if (paramSyms.size == 16)
+          tq"$sporesPath.Spore16[..$targs]"
+        else if (paramSyms.size == 17)
+          tq"$sporesPath.Spore17[..$targs]"
+        else if (paramSyms.size == 18)
+          tq"$sporesPath.Spore18[..$targs]"
+        else if (paramSyms.size == 19)
+          tq"$sporesPath.Spore19[..$targs]"
+        else if (paramSyms.size == 20)
+          tq"$sporesPath.Spore20[..$targs]"
+        else if (paramSyms.size == 21)
+          tq"$sporesPath.Spore21[..$targs]"
+        else if (paramSyms.size == 22)
+          tq"$sporesPath.Spore22[..$targs]"
         else c.abort(funTree.pos, Feedback.UnsupportedAritySpore)
 
       generator.generateSpore(sporeName, sporeType, Nil, sporeBody)
@@ -102,7 +132,37 @@ private[spores] class MacroModule[C <: whitebox.Context](val c: C) {
           tq"$sporesPath.Spore6WithEnv[..$targs]"
         else if (paramSyms.size == 7)
           tq"$sporesPath.Spore7WithEnv[..$targs]"
-        else ???
+        else if (paramSyms.size == 8)
+          tq"$sporesPath.Spore8WithEnv[..$targs]"
+        else if (paramSyms.size == 9)
+          tq"$sporesPath.Spore9WithEnv[..$targs]"
+        else if (paramSyms.size == 10)
+          tq"$sporesPath.Spore10WithEnv[..$targs]"
+        else if (paramSyms.size == 11)
+          tq"$sporesPath.Spore11WithEnv[..$targs]"
+        else if (paramSyms.size == 12)
+          tq"$sporesPath.Spore12WithEnv[..$targs]"
+        else if (paramSyms.size == 13)
+          tq"$sporesPath.Spore13WithEnv[..$targs]"
+        else if (paramSyms.size == 14)
+          tq"$sporesPath.Spore14WithEnv[..$targs]"
+        else if (paramSyms.size == 15)
+          tq"$sporesPath.Spore15WithEnv[..$targs]"
+        else if (paramSyms.size == 16)
+          tq"$sporesPath.Spore16WithEnv[..$targs]"
+        else if (paramSyms.size == 17)
+          tq"$sporesPath.Spore17WithEnv[..$targs]"
+        else if (paramSyms.size == 18)
+          tq"$sporesPath.Spore18WithEnv[..$targs]"
+        else if (paramSyms.size == 19)
+          tq"$sporesPath.Spore19WithEnv[..$targs]"
+        else if (paramSyms.size == 20)
+          tq"$sporesPath.Spore20WithEnv[..$targs]"
+        else if (paramSyms.size == 21)
+          tq"$sporesPath.Spore21WithEnv[..$targs]"
+        else if (paramSyms.size == 22)
+          tq"$sporesPath.Spore22WithEnv[..$targs]"
+        else c.abort(funTree.pos, Feedback.UnsupportedAritySpore)
       generator.generateSpore(sporeName,
                               sporeType,
                               List(capturedType),

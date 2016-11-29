@@ -74,4 +74,13 @@ class SporeAritySpec {
     }
     assert(s(1, 1, 1, 1, 1, 1, 1) == 49)
   }
+
+  @Test
+  def spore8(): Unit = {
+    val s = spore {
+      (i: Int, i2: Int, i3: Int, i4: Int, i5: Int, i6: Int, i7: Int, i8: Int) =>
+        42 + i + i2 + i3 + i4 + i5 + i6 + i7 + i8
+    }
+    assert(s(1, 1, 1, 1, 1, 1, 1, 1) == 50)
+  }
 }

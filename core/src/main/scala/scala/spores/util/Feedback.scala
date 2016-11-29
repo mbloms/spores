@@ -5,7 +5,7 @@ private[spores] object Feedback {
     "Expected spore class definition. The generated format of a spore has changed."
 
   val UnsupportedAritySpore =
-    "The arity of this support is not yet supported, please file an issue."
+    "The arity of a spore cannot be lower than 0 nor greater than 22."
 
   val IncorrectSporeHeader =
     "Incorrect spore header: Only val defs allowed at this position."
