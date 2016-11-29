@@ -218,9 +218,10 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
         // x.m().s
         case sel @ Select(app @ Apply(fun0, _), _) =>
           debug(s"Checking select ($app): $sel")
-          if (app.symbol.isStatic) {
-            debug(s"OK, invocation of '$app' is static.")
-          } else checkStaticSelectOnObject(fun0, sel)
+          if (!app.symbol.isStatic)
+            checkStaticSelectOnObject(fun0, sel)
+          debug(s"Checking args of '$app'.")
+          app.args.foreach(traverse)
 
         case sel @ Select(pre, _) =>
           debug(s"Checking select $sel")

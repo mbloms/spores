@@ -1,25 +1,20 @@
 package scala.spores
 
-import reflect._
+import scala.reflect._
 
 object TestUtil {
   import scala.language.postfixOps
-  import scala.util.Try
   import tools.reflect.{ToolBox, ToolBoxError}
 
-  implicit class stringops(text: String) {
-    def mustContain(substring: String) = assert(text contains substring, text)
-  }
-
   def intercept[T <: Throwable: ClassTag](test: => Any): T = {
-    Try {
+    try {
       test
       throw new Exception(s"Expected exception ${classTag[T]}")
-    } recover {
+    } catch {
       case t: Throwable =>
         if (classTag[T].runtimeClass != t.getClass) throw t
         else t.asInstanceOf[T]
-    } get
+    }
   }
 
   def eval(code: String, compileOptions: String = ""): Any = {
@@ -45,8 +40,14 @@ object TestUtil {
       errorSnippet: String,
       compileOptions: String = "",
       baseCompileOptions: String = s"-cp $toolboxClasspath")(code: String) {
-    intercept[ToolBoxError] {
-      eval(code, compileOptions + " " + baseCompileOptions)
-    }.getMessage mustContain errorSnippet
+    val errorMessage = intercept[ToolBoxError] {
+      eval(code, s"$compileOptions $baseCompileOptions")
+    }.getMessage
+    val userMessage =
+      s"""
+         |FOUND: $errorMessage
+         |EXPECTED: $errorSnippet
+      """.stripMargin
+    assert(errorMessage.contains(errorSnippet), userMessage)
   }
 }

@@ -296,4 +296,25 @@ class CaptureNegSpec {
       """.stripMargin
     }
   }
+
+  @Test
+  def `reference to outer class member is catched`(): Unit = {
+    expectError(Feedback.InvalidReferenceTo("object OuterReference")) {
+      s"""
+        |import scala.spores._
+        |class Patterns {
+        |  val alphabeticPattern = "^a"
+        |}
+        |
+        |object OuterReference {
+        |  val text = Some("Hello, World!")
+        |  val ps = new Patterns
+        |
+        |  text.map(spore { (t: String) =>
+        |    t.trim.split(ps.alphabeticPattern).map(word => (word, "")).toTraversable
+        |  })
+        |}
+      """.stripMargin
+    }
+  }
 }
