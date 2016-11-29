@@ -37,7 +37,7 @@ package object spores extends Versioning {
   // TODO(jvican): Change this for compiler flag
   // Change the default value to enable the macro debugging
   private val defaultDebugProperty = System.getProperty("spores.debug")
-  val isDebugEnabled = settingToBoolean(defaultDebugProperty, default = true)
+  val isDebugEnabled = settingToBoolean(defaultDebugProperty)
   private[spores] def debug(s: => String)(implicit line: sourcecode.Line,
                                           file: sourcecode.File): Unit = {
     if (isDebugEnabled) logger.elem(s)
