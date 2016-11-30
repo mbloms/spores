@@ -243,8 +243,7 @@ previous section to convert the function literal implicitly to a spore.</p>
 still has the wrong shape. The captured variable <code class="hljs">i</code> is not declared in the
 spore header (the list of value definitions preceding the closure within the
 spore), like a spore demands.</p>
-<p>We can overcome this using the <code class="hljs">capture</code> syntax – an alternative way of
-capturing paths. That is, instead of having to write:</p>
+<p>We can overcome this using the <code class="hljs">capture</code> syntax. That is, instead of having to write:</p>
 <div class="row">
 <pre class="hljs small-expand columns a_xscroll"><code class="language-scala">{
   <span class="hljs-keyword">val</span> captured = i
