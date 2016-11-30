@@ -106,6 +106,7 @@ parameter of the closure nor one of the spore's value declarations (the only
 value declaration is: `val inner = outer2`).
 
 ### Evaluation Semantics
+<a name="evaluation-semantics"></a>
 
 In order to make the runtime behavior of a spore as intuitive as possible, the
 design leaves the evaluation semantics unchanged compared to regular closures.
@@ -235,8 +236,7 @@ still has the wrong shape. The captured variable `i` is not declared in the
 spore header (the list of value definitions preceding the closure within the
 spore), like a spore demands.
 
-We can overcome this using the `capture` syntax – an alternative way of
-capturing paths. That is, instead of having to write:
+We can overcome this using the `capture` syntax. That is, instead of having to write:
 
 ```scala
 {
@@ -264,34 +264,15 @@ Here, `i` is "captured" as it occurs syntactically after the arrow of another
 generator (it occurs after `j <- lookup(i)`, the second generator in the
 for-comprehension).
 
-**Note:** anything that is "captured" using `capture` may only be a path.
-
-**A path** (as defined by the Scala Language Specification, section 3.1) is:
-
-- The empty path &#949; (which cannot be written explicitly in user programs).
-- `C.this`, where `C` references a class.
-- `p.x` where `p` is a path and `x` is a stable member of `p`.
-- `C.super.x` or `C.super[M].x` where `C` references a class and `x` references a stable member of the super class or designated parent class `M` of `C`.
-
-The reason why captured expressions are restricted to paths is that otherwise
-the two closures
-
-```scala
-(x => <expr1> + capture(<expr2>))
-```
-
-and
-
-```scala
-(x => <expr1> + <expr2>)
-```
-
-(where `<expr1>` and `<expr2>` are not just paths) would not have the same
-runtime behavior, because in the first case, the closure would have to be
-transformed in a way that would evaluate `<expr2>` "outside of the closure".
-Not only would this complicate the reasoning about spore-based code (see the
-section Evaluation Semantics above), but it's not clear what "outside of the
-closure" even means in a context such as for-comprehensions.
+> {.note}
+> `capture` can only capture identifiers. This means that paths like
+> `capture(foo.bar.baz)` will fail and should be rewritten to `capture(foo).bar.baz`.
+>  
+> The reason why captured expressions are restricted to identifiers is that
+> otherwise the `capture` function will change the evaluation semantics.
+> Removing `spore` from the block could potentially change the way the captured
+> expressions are evaluated. This would complicate the reasoning about spore-based
+> code (see the section [Evaluation Semantics](#evaluation-semantics) above).
 
 ### Macro Expansion
 
