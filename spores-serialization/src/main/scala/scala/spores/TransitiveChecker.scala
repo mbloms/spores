@@ -68,7 +68,7 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
         m.isTerm && !m.isMethod && !m.isModule && m.isImplicit)
       evidences.filter { implicitEvidence =>
         val typeArgs = implicitEvidence.info.typeArgs
-        implicitEvidence.tpe <:< typeOf[CanBeSerialized[_]] &&
+        implicitEvidence.tpe <:< typeOf[CanSerialize[_]] &&
         typeArgs.contains(concreteType) &&
         typeArgs.length == 1
       }.nonEmpty

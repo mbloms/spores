@@ -47,7 +47,7 @@ object PluginFeedback {
 
   def nonSerializableTypeParam(owner: String, tparam: String) = {
     s"""${BoldRed(
-         s"Type parameter $tparam in $owner does not extend `Serializable` or has an implicit value `CanBeSerialized[$tparam]` in scope.")}
+         s"Type parameter $tparam in $owner does not extend `Serializable` or has an implicit value `CanSerialize[$tparam]` in scope.")}
        |
        |${SolutionTemplate(
          s"Define `$tparam` as `$tparam <: Serializable` or extend $tparam with the most precise serializable super class.")}
