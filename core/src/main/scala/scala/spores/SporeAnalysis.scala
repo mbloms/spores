@@ -38,13 +38,9 @@ protected class SporeAnalysis[C <: whitebox.Context with Singleton](val ctx: C) 
   }
 
   /** Check predicate is satisfied for a concrete path. */
-  private def isPathWith(t: Tree)(pred: TermSymbol => Boolean): Boolean = {
+  private def isIdentifier(t: Tree)(pred: TermSymbol => Boolean): Boolean = {
     t match {
-      case sel @ Select(s, _) => isPathWith(s)(pred) && pred(sel.symbol.asTerm)
       case id: Ident => pred(id.symbol.asTerm)
-      case th: This => true
-      /* Super is not present in paths because of SI-1938 */
-      // case supr: Super => true
       case _ =>
         debug(s"isPathWith fails with $t")
         false
@@ -58,9 +54,9 @@ protected class SporeAnalysis[C <: whitebox.Context with Singleton](val ctx: C) 
         case app @ Apply(fun, List(captured)) if fun.symbol == captureSym =>
           debug(s"Found capture: $app")
           val culprit = captured.toString
-          if (!isPathWith(captured)(_.isStable))
+          if (!isIdentifier(captured)(_.isStable))
             ctx.abort(captured.pos, Feedback.InvalidOuterReference(culprit))
-          else if (!isPathWith(captured)(!_.isLazy))
+          else if (!isIdentifier(captured)(!_.isLazy))
             ctx.abort(captured.pos, Feedback.InvalidLazyMember(culprit))
           else capturedSymbols ::= captured.symbol -> captured
 

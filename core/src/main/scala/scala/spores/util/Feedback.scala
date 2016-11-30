@@ -17,7 +17,7 @@ private[spores] object Feedback {
     "You cannot construct a tuple of zero or more than 22 elements."
 
   def InvalidOuterReference(captured: String) =
-    s"Only stable paths can be captured inside a spore. Found: `$captured`."
+    s"Only identifiers can be captured inside a spore with `capture`. Found: `$captured`."
 
   def InvalidLazyMember(captured: String) =
     s"The path of a captured variable inside a spore cannot contain lazy members. Found: `$captured`."

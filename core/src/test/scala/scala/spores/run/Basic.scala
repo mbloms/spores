@@ -279,54 +279,6 @@ class BasicSpec {
     }
   }
 
-}
-
-// this is just to test that `super` is judged by the framework as a stable path
-class SuperTest {
-  val name = "super test"
-}
-
-package stablePathPkg {
-  object StablePathObj {
-    val kitteh = "i can haz stable path"
-  }
-}
-
-@RunWith(classOf[JUnit4])
-class StablePathSpec extends SuperTest {
-  override val name = "stable path spec"
-  val v0 = 12
-
-  @Test
-  def `can capture this in a stable path`(): Unit = {
-    val s: Spore[Int, String] = spore { (x: Int) =>
-      s"${capture(this.v0)}"
-    }
-
-    assert(s(42) == "12")
-  }
-
-  @Test
-  def `can capture an innocuous simple stable path`(): Unit = {
-    object Innocuous {
-      val cute = "fluffy"
-    }
-    val s: Spore[Int, String] = spore { (x: Int) =>
-      s"${capture(Innocuous.cute)}"
-    }
-
-    assert(s(42) == "fluffy")
-  }
-
-  @Test
-  def `can capture an innocuous stable path in a package`(): Unit = {
-    val s: Spore[Int, String] = spore { (x: Int) =>
-      s"${capture(stablePathPkg.StablePathObj.kitteh)}"
-    }
-
-    assert(s(42) == "i can haz stable path")
-  }
-
   @Test
   def testIssue4(): Unit = {
     val s = spore {
@@ -334,6 +286,8 @@ class StablePathSpec extends SuperTest {
       (x: Int) =>
         x * y
     }
-    assert(true)
+    assert(s(1) == 3)
+    assert(s(2) == 6)
+    assert(s(3) == 9)
   }
 }

@@ -39,15 +39,61 @@ class CaptureNegSpec {
   }
 
   @Test
-  def `no lazy vals allowed in any path`() {
-    expectError(Feedback.InvalidLazyMember("NoLazyValsObj.v1")) {
+  def `no static selects are allowed in any path in 'capture'`() {
+    expectError(Feedback.InvalidOuterReference("NoSelect.v1")) {
       """
-        object NoLazyValsObj {
-          lazy val v1 = 10
+        object NoSelect {
+          val v1 = 10
         }
         import scala.spores._
         val s: Spore[Int, Unit] = spore {
-          (x: Int) => println("arg: " + x + ", c1: " + capture(NoLazyValsObj.v1))
+          (x: Int) => println("arg: " + x + ", c1: " + capture(NoSelect.v1))
+        }
+      """
+    }
+  }
+
+  @Test
+  def `no selects are allowed in any path in 'capture'`() {
+    expectError(Feedback.InvalidOuterReference("noSelect.v1")) {
+      """
+        class NoSelect {
+          val v1 = 10
+        }
+        val noSelect = new NoSelect
+        import scala.spores._
+        val s: Spore[Int, Unit] = spore {
+          (x: Int) => println("arg: " + x + ", c1: " + capture(noSelect.v1))
+        }
+      """
+    }
+  }
+
+  @Test
+  def `this is not allowed in 'capture'`() {
+    expectError(Feedback.InvalidOuterReference("this.v1")) {
+      """
+        class NoThisReference {
+          val v1 = 10
+          import scala.spores._
+          val s: Spore[Int, Unit] = spore {
+            (x: Int) => println("arg: " + x + ", c1: " + capture(this.v1))
+          }
+        }
+      """
+    }
+  }
+
+  @Test
+  def `implicit this is not allowed in 'capture'`() {
+    expectError(Feedback.InvalidOuterReference("NoThisReference.this.v1")) {
+      """
+        class NoThisReference {
+          val v1 = 10
+          import scala.spores._
+          val s: Spore[Int, Unit] = spore {
+            (x: Int) => println("arg: " + x + ", c1: " + capture(v1))
+          }
         }
       """
     }
