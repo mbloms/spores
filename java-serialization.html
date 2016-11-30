@@ -52,8 +52,8 @@ runtime. Concretely, this translates into addressing <a href="http://www.cakesol
 <p>Add the following sbt settings to your <code class="hljs">build.sbt</code>:</p>
 <div class="row">
 <pre class="hljs small-expand columns a_xscroll"><code class="language-scala">resolvers += <span class="hljs-type">Resolver</span>.bintrayRepo(<span class="hljs-string">"scalacenter"</span>, <span class="hljs-string">"releases"</span>)
-libraryDependencies += <span class="hljs-string">"ch.epfl.scala"</span> %% <span class="hljs-string">"spores"</span> % <span class="hljs-string">"0.4.0-M5"</span>
-addCompilerPlugin(<span class="hljs-string">"ch.epfl.scala"</span> %% <span class="hljs-string">"spores-serialization"</span> % <span class="hljs-string">"0.4.0-M5"</span>)
+libraryDependencies += <span class="hljs-string">"ch.epfl.scala"</span> %% <span class="hljs-string">"spores"</span> % <span class="hljs-string">"0.4.0"</span>
+addCompilerPlugin(<span class="hljs-string">"ch.epfl.scala"</span> %% <span class="hljs-string">"spores-serialization"</span> % <span class="hljs-string">"0.4.0"</span>)
 </code></pre>
 </div>
 <blockquote class="note">
@@ -69,7 +69,7 @@ are serializable-safe, all the captured variables are checked to be serializable
 <li>Extend <code class="hljs">scala.Serializable</code> in the classes of all the captured types.</li>
 <li>Close the class hierarchy of all the custom classes that you capture (<a href="java-serialization.html#closed-class-hierarchies">what is this?</a>).</li>
 </ol>
-<p>With these requirements, <code class="hljs">spores-serialization</code> makes its best to prove the
+<p>With these requirements, <code class="hljs">spores-serialization</code> makes a best effort to ensure the
 correct serializability of your spores.</p>
 <h3 id="an-example" class="a_section" data-magellan-target="an-example">An example<a class="a_hlink" href="#an-example"></a></h3>
 <div class="row">
@@ -90,11 +90,11 @@ In it, we capture an <code class="hljs">Int</code>, a <code class="hljs">String<
 sent over the wire.</p>
 <p>But, why? The compiler plugin inspects the type of <code class="hljs">capturedInt</code>, <code class="hljs">capturedString</code> and
 <code class="hljs">capturedList</code>. In this case, <code class="hljs">Int</code> is a primitive, <code class="hljs">String</code> extends <code class="hljs">java.io.Serializable</code>
-and <code class="hljs">List[Int]</code> is a closed class hierarchy with a primitive (and serializable) type parameter
+and <code class="hljs">List[Int]</code> is a closed class hierarchy with a primitive (and serializable) type argument
 whose subclasses are safely serializable.</p>
 <p>The compiler plugin performs a similar reasoning to the one explained before
-to prove that certain types are serializable. Since Scala is very flexible and
-allows user to abstract over their logic, <code class="hljs">spores-serialization</code> is able to perform
+to verify that certain types are serializable. Since Scala is very flexible and
+allows users to abstract over their logic, <code class="hljs">spores-serialization</code> is able to perform
 such analysis in more sophisticated situations.</p>
 <p>Before introducing them, let's understand the underlying concepts and guarantees
 that the transitive checks provide.</p>
@@ -102,8 +102,8 @@ that the transitive checks provide.</p>
 <h3 id="closed-class-hierarchies" class="a_section" data-magellan-target="closed-class-hierarchies">Closed class hierarchies<a class="a_hlink" href="#closed-class-hierarchies"></a></h3>
 <p>Closed class hierarchies play a key role in Scala because:</p>
 <ul>
-<li>allows the compiler to <a href="https://en.wikipedia.org/wiki/Closed-world_assumption">assume a closed-world</a> for a concrete set of classes;</li>
-<li>macros and compiler plugins have <em>full</em> access to its definition and properties.</li>
+<li>they allow the compiler to <a href="https://en.wikipedia.org/wiki/Closed-world_assumption">assume a closed-world</a> for a concrete set of classes;</li>
+<li>macros and compiler plugins have <em>full</em> access to their definition and properties.</li>
 </ul>
 <p>This section sheds some light on the differences between the two and why
 <code class="hljs">spores-serialization</code> requires closed class hierarchies to ensure the correct
@@ -112,7 +112,7 @@ serializability of your program.</p>
 <p>Traditionally, class hierarchies have always be open. Open class hierarchies
 are handy and flexible for developers: they allow them to extend classes in any
 file or project they want (if they are <em>visible</em>). However, such flexibility
-hinders the static analysis of programs. For overcoming this limitation, we use
+hinders the static analysis of programs. To overcome this limitation, we use
 closed class hierarchies.</p>
 <div class="row"><div class="small-expand columns a_xscroll a_table"><table>
 <thead>
@@ -124,7 +124,7 @@ closed class hierarchies.</p>
 <tr><td><code class="language-scala"><span class="hljs-keyword">case</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Baz</span>(<span class="hljs-params">b: Int</span>) <span class="hljs-keyword">extends</span> <span class="hljs-title">Foo</span></span></code></td><td><code class="language-scala"><span class="hljs-keyword">final </span> <span class="hljs-keyword">case</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Baz</span>(<span class="hljs-params">b: Int</span>) <span class="hljs-keyword">extends</span> <span class="hljs-title">Foo</span></span></code></td></tr>
 </tbody>
 </table></div></div>
-<p>A closed class hierarchy is a finite set of classes that share same hierarchy and are defined
+<p>A closed class hierarchy is a finite set of classes that share the same hierarchy and are defined
 in the same Scala file. They are defined as their counterpart except for the use of extra modifiers.
 The rule of thumb is to define all the leafs as <code class="hljs">final</code>, and the root and intermediate traits
 and classes as <code class="hljs">sealed</code>. Therefore, whenever you try to extend a sealed trait/class
@@ -133,7 +133,7 @@ or a <code class="hljs">final</code> class, the compiler will throw a happy erro
 <p>Transitive checking requires a full traversal of the class hierarchy. It needs to check
 both class and trait definitions and <em>all their members</em> to prove that no serialization issues
 can happen at runtime.</p>
-<p>So, why cannot we just use open class hierarchies?</p>
+<p>So, why can't we just use open class hierarchies?</p>
 <p>Because:</p>
 <ol>
 <li>Non-<code class="hljs">final</code> classes can be extended elsewhere. <code class="hljs">spores-serialization</code> could give false
@@ -147,7 +147,7 @@ and may have a <a href="https://github.com/scala/scala/pull/5284">partial fix so
 <h4 id="the-class-metamorphosis" class="a_section" data-magellan-target="the-class-metamorphosis">The class Metamorphosis<a class="a_hlink" href="#the-class-metamorphosis"></a></h4>
 <p>So what should you do to make <code class="hljs">spores-serialization</code> transitively check all your program?
 Ensure that all the captured variables in your spores are serializable and closed. If you
-have scattered class definitions across different packages, bring them to the same file
+have class definitions scattered across different packages, bring them to the same file
 and baptise the class hierarchy with <code class="hljs">sealed</code> and <code class="hljs">final</code> as described before.</p>
 <div class="row">
 <pre class="hljs small-expand columns a_xscroll"><code class="language-scala"><span class="hljs-keyword">import</span> scala.spores._
@@ -167,8 +167,8 @@ spore {
 }
 </code></pre>
 </div>
-<p>The previous example compiles. If you don't seal the hierarchy, <code class="hljs">spores-serialization</code> will
-output the following error:</p>
+<p>The previous example compiles. If you don't seal the hierarchy, <code class="hljs">spores-serialization</code>
+outputs the following error:</p>
 <div class="row">
 <pre class="hljs small-expand columns a_xscroll"><code class="language-scala">[warn] /your/path/<span class="hljs-type">File</span>.scala:<span class="hljs-number">93</span>: <span class="hljs-type">Detected</span> open <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">hierarchy</span> <span class="hljs-title">in</span> `<span class="hljs-title">trait</span> <span class="hljs-title">Foo</span>`.</span>
 [warn]   <span class="hljs-type">Transitive</span> inspection cannot ensure that <span class="hljs-class"><span class="hljs-keyword">trait</span> <span class="hljs-title">Foo</span> <span class="hljs-title">is</span> <span class="hljs-title">not</span> <span class="hljs-title">being</span> <span class="hljs-title">extended</span> <span class="hljs-title">somewhere</span> <span class="hljs-title">else</span>. <span class="hljs-title">For</span> <span class="hljs-title">a</span> <span class="hljs-title">complete</span> <span class="hljs-title">serializable</span> <span class="hljs-title">check</span>, <span class="hljs-title">class</span> <span class="hljs-title">hierarchies</span> <span class="hljs-title">need</span> <span class="hljs-title">to</span> <span class="hljs-title">be</span> <span class="hljs-title">closed</span>.</span>
@@ -181,10 +181,10 @@ output the following error:</p>
 </div>
 <p>Notice that capturing subclasses like <code class="hljs">Bar</code> or <code class="hljs">Baz</code> will never cause an error
 because they are final and, by definition, have no subclass.</p>
-<h4 id="a-escape-hatch" class="a_section" data-magellan-target="a-escape-hatch">A escape hatch<a class="a_hlink" href="#a-escape-hatch"></a></h4>
-<p>The annotation <code class="hljs">@assumeClosed</code> is a escape hatch for users that <em>for some reason</em> cannot
-turn their class hierarchy closed. It tells the compiler to assume that the class you're
-capturing is closed, but unfortunately no analysis of the subclasses will be performed (SI-7046).
+<h4 id="an-escape-hatch" class="a_section" data-magellan-target="an-escape-hatch">An escape hatch<a class="a_hlink" href="#an-escape-hatch"></a></h4>
+<p>The annotation <code class="hljs">@assumeClosed</code> is an escape hatch for users that <em>for some reason</em> cannot
+close their class hierarchy. The annotation tells the compiler to assume that the class you're
+capturing is closed, but unfortunately no analysis of the subclasses is performed (SI-7046).
 Therefore, its use is discouraged and only left for intrepid developers that like risk.</p>
 <div class="row">
 <pre class="hljs small-expand columns a_xscroll"><code class="language-scala"><span class="hljs-keyword">import</span> scala.spores._
@@ -202,7 +202,7 @@ Therefore, its use is discouraged and only left for intrepid developers that lik
 </div>
 <h3 id="abstracting-over-the-logic" class="a_section" data-magellan-target="abstracting-over-the-logic">Abstracting over the logic<a class="a_hlink" href="#abstracting-over-the-logic"></a></h3>
 <p>Sooner or later, your logic may become repetitive. <code class="hljs">spores-serialization</code> is capable
-of allowing users to abstract over their logic and define spores at places where
+of allowing users to abstract over their logic and define spores in places where
 the captured types are not fully defined.</p>
 <p>For the following code snippet, assume that <code class="hljs">Foo</code> is a closed class hierarchy.</p>
 <div class="row">
@@ -234,9 +234,9 @@ the captured types are not fully defined.</p>
 }
 </code></pre>
 </div>
-<p>Why are these working examples? Because <code class="hljs">Foo</code> is ensured to be a high bound of
+<p>Why are these working examples? Because <code class="hljs">Foo</code> is ensured to be an upper bound of
 the type parameter and <code class="hljs">Foo</code> is a closed class hierarchy.</p>
-<p>While the previous examples work, users can also set the high bound to be
+<p>While the previous examples work, users can also set the upper bound to be
 <code class="hljs">Serializable</code>:</p>
 <div class="row">
 <pre class="hljs small-expand columns a_xscroll"><code class="language-scala"><span class="hljs-keyword">import</span> scala.spores._
@@ -254,19 +254,19 @@ the type parameter and <code class="hljs">Foo</code> is a closed class hierarchy
 <pre class="hljs small-expand columns a_xscroll"><code>TBD
 </code></pre>
 </div>
-<p>Generally, proving that a type parameter extends <code class="hljs">scala.Serializable</code> is not enough
-for ensuring the lack of type members because &quot;serializable&quot; classes may have fields
+<p>Generally, verifying that a type parameter extends <code class="hljs">scala.Serializable</code> is not enough
+to ensure the lack of type members because &quot;serializable&quot; classes may have fields
 that are not. The previous code snippet is <strong>not the recommended way</strong> to use <code class="hljs">spores-serialization</code>.
 It's better to allow the compiler plugin to do all the work if you don't necessarily
-like debugging a runtime serialization error a Sunday night.</p>
+like debugging a runtime serialization error on a Sunday night.</p>
 <h3 id="transient-fields" class="a_section" data-magellan-target="transient-fields">Transient fields<a class="a_hlink" href="#transient-fields"></a></h3>
 <p>In Java, variables may be marked <code class="hljs">transient</code> to indicate that they are not part of the persistent
-state of an object and therefore will not be serialized (see <a href="https://en.wikibooks.org/wiki/Java_Programming/Keywords/transient">this</a> and the <a href="http://docs.oracle.com/javase/specs/jls/se8/html/jls-8.html#jls-8.3.1.3">Java Language Specification</a>).
+state of an object and are therefore not serialized (see <a href="https://en.wikibooks.org/wiki/Java_Programming/Keywords/transient">this</a> and the <a href="http://docs.oracle.com/javase/specs/jls/se8/html/jls-8.html#jls-8.3.1.3">Java Language Specification</a>).
 In Scala, you can achieve the same goal by annotating the fields with <code class="hljs">@transient</code>.</p>
 <p>By definition, transient fields are not part of the analyzed field, and
-<code class="hljs">spores-serialization</code> will ignore its type even if it's not serializable.
-Under the hood, when Java does initialize the unserialized class, a transient
-field will hold no value so make sure that transient fields are not used in the
+<code class="hljs">spores-serialization</code> ignores its type even if it's not serializable.
+Under the hood, when Java initializes the deserialized class instance, a transient
+field will hold no value, so make sure that transient fields are not used in the
 logic of your program.</p>
 <h3 id="serializable-value-classes" class="a_section" data-magellan-target="serializable-value-classes">Serializable value classes<a class="a_hlink" href="#serializable-value-classes"></a></h3>
 <p>By definition, value classes can <em>only</em> extend <code class="hljs">AnyVal</code>, which means they cannot be <code class="hljs">{java.io, scala}.Serializable</code>.
@@ -428,7 +428,7 @@ and propose your ideas to make everyone's life easier.</p>
   
   <li>
     
-       <a href="#a-escape-hatch">A escape hatch</a> 
+       <a href="#an-escape-hatch">An escape hatch</a> 
     
     
   </li>
