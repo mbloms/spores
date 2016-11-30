@@ -264,7 +264,7 @@ logic of your program.
 
 By definition, value classes can *only* extend `AnyVal`, which means they cannot be `{java.io, scala}.Serializable`.
 To overcome this limitation, the compiler plugin uses implicits to prove that a value class `Foo` is serializable.
-For proving it, you need to provide an implicit `CanBeSerialized[Foo]` in the scope of
+For proving it, you need to provide an implicit `CanSerialize[Foo]` in the scope of
 the spore definition.
 
 ```scala
@@ -273,7 +273,7 @@ import scala.spores._
 // Value class definition somewhere
 case class Foo(i: Int) extends AnyVal
 object Foo {
-  implicit object FooIsSerializable extends CanBeSerialized[Foo]
+  implicit object FooIsSerializable extends CanSerialize[Foo]
 }
 
 // Spore definition somewhere else
