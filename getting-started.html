@@ -134,6 +134,7 @@ during compilation. The reason is that the variable <code class="hljs">outer1</c
 parameter of the closure nor one of the spore's value declarations (the only
 value declaration is: <code class="hljs">val inner = outer2</code>).</p>
 <h3 id="evaluation-semantics" class="a_section" data-magellan-target="evaluation-semantics">Evaluation Semantics<a class="a_hlink" href="#evaluation-semantics"></a></h3>
+<p><a name="evaluation-semantics"></a></p>
 <p>In order to make the runtime behavior of a spore as intuitive as possible, the
 design leaves the evaluation semantics unchanged compared to regular closures.
 Basically, leaving out the <code class="hljs">spore</code> marker results in a closure with the same
@@ -267,31 +268,15 @@ as follows:</p>
 <p>Here, <code class="hljs">i</code> is &quot;captured&quot; as it occurs syntactically after the arrow of another
 generator (it occurs after <code class="hljs">j &lt;- lookup(i)</code>, the second generator in the
 for-comprehension).</p>
-<p><strong>Note:</strong> anything that is &quot;captured&quot; using <code class="hljs">capture</code> may only be a path.</p>
-<p><strong>A path</strong> (as defined by the Scala Language Specification, section 3.1) is:</p>
-<ul>
-<li>The empty path ε (which cannot be written explicitly in user programs).</li>
-<li><code class="hljs">C.this</code>, where <code class="hljs">C</code> references a class.</li>
-<li><code class="hljs">p.x</code> where <code class="hljs">p</code> is a path and <code class="hljs">x</code> is a stable member of <code class="hljs">p</code>.</li>
-<li><code class="hljs">C.super.x</code> or <code class="hljs">C.super[M].x</code> where <code class="hljs">C</code> references a class and <code class="hljs">x</code> references a stable member of the super class or designated parent class <code class="hljs">M</code> of <code class="hljs">C</code>.</li>
-</ul>
-<p>The reason why captured expressions are restricted to paths is that otherwise
-the two closures</p>
-<div class="row">
-<pre class="hljs small-expand columns a_xscroll"><code class="language-scala">(x =&gt; &lt;expr1&gt; + capture(&lt;expr2&gt;))
-</code></pre>
-</div>
-<p>and</p>
-<div class="row">
-<pre class="hljs small-expand columns a_xscroll"><code class="language-scala">(x =&gt; &lt;expr1&gt; + &lt;expr2&gt;)
-</code></pre>
-</div>
-<p>(where <code class="hljs">&lt;expr1&gt;</code> and <code class="hljs">&lt;expr2&gt;</code> are not just paths) would not have the same
-runtime behavior, because in the first case, the closure would have to be
-transformed in a way that would evaluate <code class="hljs">&lt;expr2&gt;</code> &quot;outside of the closure&quot;.
-Not only would this complicate the reasoning about spore-based code (see the
-section Evaluation Semantics above), but it's not clear what &quot;outside of the
-closure&quot; even means in a context such as for-comprehensions.</p>
+<blockquote class="note">
+<p><code class="hljs">capture</code> can only capture identifiers. This means that paths like
+<code class="hljs">capture(foo.bar.baz)</code> will fail and should be rewritten to <code class="hljs">capture(foo).bar.baz</code>.</p>
+<p>The reason why captured expressions are restricted to identifiers is that
+otherwise the <code class="hljs">capture</code> function will change the evaluation semantics.
+Removing <code class="hljs">spore</code> from the block could potentially change the way the captured
+expressions are evaluated. This would complicate the reasoning about spore-based
+code (see the section <a href="getting-started.html#evaluation-semantics">Evaluation Semantics</a> above).</p>
+</blockquote>
 <h3 id="macro-expansion" class="a_section" data-magellan-target="macro-expansion">Macro Expansion<a class="a_hlink" href="#macro-expansion"></a></h3>
 <p>An invocation of the spore macro expands the spore's body as follows. Given
 the general shape of a spore as shown above, the spore macro produces the
