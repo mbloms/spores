@@ -36,10 +36,10 @@ lazy val publishSettings = Seq(
   licenses := Seq(
     "BSD 3-Clause" -> url("http://www.scala-lang.org/downloads/license.html")),
   // Note that original repo is http://github.com/heathermiller/spores
-  homepage := Some(url("https://github.com/jvican/spores-spark")),
+  homepage := Some(url("https://github.com/scalacenter/spores")),
   scmInfo := Some(ScmInfo(
-    url("https://github.com/jvican/spores"),
-    "scm:git:git@github.com:jvican/spores.git"
+    url("https://github.com/scalacenter/spores"),
+    "scm:git:git@github.com:scalacenter/spores.git"
   )),
   startYear := Some(2013),
   autoAPIMappings := true,
@@ -194,7 +194,7 @@ lazy val docs: Project = project
   .settings(scalaVersion := "2.11.8")
   .settings(
     ghpages.settings,
-    git.remoteRepo := "git@github.com:jvican/spores",
+    git.remoteRepo := "git@github.com:scalacenter/spores",
     git.branch := Some("gh-pages"),
     name := "spores",
     ornateSourceDir := Some(baseDirectory.value / "src" / "ornate"),
