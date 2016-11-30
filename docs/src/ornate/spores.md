@@ -13,11 +13,7 @@ definition and used throughout the closure body. `Spores` are designed to be com
 in both logic and properties.
 
 > {.note}
-> *Expectations*
->  
-> As the project has not been tested in production yet and depend on fragile
-> parts of the Scala compiler, there may be some bugs or misbehaviours.
->
+> The current implementation of `spores` and `spores-serialization` is still experimental.
 > Please, help us improve and file any issue you may encounter [here](https://github.com/jvican/spores/issues/new)!
 
 ## Introduction
