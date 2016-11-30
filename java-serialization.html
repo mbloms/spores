@@ -271,7 +271,7 @@ logic of your program.</p>
 <h3 id="serializable-value-classes" class="a_section" data-magellan-target="serializable-value-classes">Serializable value classes<a class="a_hlink" href="#serializable-value-classes"></a></h3>
 <p>By definition, value classes can <em>only</em> extend <code class="hljs">AnyVal</code>, which means they cannot be <code class="hljs">{java.io, scala}.Serializable</code>.
 To overcome this limitation, the compiler plugin uses implicits to prove that a value class <code class="hljs">Foo</code> is serializable.
-For proving it, you need to provide an implicit <code class="hljs">CanBeSerialized[Foo]</code> in the scope of
+For proving it, you need to provide an implicit <code class="hljs">CanSerialize[Foo]</code> in the scope of
 the spore definition.</p>
 <div class="row">
 <pre class="hljs small-expand columns a_xscroll"><code class="language-scala"><span class="hljs-keyword">import</span> scala.spores._
@@ -279,7 +279,7 @@ the spore definition.</p>
 <span class="hljs-comment">// Value class definition somewhere</span>
 <span class="hljs-keyword">case</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Foo</span>(<span class="hljs-params">i: <span class="hljs-type">Int</span></span>) <span class="hljs-keyword">extends</span> <span class="hljs-title">AnyVal</span></span>
 <span class="hljs-class"><span class="hljs-keyword">object</span> <span class="hljs-title">Foo</span> </span>{
-  <span class="hljs-keyword">implicit</span> <span class="hljs-class"><span class="hljs-keyword">object</span> <span class="hljs-title">FooIsSerializable</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">CanBeSerialized</span>[<span class="hljs-type">Foo</span>]</span>
+  <span class="hljs-keyword">implicit</span> <span class="hljs-class"><span class="hljs-keyword">object</span> <span class="hljs-title">FooIsSerializable</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">CanSerialize</span>[<span class="hljs-type">Foo</span>]</span>
 }
 
 <span class="hljs-comment">// Spore definition somewhere else</span>
