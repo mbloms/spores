@@ -35,7 +35,7 @@ This compiler plugin requires you to:
 1. Extend `scala.Serializable` in the classes of all the captured types.
 1. Close the class hierarchy of all the custom classes that you capture ([what is this?](#closed-class-hierarchies)).
 
-With these requirements, `spores-serialization` makes its best to prove the
+With these requirements, `spores-serialization` makes a best effort to ensure the
 correct serializability of your spores.
 
 ### An example
@@ -59,12 +59,12 @@ sent over the wire.
 
 But, why? The compiler plugin inspects the type of `capturedInt`, `capturedString` and
 `capturedList`. In this case, `Int` is a primitive, `String` extends `java.io.Serializable`
-and `List[Int]` is a closed class hierarchy with a primitive (and serializable) type parameter
+and `List[Int]` is a closed class hierarchy with a primitive (and serializable) type argument
 whose subclasses are safely serializable.
 
 The compiler plugin performs a similar reasoning to the one explained before
-to prove that certain types are serializable. Since Scala is very flexible and
-allows user to abstract over their logic, `spores-serialization` is able to perform
+to verify that certain types are serializable. Since Scala is very flexible and
+allows users to abstract over their logic, `spores-serialization` is able to perform
 such analysis in more sophisticated situations.
 
 Before introducing them, let's understand the underlying concepts and guarantees
@@ -75,8 +75,8 @@ that the transitive checks provide.
 ### Closed class hierarchies {.closed-class-hierarchies}
 
 Closed class hierarchies play a key role in Scala because:
-* allows the compiler to [assume a closed-world](https://en.wikipedia.org/wiki/Closed-world_assumption) for a concrete set of classes;
-* macros and compiler plugins have *full* access to its definition and properties.
+* they allow the compiler to [assume a closed-world](https://en.wikipedia.org/wiki/Closed-world_assumption) for a concrete set of classes;
+* macros and compiler plugins have *full* access to their definition and properties.
 
 This section sheds some light on the differences between the two and why
 `spores-serialization` requires closed class hierarchies to ensure the correct
@@ -87,7 +87,7 @@ serializability of your program.
 Traditionally, class hierarchies have always be open. Open class hierarchies
 are handy and flexible for developers: they allow them to extend classes in any
 file or project they want (if they are *visible*). However, such flexibility
-hinders the static analysis of programs. For overcoming this limitation, we use
+hinders the static analysis of programs. To overcome this limitation, we use
 closed class hierarchies.
 
 Open class hierarchy | Closed class hierarchy |
@@ -96,7 +96,7 @@ Open class hierarchy | Closed class hierarchy |
 <code class="language-scala"> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Bar</span>(<span class="hljs-params">b: Int</span>) <span class="hljs-keyword">extends</span> <span class="hljs-title">Foo</span></span></code> | <code class="language-scala"><span class="hljs-keyword">final </span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Bar</span>(<span class="hljs-params">b: Int</span>) <span class="hljs-keyword">extends</span> <span class="hljs-title">Foo</span></span></code> |
 <code class="language-scala"><span class="hljs-keyword">case</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Baz</span>(<span class="hljs-params">b: Int</span>) <span class="hljs-keyword">extends</span> <span class="hljs-title">Foo</span></span></code> | <code class="language-scala"><span class="hljs-keyword">final </span> <span class="hljs-keyword">case</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Baz</span>(<span class="hljs-params">b: Int</span>) <span class="hljs-keyword">extends</span> <span class="hljs-title">Foo</span></span></code> |
 
-A closed class hierarchy is a finite set of classes that share same hierarchy and are defined
+A closed class hierarchy is a finite set of classes that share the same hierarchy and are defined
 in the same Scala file. They are defined as their counterpart except for the use of extra modifiers.
 The rule of thumb is to define all the leafs as `final`, and the root and intermediate traits
 and classes as `sealed`. Therefore, whenever you try to extend a sealed trait/class
@@ -108,7 +108,7 @@ Transitive checking requires a full traversal of the class hierarchy. It needs t
  both class and trait definitions and *all their members* to prove that no serialization issues
  can happen at runtime.
  
-So, why cannot we just use open class hierarchies?
+So, why can't we just use open class hierarchies?
  
 Because:
 1. Non-`final` classes can be extended elsewhere. `spores-serialization` could give false
@@ -123,7 +123,7 @@ and may have a [partial fix soon](https://github.com/scala/scala/pull/5284).
 
 So what should you do to make `spores-serialization` transitively check all your program?
 Ensure that all the captured variables in your spores are serializable and closed. If you
-have scattered class definitions across different packages, bring them to the same file
+have class definitions scattered across different packages, bring them to the same file
 and baptise the class hierarchy with `sealed` and `final` as described before.
 
 ```scala
@@ -144,8 +144,8 @@ spore {
 }
 ```
 
-The previous example compiles. If you don't seal the hierarchy, `spores-serialization` will
-output the following error:
+The previous example compiles. If you don't seal the hierarchy, `spores-serialization`
+outputs the following error:
 
 ```
 [warn] /your/path/File.scala:93: Detected open class hierarchy in `trait Foo`.
@@ -160,11 +160,11 @@ output the following error:
 Notice that capturing subclasses like `Bar` or `Baz` will never cause an error
 because they are final and, by definition, have no subclass.
 
-#### A escape hatch
+#### An escape hatch
 
-The annotation `@assumeClosed` is a escape hatch for users that *for some reason* cannot
-turn their class hierarchy closed. It tells the compiler to assume that the class you're
-capturing is closed, but unfortunately no analysis of the subclasses will be performed (SI-7046).
+The annotation `@assumeClosed` is an escape hatch for users that *for some reason* cannot
+close their class hierarchy. The annotation tells the compiler to assume that the class you're
+capturing is closed, but unfortunately no analysis of the subclasses is performed (SI-7046).
 Therefore, its use is discouraged and only left for intrepid developers that like risk.
 
 ```scala
@@ -184,7 +184,7 @@ val s = spore {
 ### Abstracting over the logic
 
 Sooner or later, your logic may become repetitive. `spores-serialization` is capable
-of allowing users to abstract over their logic and define spores at places where
+of allowing users to abstract over their logic and define spores in places where
 the captured types are not fully defined.
 
 For the following code snippet, assume that `Foo` is a closed class hierarchy.
@@ -219,10 +219,10 @@ val s = spore {
 }
 ```
 
-Why are these working examples? Because `Foo` is ensured to be a high bound of
+Why are these working examples? Because `Foo` is ensured to be an upper bound of
 the type parameter and `Foo` is a closed class hierarchy.
 
-While the previous examples work, users can also set the high bound to be
+While the previous examples work, users can also set the upper bound to be
 `Serializable`:
 
 ```scala
@@ -242,22 +242,22 @@ But this results in the following warning:
 TBD
 ```
 
-Generally, proving that a type parameter extends `scala.Serializable` is not enough
-for ensuring the lack of type members because "serializable" classes may have fields
+Generally, verifying that a type parameter extends `scala.Serializable` is not enough
+to ensure the lack of type members because "serializable" classes may have fields
 that are not. The previous code snippet is **not the recommended way** to use `spores-serialization`.
 It's better to allow the compiler plugin to do all the work if you don't necessarily
-like debugging a runtime serialization error a Sunday night.
+like debugging a runtime serialization error on a Sunday night.
 
 ### Transient fields
 
 In Java, variables may be marked `transient` to indicate that they are not part of the persistent
-state of an object and therefore will not be serialized (see [this](https://en.wikibooks.org/wiki/Java_Programming/Keywords/transient) and the [Java Language Specification](http://docs.oracle.com/javase/specs/jls/se8/html/jls-8.html#jls-8.3.1.3)).
+state of an object and are therefore not serialized (see [this](https://en.wikibooks.org/wiki/Java_Programming/Keywords/transient) and the [Java Language Specification](http://docs.oracle.com/javase/specs/jls/se8/html/jls-8.html#jls-8.3.1.3)).
 In Scala, you can achieve the same goal by annotating the fields with `@transient`.
 
 By definition, transient fields are not part of the analyzed field, and
-`spores-serialization` will ignore its type even if it's not serializable.
-Under the hood, when Java does initialize the unserialized class, a transient
-field will hold no value so make sure that transient fields are not used in the
+`spores-serialization` ignores its type even if it's not serializable.
+Under the hood, when Java initializes the deserialized class instance, a transient
+field will hold no value, so make sure that transient fields are not used in the
 logic of your program.
 
 ### Serializable value classes
