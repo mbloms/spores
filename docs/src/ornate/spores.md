@@ -14,7 +14,6 @@ in both logic and properties.
 
 > {.note}
 > ##### Expectations
-> You can expect a beta-quality version of spores and the serialization transitive checker.
 > As the projects have not been tested in production yet and they depend on fragile
 > parts of the Scala compiler, there may be some bugs or misbehaviours.
 >
