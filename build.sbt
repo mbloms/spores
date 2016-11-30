@@ -37,6 +37,10 @@ lazy val publishSettings = Seq(
     "BSD 3-Clause" -> url("http://www.scala-lang.org/downloads/license.html")),
   // Note that original repo is http://github.com/heathermiller/spores
   homepage := Some(url("https://github.com/jvican/spores-spark")),
+  scmInfo := Some(ScmInfo(
+    url("https://github.com/jvican/spores"),
+    "scm:git:git@github.com:jvican/spores.git"
+  )),
   startYear := Some(2013),
   autoAPIMappings := true,
   developers := List(
