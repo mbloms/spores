@@ -6,6 +6,10 @@ import scala.spores.util.PluginFeedback._
 import scala.spores.util.CheckerUtils
 import scala.tools.nsc.transform.TypingTransformers
 
+/** Check that spore captured variables are serializable transitively.
+  *
+  * The transitive checker is a transformer instead of a traverser because
+  * it needs access to `TypingTransformers` for implicit searches. */
 class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
     extends TypingTransformers
     with CheckerUtils[G] {
