@@ -156,16 +156,19 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
           analyzeClassHierarchy(symbol, definedAnns, concreteType0)
         } else {
           val captured = members.lookup(TermName(capturedSporeFieldName))
-          if (captured eq NoSymbol)
-            debuglog("Error: `captured` field not found.")
-          else {
-            val targetTpe = captured.tpe.finalResultType
+          assert(!(captured eq NoSymbol))
+          val capturedTpe = captured.tpe.finalResultType
+          val targetTpes =
+            if (!definitions.isTupleType(capturedTpe)) List(capturedTpe)
+            else capturedTpe.typeArgs
+          targetTpes.foreach { targetTpe =>
             val canSerializeTpe =
               canSerialize.initialize.tpe
                 .instantiateTypeParams(canSerialize.typeParams,
                                        List(targetTpe))
                 .finalResultType
-            val search = safeInferImplicit(canSerializeTpe, localTyper.context)
+            val search =
+              safeInferImplicit(canSerializeTpe, localTyper.context)
             debuglog(s"Implicit search result is $search")
             if (search.isSuccess)
               areSerializable += targetTpe.typeSymbolDirect
@@ -184,6 +187,7 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
           mapped
         }
 
+        // Inspect types of the captured class
         noTransientFields.foreach { field =>
           val fieldSymbol = field.info.typeSymbol
           debuglog(s"Inspecting field of ${fieldSymbol.tpe}")
