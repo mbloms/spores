@@ -82,11 +82,8 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
                         members: Scope = new Scope {},
                         concreteType: Type = NoType) = {
       debuglog(s"Checking serializability of $sym")
-      sym.isSerializable || {
-        if (concreteType eq NoType)
-          areSerializable.contains(sym.tpe.typeSymbolDirect)
-        else areSerializable.contains(concreteType.typeSymbolDirect)
-      } || {
+      sym.isSerializable ||
+      areSerializable.contains(sym.tpe.typeSymbolDirect) || {
         val evidences = members.filter(m =>
           m.isTerm && !m.isMethod && !m.isModule && m.isImplicit)
         evidences.filter { implicitEvidence =>
