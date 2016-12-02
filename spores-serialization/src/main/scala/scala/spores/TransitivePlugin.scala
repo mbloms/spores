@@ -30,7 +30,7 @@ class TransitivePlugin(val global: Global) extends Plugin {
     override def newPhase(prev: Phase): Phase = {
       new StdPhase(prev) {
         override def apply(unit: global.CompilationUnit): Unit = {
-          new checker.TransitiveTraverser(unit, config).traverse(unit.body)
+          new checker.TransitiveTraverser(unit, config).transform(unit.body)
         }
       }
     }
