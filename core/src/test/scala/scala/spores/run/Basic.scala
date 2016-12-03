@@ -383,3 +383,14 @@ object ValidObject2 extends C2 {
     f.toString + x.toString + "!"
   }
 }
+
+object Outer {
+  def method(): Unit = {
+    object Inner extends C2 {
+      val s = spore { (x: Int) =>
+        f.toString + x.toString + "!"
+      }
+    }
+  }
+}
+
