@@ -11,6 +11,14 @@ import scala.spores._
 @RunWith(classOf[JUnit4])
 class SerializableSpec {
   @Test
+  def `A spore that does not capture anything can be serialized`(): Unit = {
+    val s: Spore[String, String] = spore {
+      case s: String => s
+    }
+    assert(s("Hello, World!") == "Hello, World!")
+  }
+
+  @Test
   def `A case class is serializable`(): Unit = {
     final case class A(number: Int)
     val a = A(1)

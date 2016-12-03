@@ -168,24 +168,24 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
           analyzeClassHierarchy(symbol, definedAnns, concreteType0)
         } else if (isSpore) {
           val captured = members.lookup(TermName(capturedSporeFieldName))
-          assert(captured eq NoSymbol,
-                 s"Captured field has to exist in ${symbol.tpe}")
-          val capturedTpe = captured.tpe.finalResultType
-          val targetTpes =
-            if (!definitions.isTupleType(capturedTpe)) List(capturedTpe)
-            else capturedTpe.typeArgs
-          targetTpes.foreach { targetTpe =>
-            val canSerializeTpe =
-              canSerialize.initialize.tpe
-                .instantiateTypeParams(canSerialize.typeParams,
-                                       List(targetTpe))
-                .finalResultType
-            val search =
-              safeInferImplicit(canSerializeTpe, localTyper.context)
-            debuglog(s"Implicit search result is $search")
-            if (search.isSuccess)
-              areSerializable += targetTpe.typeSymbolDirect
-            else debuglog(s"No `CanSerialize` implicit for $targetTpe")
+          if (!(captured eq NoSymbol)) {
+            val capturedTpe = captured.tpe.finalResultType
+            val targetTpes =
+              if (!definitions.isTupleType(capturedTpe)) List(capturedTpe)
+              else capturedTpe.typeArgs
+            targetTpes.foreach { targetTpe =>
+              val canSerializeTpe =
+                canSerialize.initialize.tpe
+                  .instantiateTypeParams(canSerialize.typeParams,
+                                         List(targetTpe))
+                  .finalResultType
+              val search =
+                safeInferImplicit(canSerializeTpe, localTyper.context)
+              debuglog(s"Implicit search result is $search")
+              if (search.isSuccess)
+                areSerializable += targetTpe.typeSymbolDirect
+              else debuglog(s"No `CanSerialize` implicit for $targetTpe")
+            }
           }
         }
 
@@ -291,6 +291,7 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
     override def transform(tree: Tree): Tree = {
       tree match {
         case cls: ClassDef if cls.symbol.tpe <:< sporeBaseType =>
+          println(s"Found spore definition: $cls")
           debuglog(s"First target of transitive analysis: ${cls.symbol}")
           checkMembers(cls.symbol, isSpore = true)
           super.transform(tree)
