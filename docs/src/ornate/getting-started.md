@@ -82,11 +82,12 @@ spore {
 The types `T_1, ..., T_n` can also be inferred.
 
 The closure of a spore has to satisfy the following rule. All free variables
-of the closure body have to be either
+of the closure body have to be either:
 
 1. parameters of the closure, or
-2. declared in the preceding sequence of local value declarations, or
-3. marked using `capture` (see corresponding section  below).
+2. declared in the preceding sequence of local value declarations,
+3. marked using `capture` (see corresponding section below), or
+4. *statically* accessible (members of objects | packages).
 
 ```scala
 case class Person(name: String, age: Int)
