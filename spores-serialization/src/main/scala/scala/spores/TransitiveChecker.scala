@@ -27,7 +27,7 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
     implicit val assumeClosedExistence = lifeVest(
       implicitly[WeakTypeTag[scala.spores.assumeClosed]])
     implicit val canSerializeExistence = lifeVest(
-      implicitly[WeakTypeTag[scala.spores.CanSerialize[_]]])
+      implicitly[WeakTypeTag[scala.spores.CanSerialize[Any]]])
   }
 
   import ExistentialShield._
