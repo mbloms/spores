@@ -16,8 +16,8 @@ runtime. Concretely, this translates into addressing [common](http://www.cakesol
 Add the following sbt settings to your `build.sbt`:
 
 ```scala
-libraryDependencies += "ch.epfl.scala" %% "spores" % "0.4.2"
-addCompilerPlugin("ch.epfl.scala" %% "spores-serialization" % "0.4.2")
+libraryDependencies += "ch.epfl.scala" %% "spores" % "0.4.3"
+addCompilerPlugin("ch.epfl.scala" %% "spores-serialization" % "0.4.3")
 ```
 
 > {.note}

@@ -19,8 +19,8 @@ serialized by the JVM (Java serialization). For more information, check the
 ## Add to your project
 
 ```scala
-libraryDependencies += "ch.epfl.scala" %% "spores" % "0.4.2"
-addCompilerPlugin("ch.epfl.scala" %% "spores-serialization" % "0.4.2")
+libraryDependencies += "ch.epfl.scala" %% "spores" % "0.4.3"
+addCompilerPlugin("ch.epfl.scala" %% "spores-serialization" % "0.4.3")
 ```
 
 [search.maven]: http://search.maven.org/#search|ga|1|ch.epfl.scala.spores
