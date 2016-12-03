@@ -114,9 +114,6 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
   @inline private def isSymbolChildOfSpore(childSym: Symbol) =
     funSymbol.exists(sym => isOwner(childSym, sym.asInstanceOf[Symbol]))
 
-  def recursiveIsStatic(s: Symbol): Boolean =
-    s != NoSymbol && (s.isStatic || recursiveIsStatic(s.owner))
-
   @inline def isStaticPath(s: Symbol): Boolean = {
     // Disclaimer: Static does not work as the reflect docs say
     s != NoSymbol && {
