@@ -1,4 +1,5 @@
 lazy val buildSettings = Seq(
+  resolvers += Resolver.jcenterRepo,
   resolvers += Resolver.bintrayRepo("scalacenter", "releases"),
   resolvers += Resolver.sonatypeRepo("snapshots"),
   organization := "ch.epfl.scala",

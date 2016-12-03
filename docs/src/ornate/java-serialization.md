@@ -17,8 +17,8 @@ Add the following sbt settings to your `build.sbt`:
 
 ```scala
 resolvers += Resolver.bintrayRepo("scalacenter", "releases")
-libraryDependencies += "ch.epfl.scala" %% "spores" % "0.4.1"
-addCompilerPlugin("ch.epfl.scala" %% "spores-serialization" % "0.4.1")
+libraryDependencies += "ch.epfl.scala" %% "spores" % "0.4.2"
+addCompilerPlugin("ch.epfl.scala" %% "spores-serialization" % "0.4.2")
 ```
 
 > {.note}

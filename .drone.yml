@@ -9,7 +9,10 @@ pipeline:
       - /drone/.git
 
   build:
-    image: scalaplatform/scala:0.5
+    image: scalaplatform/scala:0.6
+    pull: true
+    volumes:
+      - /platform:/keys
     pull: true
     commands:
       - sbt clean spores/test spores-pickling/test spores-serialization/test
