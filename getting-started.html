@@ -111,11 +111,12 @@ but not <code class="hljs">lazy</code>.</p>
 </div>
 <p>The types <code class="hljs">T_1, ..., T_n</code> can also be inferred.</p>
 <p>The closure of a spore has to satisfy the following rule. All free variables
-of the closure body have to be either</p>
+of the closure body have to be either:</p>
 <ol>
 <li>parameters of the closure, or</li>
-<li>declared in the preceding sequence of local value declarations, or</li>
-<li>marked using <code class="hljs">capture</code> (see corresponding section  below).</li>
+<li>declared in the preceding sequence of local value declarations,</li>
+<li>marked using <code class="hljs">capture</code> (see corresponding section below), or</li>
+<li><em>statically</em> accessible (members of objects | packages).</li>
 </ol>
 <div class="row">
 <pre class="hljs small-expand columns a_xscroll"><code class="language-scala"><span class="hljs-keyword">case</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Person</span>(<span class="hljs-params">name: <span class="hljs-type">String</span>, age: <span class="hljs-type">Int</span></span>)</span>
