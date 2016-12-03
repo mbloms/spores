@@ -111,21 +111,21 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
     })
   }
 
-  /** Check whether `member` is selected from a static selector, or
-    * whether its selector is transitively selected from a static symbol.
-    */
-  @inline private def isStaticSelector(member: Tree): Boolean = member match {
-    case Select(selector, member0) =>
-      val selStatic = selector.symbol.isStatic
-      debug(s"Checking whether $selector is static...$selStatic")
-      selStatic || isStaticSelector(selector)
-    case _ => false
-  }
-
   @inline private def isSymbolChildOfSpore(childSym: Symbol) =
     funSymbol.exists(sym => isOwner(childSym, sym.asInstanceOf[Symbol]))
 
-  @inline def isStaticPath(s: Symbol) = !s.isClass && s.isStatic
+  def recursiveIsStatic(s: Symbol): Boolean =
+    s != NoSymbol && (s.isStatic || recursiveIsStatic(s.owner))
+
+  @inline def isStaticPath(s: Symbol): Boolean = {
+    // Disclaimer: Static does not work as the reflect docs say
+    s != NoSymbol && {
+      (s.isMethod && isStaticPath(s.owner)) || {
+        (s.isModule || s.isModuleClass || s.isPackage || s.isPackageClass) &&
+        (s.isStatic || isStaticPath(s.owner))
+      }
+    }
+  }
 
   /** Check the validity of symbols. Spores allow refs to symbols if:
     *
@@ -146,38 +146,7 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
     isSymbolChildOfSpore(s) ||
     declaredSymbols.contains(s) ||
     s == NoSymbol ||
-    isStaticPath(s) ||
-    s == definitions.PredefModule ||
-    s.owner == definitions.PredefModule
-  }
-
-  /** Check that a path is valid by inspecting all the referred symbols. */
-  private def isPathValid(tree: Tree): (Boolean, Option[Tree]) = {
-    debug(s"Checking isPathValid for $tree [${tree.symbol}]...")
-    debug(s" > Tree class: ${tree.getClass.getName}")
-    if (tree.symbol != null && isSymbolValid(tree.symbol)) (true, None)
-    else
-      tree match {
-        case Select(pre, sel) =>
-          debug(s"Case 1: Select($pre, $sel)")
-          isPathValid(pre)
-        case Apply(Select(pre, _), _) =>
-          debug(s"Case 2: Apply(Select($pre, _), _)")
-          isPathValid(pre)
-        case TypeApply(Select(pre, _), _) =>
-          debug(s"Case 3: TypeApply(Select($pre, _), _)")
-          isPathValid(pre)
-        case TypeApply(fun, _) =>
-          debug(s"Case 4: TypeApply($fun, _)")
-          isPathValid(fun)
-        case Literal(Constant(_)) | New(_) => (true, None)
-        case id: Ident =>
-          val isValid = isSymbolValid(id.symbol)
-          (isValid, if (isValid) None else Some(id))
-        case _ =>
-          debug("Case 7: _")
-          (false, Some(tree))
-      }
+    isStaticPath(s)
   }
 
   /** Inspect a tree and check that all the trees in the body suit the
@@ -187,26 +156,11 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
   private class ReferenceInspector extends Traverser {
     override def traverse(tree: Tree): Unit = {
       tree match {
-        case id: Ident =>
-          debug(s"Checking ident: $id")
-          if (!isSymbolValid(id.symbol))
-            ctx.abort(id.pos, Feedback.InvalidReferenceTo(id.symbol.toString))
-        case th: This =>
-          debug(s"Checking this reference: $th")
-          ctx.abort(th.pos, Feedback.InvalidReferenceTo(th.symbol.toString))
-        case sp: Super =>
-          debug(s"Checking super reference: $sp")
-          ctx.abort(sp.pos, Feedback.InvalidReferenceTo(sp.symbol.toString))
-        case sel @ Select(pre, _) =>
-          debug(s"Checking select $sel")
-          isPathValid(sel) match {
-            case (true, None) => // correct, do nothing
-            case (true, Some(subtree)) => // correct, do nothing
-            case (false, Some(subtree)) => traverse(subtree)
-            case (false, None) =>
-              ctx.abort(sel.pos,
-                        Feedback.InvalidReferenceTo(sel.symbol.toString))
-          }
+        case Ident(_) | This(_) | Super(_) =>
+          debug(s"Checking ident | this | super: $tree")
+          if (!isSymbolValid(tree.symbol))
+            ctx.abort(tree.pos,
+                      Feedback.InvalidReferenceTo(tree.symbol.toString))
         case _ => super.traverse(tree)
       }
     }

@@ -136,7 +136,7 @@ class CaptureNegSpec {
   }
 
   @Test
-  def `no references to outer objects allowed`(): Unit = {
+  def `no indirect references to outer objects allowed`(): Unit = {
     expectError(Feedback.InvalidReferenceTo("value outerObject")) {
       """
         import scala.spores._
@@ -160,43 +160,24 @@ class CaptureNegSpec {
   }
 
   @Test
-  def `no references to extended members allowed`(): Unit = {
-    expectError(Feedback.InvalidReferenceTo("object BigC")) {
+  def `no indirect references to outer objects allowed II`(): Unit = {
+    expectError(Feedback.InvalidReferenceTo("variable outerObject")) {
       """
         import scala.spores._
 
         class C {
-          val f = 1
+          def m(i: Int): Any = "example " + i
         }
 
-        object BigC extends C {
-          val s = spore {
-            (x: Int) =>
-              val s1 = f.toString
-              s1 + "!"
-          }
-        }
-      """
-    }
-  }
-
-  @Test
-  def `no references to extended members allowed in delayed`(): Unit = {
-    expectError(Feedback.InvalidReferenceTo("object BigC")) {
-      """
-        import scala.spores._
-
-        class C {
-          val f = 1
+        object TopLevelObject {
+          val f = new C
         }
 
-        object BigC extends C {
-          val s = spore {
-            delayed {
-              val s1 = f.toString
-              s1 + "!"
-            }
-          }
+        var outerObject = TopLevelObject.f
+        val s = spore {
+          (x: Int) =>
+            val s1 = outerObject.m(x).asInstanceOf[String]
+            s1 + "!"
         }
       """
     }
@@ -274,7 +255,6 @@ class CaptureNegSpec {
     }
   }
 
-  /* No `Super` in paths because of https://issues.scala-lang.org/browse/SI-1938 */
   @Test
   def `cannot capture super in a path with capture`(): Unit = {
     expectError(Feedback.InvalidOuterReference("A.super.bar")) {
@@ -293,14 +273,14 @@ class CaptureNegSpec {
   }
 
   @Test
-  def `cannot capture super in a path`(): Unit = {
-    expectError(Feedback.InvalidReferenceTo("object A")) {
+  def `cannot capture super in a path from a class`(): Unit = {
+    expectError(Feedback.InvalidReferenceTo("class A")) {
       """
          import scala.spores._
 
-         class Foo { val bar = "1" }
+         class Foo { def bar = "1" }
 
-         object A extends Foo {
+         class A extends Foo {
            val s: Spore[Int, String] = spore { (x: Int) =>
              s"arg: $x, c1: ${super.bar}"
            }
@@ -345,14 +325,14 @@ class CaptureNegSpec {
 
   @Test
   def `reference to outer class member is catched`(): Unit = {
-    expectError(Feedback.InvalidReferenceTo("object OuterReference")) {
+    expectError(Feedback.InvalidReferenceTo("class OuterReference")) {
       s"""
         |import scala.spores._
         |class Patterns {
         |  val alphabeticPattern = "^a"
         |}
         |
-        |object OuterReference {
+        |class OuterReference {
         |  val text = Some("Hello, World!")
         |  val ps = new Patterns
         |
@@ -392,7 +372,7 @@ class CaptureNegSpec {
          |  def hehe(a: String) = {
          |    val trap = "I am a trap"
          |    spore {
-         |      () => TrapUtil.defWithSeveralArgs("Hello", "World", trap, "END.")
+         |      () => defWithSeveralArgs("Hello", "World", trap, "END.")
          |    }
          |  }
          |}

@@ -295,7 +295,8 @@ class BasicSpec {
   def `Not recognise eq or == as non-static in primitive`(): Unit = {
     val s = spore {
       val y = 3
-      (x: Int) => x == y
+      (x: Int) =>
+        x == y
     }
     assert(!s(1))
     assert(!s(2))
@@ -308,7 +309,8 @@ class BasicSpec {
     val w1 = new Wrapper(3)
     val s = spore {
       val captured1 = w1
-      (wrapper: Wrapper) => wrapper == captured1
+      (wrapper: Wrapper) =>
+        wrapper == captured1
     }
     assert(!s(new Wrapper(1)))
     assert(!s(new Wrapper(2)))
@@ -323,7 +325,8 @@ class BasicSpec {
     val s = spore {
       val captured1 = w1
       val captured2 = w2
-      () => captured2 == captured1
+      () =>
+        captured2 == captured1
     }
     assert(!s())
   }
@@ -334,9 +337,49 @@ class BasicSpec {
     val w = new Wrapper(3)
     val s = spore {
       val captured = w
-      () => (captured == null) || (captured == null)
+      () =>
+        (captured == null) || (captured == null)
     }
     assert(!s())
   }
+
+  @Test
+  def `Allow to select functions on top-level modules`(): Unit = {
+    spore { () =>
+      TrapUtil.defWithSeveralArgs("Hello", "World", "END.")
+    }
+  }
+
+  @Test
+  def `Allow referencing to extended members within an object definition`: Unit = {
+    assert(ValidObject.s() == "1!")
+  }
+
+  @Test
+  def `Allow referencing to extended members using delayed within an object definition`: Unit = {
+    assert(ValidObject2.s(9) == "19!")
+  }
 }
 
+object TrapUtil {
+  def defWithSeveralArgs(xs: String*) = xs.foreach(println)
+}
+
+class C2 {
+  val f = 1
+}
+
+object ValidObject extends C2 {
+  val s = spore {
+    delayed {
+      val s1 = f.toString
+      s1 + "!"
+    }
+  }
+}
+
+object ValidObject2 extends C2 {
+  val s = spore { (x: Int) =>
+    f.toString + x.toString + "!"
+  }
+}
