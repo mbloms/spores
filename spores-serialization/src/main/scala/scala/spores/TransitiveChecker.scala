@@ -291,7 +291,6 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
     override def transform(tree: Tree): Tree = {
       tree match {
         case cls: ClassDef if cls.symbol.tpe <:< sporeBaseType =>
-          println(s"Found spore definition: $cls")
           debuglog(s"First target of transitive analysis: ${cls.symbol}")
           checkMembers(cls.symbol, isSpore = true)
           super.transform(tree)
