@@ -89,4 +89,4 @@ If you want to read more about the underlying theory, check the paper [Spores: A
 for Closures in the Age of Concurrency and Distribution](https://infoscience.epfl.ch/record/191239/files/spores_1.pdf)
 by [Heather Miller](https://heather.miller.am) and [Philipp Haller](http://lampwww.epfl.ch/~phaller/).
 
-[search.maven]: http://search.maven.org/#search|ga|1|ch.epfl.scala.spores
+[search.maven]: http://search.maven.org/#search%7Cga%7C1%7Cch.epfl.scala.spores
