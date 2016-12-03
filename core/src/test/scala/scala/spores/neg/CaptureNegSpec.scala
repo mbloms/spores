@@ -379,4 +379,24 @@ class CaptureNegSpec {
        """.stripMargin
     }
   }
+
+  @Test
+  def `Don't allow objects defined inside the method of a class`(): Unit = {
+    expectError(Feedback.InvalidReferenceTo("object Inner")) {
+      s"""import scala.spores._
+         |
+         |class Base { val f = 1 }
+         |
+         |class Outer {
+         |  def method(): Unit = {
+         |    object Inner extends Base {
+         |      val s = spore { (x: Int) =>
+         |        f.toString + x.toString + "!"
+         |      }
+         |    }
+         |  }
+         |}
+       """.stripMargin
+    }
+  }
 }

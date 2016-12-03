@@ -384,6 +384,7 @@ object ValidObject2 extends C2 {
   }
 }
 
+/* Nested object are hoisted up to the outer object. */
 object Outer {
   def method(): Unit = {
     object Inner extends C2 {
