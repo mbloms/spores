@@ -21,22 +21,22 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
   val alreadyAnalyzed = new scala.collection.mutable.HashSet[Symbol]()
   val areSerializable = new scala.collection.mutable.HashSet[Symbol]()
 
-  /* Fetch `ClassTag`s independently to avoid initialization issues. */
+  /* Fetch `WeakTypeTag`s independently to avoid initialization issues. */
   object ExistentialShield {
     implicit val sporeBaseExistence = lifeVest(
-      implicitly[ClassTag[scala.spores.SporeBase]])
+      implicitly[WeakTypeTag[scala.spores.SporeBase]])
     implicit val assumeClosedExistence = lifeVest(
-      implicitly[ClassTag[scala.spores.assumeClosed]])
+      implicitly[WeakTypeTag[scala.spores.assumeClosed]])
     implicit val canSerializeExistence = lifeVest(
-      implicitly[ClassTag[scala.spores.CanSerialize[_]]])
+      implicitly[WeakTypeTag[scala.spores.CanSerialize[_]]])
   }
 
   import ExistentialShield._
-  def classOf[T: ClassTag] = rootMirror.requiredClass[T]
-  val sporeBaseType = classOf[scala.spores.SporeBase].tpe
-  val assumeClosed = classOf[scala.spores.assumeClosed]
-  val canSerialize = classOf[scala.spores.CanSerialize[_]]
-  val deprecatedInheritance = classOf[scala.deprecatedInheritance]
+  def fromClassPath[T: WeakTypeTag] = symbolOf[T].asClass
+  val sporeBaseType = fromClassPath[scala.spores.SporeBase].tpe
+  val assumeClosed = fromClassPath[scala.spores.assumeClosed]
+  val canSerialize = fromClassPath[scala.spores.CanSerialize[Any]]
+  val deprecatedInheritance = fromClassPath[scala.deprecatedInheritance]
   val capturedSporeFieldName = "captured"
 
   class TransitiveTraverser(unit: CompilationUnit, config: PluginConfig)
