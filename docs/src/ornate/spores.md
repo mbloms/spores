@@ -15,8 +15,7 @@ definition and used throughout the closure body. `Spores` are designed to be com
 in both logic and properties.
 
 > {.note}
-> The current implementation of `spores` and `spores-serialization` is still experimental.
-> Please, help us improve and file any issue you may encounter [here](https://github.com/jvican/spores/issues/new)!
+> Please, help us improve the project by [filing any issue you may encounter](https://github.com/jvican/spores/issues/new)!
 
 ## Introduction
 
