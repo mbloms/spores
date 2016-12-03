@@ -363,4 +363,40 @@ class CaptureNegSpec {
       """.stripMargin
     }
   }
+
+
+  @Test
+  def `Ensure that apply arguments are checked`(): Unit = {
+    expectError(Feedback.InvalidReferenceTo("value trap")) {
+      s"""import scala.spores._
+         |
+         |object TrapUtil {
+         |  def defWithSeveralArgs(xs: String*) = xs.foreach(println)
+         |}
+         |
+         |val trap = "I am a trap"
+         |spore {
+         |  () => TrapUtil.defWithSeveralArgs("Hello", "World", trap, "END.")
+         |}
+       """.stripMargin
+    }
+  }
+
+  @Test
+  def `Ensure that calling methods defined in classes is prohibited`(): Unit = {
+    expectError(Feedback.InvalidReferenceTo("class TrapUtil")) {
+      s"""import scala.spores._
+         |
+         |class TrapUtil {
+         |  def defWithSeveralArgs(xs: String*) = xs.foreach(println)
+         |  def hehe(a: String) = {
+         |    val trap = "I am a trap"
+         |    spore {
+         |      () => TrapUtil.defWithSeveralArgs("Hello", "World", trap, "END.")
+         |    }
+         |  }
+         |}
+       """.stripMargin
+    }
+  }
 }

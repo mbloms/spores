@@ -197,14 +197,6 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
         case sp: Super =>
           debug(s"Checking super reference: $sp")
           ctx.abort(sp.pos, Feedback.InvalidReferenceTo(sp.symbol.toString))
-
-        // x.m().s
-        case sel @ Select(app @ Apply(fun0, _), _) =>
-          debug(s"Checking $fun0 inside apply wrapped by $sel")
-          traverse(fun0)
-          debug(s"Checking args of '$app'.")
-          app.args.foreach(traverse)
-
         case sel @ Select(pre, _) =>
           debug(s"Checking select $sel")
           isPathValid(sel) match {

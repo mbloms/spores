@@ -339,3 +339,4 @@ class BasicSpec {
     assert(!s())
   }
 }
+
