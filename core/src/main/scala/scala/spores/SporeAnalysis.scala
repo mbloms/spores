@@ -171,7 +171,9 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
           debug(s"Case 4: TypeApply($fun, _)")
           isPathValid(fun)
         case Literal(Constant(_)) | New(_) => (true, None)
-        case id: Ident => (isSymbolValid(id.symbol), None)
+        case id: Ident =>
+          val isValid = isSymbolValid(id.symbol)
+          (isValid, if (isValid) None else Some(id))
         case _ =>
           debug("Case 7: _")
           (false, Some(tree))
@@ -183,26 +185,6 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
     * non-captured symbols or external expressions like lazy vals.
     */
   private class ReferenceInspector extends Traverser {
-    def checkStaticSelectOnObject(innerFun: Tree, outerSelect: Select): Unit = {
-      innerFun match {
-        case Select(qual: SymTree, _) =>
-          if (isSymbolChildOfSpore(qual.symbol)) {
-            debug(s"OK, selected on local object $qual")
-          } else {
-            debug(s"Is $qual transitively selected from a top-level object?")
-            val objIsStatic = qual.symbol.isStatic || isStaticSelector(qual)
-            debug(s"$qual.symbol.isStatic: $objIsStatic")
-            if (!objIsStatic) {
-              ctx.abort(outerSelect.pos,
-                        Feedback.NonStaticInvocation(innerFun.toString))
-            }
-          }
-        case _: Select => () // Selector doesn't have a `Symbol`
-        case _ => // TODO(jvican): Add test for this case
-          traverse(innerFun)
-      }
-    }
-
     override def traverse(tree: Tree): Unit = {
       tree match {
         case id: Ident =>
@@ -218,18 +200,17 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
 
         // x.m().s
         case sel @ Select(app @ Apply(fun0, _), _) =>
-          debug(s"Checking select ($app): $sel")
-          if (!app.symbol.isStatic)
-            checkStaticSelectOnObject(fun0, sel)
+          debug(s"Checking $fun0 inside apply wrapped by $sel")
+          traverse(fun0)
           debug(s"Checking args of '$app'.")
           app.args.foreach(traverse)
 
         case sel @ Select(pre, _) =>
           debug(s"Checking select $sel")
           isPathValid(sel) match {
-            case (false, Some(subtree)) => traverse(subtree)
             case (true, None) => // correct, do nothing
             case (true, Some(subtree)) => // correct, do nothing
+            case (false, Some(subtree)) => traverse(subtree)
             case (false, None) =>
               ctx.abort(sel.pos,
                         Feedback.InvalidReferenceTo(sel.symbol.toString))

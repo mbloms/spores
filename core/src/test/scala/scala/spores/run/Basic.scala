@@ -290,4 +290,52 @@ class BasicSpec {
     assert(s(2) == 6)
     assert(s(3) == 9)
   }
+
+  @Test
+  def `Not recognise eq or == as non-static in primitive`(): Unit = {
+    val s = spore {
+      val y = 3
+      (x: Int) => x == y
+    }
+    assert(!s(1))
+    assert(!s(2))
+    assert(s(3))
+  }
+
+  @Test
+  def `Not recognise eq or == as non-static in class`(): Unit = {
+    class Wrapper(val i: Int)
+    val w1 = new Wrapper(3)
+    val s = spore {
+      val captured1 = w1
+      (wrapper: Wrapper) => wrapper == captured1
+    }
+    assert(!s(new Wrapper(1)))
+    assert(!s(new Wrapper(2)))
+    assert(s(w1))
+  }
+
+  @Test
+  def `Not recognise eq or == as non-static in class II`(): Unit = {
+    class Wrapper(val i: Int)
+    val w1 = new Wrapper(3)
+    val w2 = new Wrapper(3)
+    val s = spore {
+      val captured1 = w1
+      val captured2 = w2
+      () => captured2 == captured1
+    }
+    assert(!s())
+  }
+
+  @Test
+  def `Not recognise eq or == against null as non-static`(): Unit = {
+    class Wrapper(val i: Int)
+    val w = new Wrapper(3)
+    val s = spore {
+      val captured = w
+      () => (captured == null) || (captured == null)
+    }
+    assert(!s())
+  }
 }

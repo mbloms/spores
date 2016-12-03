@@ -137,7 +137,7 @@ class CaptureNegSpec {
 
   @Test
   def `no references to outer objects allowed`(): Unit = {
-    expectError(Feedback.NonStaticInvocation("outerObject.m")) {
+    expectError(Feedback.InvalidReferenceTo("value outerObject")) {
       """
         import scala.spores._
 
