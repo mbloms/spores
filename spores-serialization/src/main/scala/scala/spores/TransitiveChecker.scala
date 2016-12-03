@@ -2,7 +2,6 @@ package scala.spores
 
 import java.net.URLClassLoader
 
-import scala.reflect.ClassTag
 import scala.spores.util.PluginFeedback._
 import scala.spores.util.CheckerUtils
 import scala.tools.nsc.transform.TypingTransformers
@@ -169,7 +168,8 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
           analyzeClassHierarchy(symbol, definedAnns, concreteType0)
         } else if (isSpore) {
           val captured = members.lookup(TermName(capturedSporeFieldName))
-          assert(!(captured eq NoSymbol))
+          assert(captured eq NoSymbol,
+                 s"Captured field has to exist in ${symbol.tpe}")
           val capturedTpe = captured.tpe.finalResultType
           val targetTpes =
             if (!definitions.isTupleType(capturedTpe)) List(capturedTpe)
