@@ -1,5 +1,24 @@
 # Getting started
 
+## Installation
+
+Add the following sbt settings to your `build.sbt`:
+
+```scala
+libraryDependencies += "ch.epfl.scala" %% "spores" % "0.4.2"
+```
+
+> {.note}
+> This artifacts is only compatible with Scala 2.11.x.
+> A [bug in 2.12.0](https://issues.scala-lang.org/browse/SI-10009) prevents us from releasing
+> a compatible version. `spores` will be probably released for 2.12.1.
+
+> {.warning}
+> If you want to use spores for serialization, read the [Basics](#basics)
+> and jump to the [Java Serialization guide](java-serialization.md).
+
+## Basics {.basics}
+
 Spores have a few modes of usage. The simplest form is:
 
 ```scala
