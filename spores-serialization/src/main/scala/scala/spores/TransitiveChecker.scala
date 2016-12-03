@@ -2,6 +2,7 @@ package scala.spores
 
 import java.net.URLClassLoader
 
+import scala.reflect.ClassTag
 import scala.spores.util.PluginFeedback._
 import scala.spores.util.CheckerUtils
 import scala.tools.nsc.transform.TypingTransformers
@@ -20,10 +21,21 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
   val alreadyAnalyzed = new scala.collection.mutable.HashSet[Symbol]()
   val areSerializable = new scala.collection.mutable.HashSet[Symbol]()
 
-  def classOf[T: WeakTypeTag] = symbolOf[T].asClass
-  val sporeBaseType = lifeVest(classOf[scala.spores.SporeBase].tpe)
-  val assumeClosed = lifeVest(classOf[scala.spores.assumeClosed])
-  val canSerialize = lifeVest(classOf[scala.spores.CanSerialize[_]])
+  /* Fetch `ClassTag`s independently to avoid initialization issues. */
+  object ExistentialShield {
+    implicit val sporeBaseExistence = lifeVest(
+      implicitly[ClassTag[scala.spores.SporeBase]])
+    implicit val assumeClosedExistence = lifeVest(
+      implicitly[ClassTag[scala.spores.assumeClosed]])
+    implicit val canSerializeExistence = lifeVest(
+      implicitly[ClassTag[scala.spores.CanSerialize[_]]])
+  }
+
+  import ExistentialShield._
+  def classOf[T: ClassTag] = rootMirror.requiredClass[T]
+  val sporeBaseType = classOf[scala.spores.SporeBase].tpe
+  val assumeClosed = classOf[scala.spores.assumeClosed]
+  val canSerialize = classOf[scala.spores.CanSerialize[_]]
   val deprecatedInheritance = classOf[scala.deprecatedInheritance]
   val capturedSporeFieldName = "captured"
 
