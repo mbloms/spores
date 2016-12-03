@@ -167,7 +167,7 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
         if (!isSpore && nonPrimitive(symbol)) {
           val definedAnns = concreteType0.map(_.annotations).toList.flatten
           analyzeClassHierarchy(symbol, definedAnns, concreteType0)
-        } else {
+        } else if (isSpore) {
           val captured = members.lookup(TermName(capturedSporeFieldName))
           assert(!(captured eq NoSymbol))
           val capturedTpe = captured.tpe.finalResultType
