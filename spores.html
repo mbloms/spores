@@ -79,16 +79,18 @@ references can be avoided.</p>
 serialization fails with a <code class="hljs">NotSerializableException</code> due to the unintended
 capture of a reference to an enclosing object.</p>
 <div class="row">
-<pre class="hljs small-expand columns a_xscroll"><code class="language-scala"><span class="hljs-keyword">case</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Helper</span>(<span class="hljs-params">name: <span class="hljs-type">String</span></span>)</span>
+<pre class="hljs small-expand columns a_xscroll"><code class="language-scala">scala&gt; <span class="hljs-keyword">case</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Helper</span>(<span class="hljs-params">name: <span class="hljs-type">String</span></span>)</span>
+defined <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Helper</span></span>
 
-<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Main</span> </span>{
-  <span class="hljs-keyword">val</span> helper = <span class="hljs-type">Helper</span>(<span class="hljs-string">"the helper"</span>)
-
-  <span class="hljs-keyword">val</span> fun: <span class="hljs-type">Int</span> =&gt; <span class="hljs-type">Unit</span> = (x: <span class="hljs-type">Int</span>) =&gt; {
-    <span class="hljs-keyword">val</span> result = x + <span class="hljs-string">" "</span> + helper.toString
-    println(<span class="hljs-string">"The result is: "</span> + result)
-  }
-}
+scala&gt; <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Main</span> </span>{
+     |   <span class="hljs-keyword">val</span> helper = <span class="hljs-type">Helper</span>(<span class="hljs-string">"the helper"</span>)
+     | 
+     |   <span class="hljs-keyword">val</span> fun: <span class="hljs-type">Int</span> =&gt; <span class="hljs-type">Unit</span> = (x: <span class="hljs-type">Int</span>) =&gt; {
+     |     <span class="hljs-keyword">val</span> result = x + <span class="hljs-string">" "</span> + helper.toString
+     |     println(<span class="hljs-string">"The result is: "</span> + result)
+     |   }
+     | }
+defined <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Main</span></span>
 </code></pre>
 </div>
 <p>Given the above class definitions, serializing the <code class="hljs">fun</code> member of an instance
