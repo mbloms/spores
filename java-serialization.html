@@ -264,13 +264,6 @@ scala&gt; <span class="hljs-keyword">val</span> s = spore {
      |   <span class="hljs-keyword">val</span> serializedWrapper = wrapper
      |   () =&gt; serializedWrapper
      | }
-&lt;console&gt;:<span class="hljs-number">29</span>: warning: <span class="hljs-type">Detected</span> open <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">hierarchy</span> <span class="hljs-title">in</span> `<span class="hljs-title">&lt;refinement</span> <span class="hljs-title">of</span> <span class="hljs-title">List</span>[<span class="hljs-type">Foo</span>] <span class="hljs-title">=&gt;</span> <span class="hljs-title">List</span>[(<span class="hljs-type">Foo</span>, <span class="hljs-type">T</span>)]<span class="hljs-title">&gt;</span>`.</span>
-  <span class="hljs-type">Transitive</span> inspection cannot ensure that &lt;refinement of <span class="hljs-type">List</span>[<span class="hljs-type">Foo</span>] =&gt; <span class="hljs-type">List</span>[(<span class="hljs-type">Foo</span>, <span class="hljs-type">T</span>)]&gt; is not being extended somewhere <span class="hljs-keyword">else</span>. <span class="hljs-type">For</span> a complete serializable check, <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">hierarchies</span> <span class="hljs-title">need</span> <span class="hljs-title">to</span> <span class="hljs-title">be</span> <span class="hljs-title">closed</span>.</span>
-
-<span class="hljs-type">Solution</span>: <span class="hljs-type">Close</span> the <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">hierarchy</span> <span class="hljs-title">by</span> <span class="hljs-title">marking</span> <span class="hljs-title">super</span> <span class="hljs-title">classes</span> <span class="hljs-title">as</span> `<span class="hljs-title">sealed</span>` <span class="hljs-title">and</span> <span class="hljs-title">sub</span> <span class="hljs-title">classes</span> <span class="hljs-title">as</span> `<span class="hljs-title">final</span>`.</span>
-
-         <span class="hljs-keyword">val</span> zippingSpore = spore {
-             ^
 s: scala.spores.<span class="hljs-type">NullarySporeWithEnv</span>[<span class="hljs-type">Wrapper</span>[<span class="hljs-type">Baz</span>]]{<span class="hljs-keyword">val</span> captured: <span class="hljs-type">Wrapper</span>[<span class="hljs-type">Baz</span>]; <span class="hljs-class"><span class="hljs-keyword">type</span> <span class="hljs-title">Captured</span> </span>= <span class="hljs-type">Wrapper</span>[<span class="hljs-type">Baz</span>]} = &lt;function0&gt;
 </code></pre>
 </div>
