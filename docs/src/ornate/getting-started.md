@@ -19,13 +19,20 @@ libraryDependencies += "ch.epfl.scala" %% "spores" % "0.4.3"
 
 ## Basics {.basics}
 
+To use spores, first import them:
+
+```tut
+import scala.spores._
+```
+
 Spores have a few modes of usage. The simplest form is:
 
-```scala
+```tut
+val outerInt = 1717
 val s = spore {
-  val h = helper
+  val i = outerInt
   (x: Int) => {
-    val result = x + " " + h.toString
+    val result = x + " " + i.toString
     println("The result is: " + result)
   }
 }
@@ -55,8 +62,8 @@ Finally, a regular function literal can be used as a spore. That is, a method
 that expects a spore can be passed a function literal so long as the function
 literal is well-formed.
 
-```scala
-def sendOverWire(s: Spore[Int, Int]): Unit = ...
+```tut
+def sendOverWire(s: Spore[Int, Int]): Unit = println(s)
 sendOverWire((x: Int) => x * x - 2)
 ```
 
@@ -67,11 +74,12 @@ closure-like objects, in a way where the environment is controlled.
 
 A spore is created as follows.
 
-```scala
+```tut
+val outerInt = 1717
 val s = spore {
-  val h = helper
+  val i = outerInt
   (x: Int) => {
-    val result = x + " " + h.toString
+    val result = x + " " + i.toString
     println("The result is: " + result)
   }
 }
@@ -108,7 +116,7 @@ of the closure body have to be either:
 3. marked using `capture` (see corresponding section below), or
 4. *statically* accessible (members of objects | packages).
 
-```scala
+```tut
 case class Person(name: String, age: Int)
 val outer1 = 0
 val outer2 = Person("Jim", 35)
@@ -191,7 +199,7 @@ it's always in the implicit scope when passing a function literal as a method
 argument when a `Spore` is expected. For example, one can do the following:
 
 ```scala
-def sendOverWire(s: Spore[Int, Int]): Unit = ...
+def sendOverWire(s: Spore[Int, Int]): Unit = println(s)
 sendOverWire((x: Int) => x * x - 2)
 ```
 

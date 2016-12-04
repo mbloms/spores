@@ -47,7 +47,7 @@ The following example uses Java Serialization to serialize a closure. However,
 serialization fails with a `NotSerializableException` due to the unintended
 capture of a reference to an enclosing object.
 
-```scala
+```tut
 case class Helper(name: String)
 
 class Main {

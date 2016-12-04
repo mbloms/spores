@@ -39,7 +39,7 @@ correct serializability of your spores.
 
 ### An example
 
-```scala
+```tut
 import scala.spores._
 val s = spore {
   val capturedInt = 8
@@ -125,7 +125,7 @@ Ensure that all the captured variables in your spores are serializable and close
 have class definitions scattered across different packages, bring them to the same file
 and baptise the class hierarchy with `sealed` and `final` as described before.
 
-```scala
+```tut
 import scala.spores._
 sealed trait Foo extends Serializable
 final class Bar(b: Int) extends Foo
@@ -166,14 +166,14 @@ close their class hierarchy. The annotation tells the compiler to assume that th
 capturing is closed, but unfortunately no analysis of the subclasses is performed (SI-7046).
 Therefore, its use is discouraged and only left for intrepid developers that like risk.
 
-```scala
+```tut
 import scala.spores._
 trait Foo extends Serializable
 final class Bar(b: Int) extends Foo
-final case class Baz(b: Int) extends Foo
+final case class Baz(s: String) extends Foo
 
 // Force cast to Foo
-val riskyFoo: Foo = Baz(1)
+val riskyFoo: Foo = Baz("1")
 val s = spore {
   val capturedFoo = (riskyFoo: Foo @assumeClosed)
   () => // spore logic
@@ -188,30 +188,30 @@ the captured types are not fully defined.
 
 For the following code snippet, assume that `Foo` is a closed class hierarchy.
 
-```scala
+```tut
 import scala.spores._
 
 class Wrapper[T <: Foo](val wrapped: List[T]) {
   val zippingSpore = spore {
     val captured = wrapped
-    (xs: List[Int]) => xs.zip(captured)
+    (xs: List[Foo]) => xs.zip(captured)
   }
 }
 ```
 
 And if the wrapper is `Serializable`, you can even send it accross the wire:
 
-```scala
+```tut
 import scala.spores._
 
-class Wrapper[T <: Foo](val wrapped: List[T]) extends Serializable {
+sealed class Wrapper[T <: Foo](val wrapped: List[T]) extends Serializable {
   val zippingSpore = spore {
     val captured = wrapped
-    (xs: List[Int]) => xs.zip(captured)
+    (xs: List[Foo]) => xs.zip(captured)
   }
 }
 
-val wrapper = new Wrapper(List("Hello", "Hello"))
+val wrapper = new Wrapper(List(Baz("Hello"), Baz("Hello")))
 val s = spore {
   val serializedWrapper = wrapper
   () => serializedWrapper
@@ -224,7 +224,7 @@ the type parameter and `Foo` is a closed class hierarchy.
 While the previous examples work, users can also set the upper bound to be
 `Serializable`:
 
-```scala
+```tut
 import scala.spores._
 
 class Wrapper[T <: Serializable](val wrapped: List[T]) {
@@ -235,7 +235,7 @@ class Wrapper[T <: Serializable](val wrapped: List[T]) {
 }
 ```
 
-But this results in the following warning:
+But this results in the following warning when flag X is passed (TBD):
 
 ```
 TBD
@@ -262,30 +262,30 @@ logic of your program.
 ### Serializable value classes
 
 By definition, value classes can *only* extend `AnyVal`, which means they cannot be `{java.io, scala}.Serializable`.
-To overcome this limitation, the compiler plugin uses implicits to prove that a value class `Foo` is serializable.
-For proving it, you need to provide an implicit `CanSerialize[Foo]` in the scope of
+To overcome this limitation, the compiler plugin uses implicits to prove that a value class `FooVal` is serializable.
+For proving it, you need to provide an implicit `CanSerialize[FooVal]` in the scope of
 the spore definition.
 
-```scala
+```tut
 import scala.spores._
 
 // Value class definition somewhere
-case class Foo(i: Int) extends AnyVal
-object Foo {
-  implicit object FooIsSerializable extends CanSerialize[Foo]
+case class FooVal(i: Int) extends AnyVal
+object FooImplicit {
+  implicit object FooIsSerializable extends CanSerialize[FooVal]
 }
 
 // Spore definition somewhere else
-import Foo._
-val foo = Foo(5)
+val foo = FooVal(5)
+import FooImplicit._
 val s = spore {
   val captured = foo
   () => // spore logic using `captured`
 }
 ```
 
-Thanks to the definition of `FooIsSerializable` and the `import Foo._` in the spore
-definition, the compiler plugin is able to prove that the use of `Foo` is safe.
+Thanks to the definition of `FooIsSerializable` and the `import FooImplicit._` in the spore
+definition, the compiler plugin is able to prove that the use of `FooVal` is safe.
 
 > {.note}
 > Non-primitive value classes *may* be non-serializable. Its serialization fails when they require

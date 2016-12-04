@@ -38,10 +38,11 @@ lazy val publishSettings = Seq(
     "BSD 3-Clause" -> url("http://www.scala-lang.org/downloads/license.html")),
   // Note that original repo is http://github.com/heathermiller/spores
   homepage := Some(url("https://github.com/scalacenter/spores")),
-  scmInfo := Some(ScmInfo(
-    url("https://github.com/scalacenter/spores"),
-    "scm:git:git@github.com:scalacenter/spores.git"
-  )),
+  scmInfo := Some(
+    ScmInfo(
+      url("https://github.com/scalacenter/spores"),
+      "scm:git:git@github.com:scalacenter/spores.git"
+    )),
   startYear := Some(2013),
   autoAPIMappings := true,
   developers := List(
@@ -184,26 +185,39 @@ lazy val playground = project
     )
   )
 
+val moveResources = taskKey[Unit]("Move resources from tut to ornate.")
 lazy val makeDocs = taskKey[Unit]("Make the process.")
 lazy val createProcessIndex = taskKey[Unit]("Create index.html.")
 lazy val publishDocs = taskKey[Unit]("Make and publish the process.")
 lazy val docs: Project = project
   .in(file("docs"))
   .enablePlugins(OrnatePlugin)
-  .settings(allSettings)
   .settings(noPublish)
   .settings(scalaVersion := "2.11.8")
   .settings(
+    tutSettings,
     ghpages.settings,
     git.remoteRepo := "git@github.com:scalacenter/spores",
     git.branch := Some("gh-pages"),
     name := "spores",
-    ornateSourceDir := Some(baseDirectory.value / "src" / "ornate"),
+    tutSourceDirectory := baseDirectory.value / "src" / "ornate",
+    ornateSourceDir := Some(tutTargetDirectory.value),
     ornateTargetDir := Some(target.value / "site"),
     siteSourceDirectory := ornateTargetDir.value.get,
+    libraryDependencies ++= Seq(
+      "ch.epfl.scala" %% "spores" % version.value,
+      compilerPlugin("ch.epfl.scala" %% "spores-serialization" % version.value)
+    ),
+    moveResources := Def.task {
+      val tutSource = tutSourceDirectory.value
+      val tutTarget = tutTargetDirectory.value
+      IO.copyDirectory(tutSource / "resources", tutTarget)
+      IO.copyFile(tutSource / "ornate.conf", tutTarget)
+    },
     makeDocs := {
       val logger = streams.value.log
-      ornate.value
+      // Generate tut output and execute ornate with tut-generated files
+      Def.sequential(tut, moveResources, ornate).value
       // Work around Ornate limitation to add custom CSS
       val targetDir = ornateTargetDir.value.get
       val cssFolder = targetDir / "_theme" / "css"
