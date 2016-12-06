@@ -22,7 +22,7 @@ protected class SporeAnalysis[C <: whitebox.Context with Singleton](val ctx: C) 
     }
   }
 
-  private val SporesDefinition = typeOf[spores.`package`.type]
+  private val SporesDefinition = typeOf[scala.spores.`package`.type]
   private val delayedSym = SporesDefinition.member(TermName("delayed"))
   private val captureSym = SporesDefinition.member(TermName("capture"))
 
@@ -93,9 +93,8 @@ protected class SporeAnalysis[C <: whitebox.Context with Singleton](val ctx: C) 
 }
 
 protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
-    val env: List[C#Symbol],
+    val sporeEnvironment: List[C#Symbol],
     val funSymbol: Option[C#Symbol],
-    val capturedSymbols: List[C#Symbol],
     var declaredSymbols: List[C#Symbol]) {
   import ctx.universe._
 
@@ -138,8 +137,7 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
     * @return Whether the symbol is valid or not.
     */
   @inline private def isSymbolValid(s: Symbol): Boolean = {
-    env.contains(s) ||
-    capturedSymbols.contains(s) ||
+    sporeEnvironment.contains(s) ||
     isSymbolChildOfSpore(s) ||
     declaredSymbols.contains(s) ||
     s == NoSymbol ||
@@ -150,7 +148,7 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
     * spores contract, that is, there are no invalid references to
     * non-captured symbols or external expressions like lazy vals.
     */
-  private class ReferenceInspector extends Traverser {
+  private object ReferenceInspector extends Traverser {
     override def traverse(tree: Tree): Unit = {
       tree match {
         case Ident(_) | This(_) | Super(_) =>
@@ -164,5 +162,37 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
   }
 
   def checkReferencesInBody(sporeBody: Tree) =
-    (new ReferenceInspector).traverse(sporeBody)
+    ReferenceInspector.traverse(sporeBody)
+
+  private object ExcludedInspector extends Traverser {
+    var collected: List[TypeTree] = Nil
+    override def traverse(tree: Tree): Unit = tree match {
+      case tt @ TypeTree() => collected = tt :: collected
+      case _ => super.traverse(tree)
+    }
+  }
+
+  private def isBottomType(btm: Type, tpe: Type) =
+    btm =:= definitions.NothingTpe && !(tpe =:= btm)
+
+  val sporeEnvironmentCasted = sporeEnvironment.asInstanceOf[List[Symbol]]
+  def checkExcludedTypesInBody(excluded: Type, sporeBody: Tree) = {
+    if (!(excluded =:= definitions.NothingTpe)) {
+      val isTuple = definitions.TupleClass.seq.exists(c =>
+        excluded.typeSymbol.typeSignature =:= c.typeSignature)
+      val blacklist = if (isTuple) excluded.typeArgs else List(excluded)
+      debug(s"Excluded types are $blacklist")
+      ExcludedInspector.traverse(sporeBody)
+      val usedTypes = ExcludedInspector.collected.map(_.symbol)
+      (usedTypes ++ sporeEnvironmentCasted).foreach { sym =>
+        val tpe = sym.typeSignature
+        blacklist.foreach { blacklisted =>
+          if (tpe <:< blacklisted && !isBottomType(tpe, blacklisted)) {
+            ctx.abort(sym.pos,
+                      Feedback.InvalidReferenceToExcludedType(tpe.toString))
+          }
+        }
+      }
+    }
+  }
 }

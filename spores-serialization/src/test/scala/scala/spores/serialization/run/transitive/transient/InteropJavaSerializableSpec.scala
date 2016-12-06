@@ -12,7 +12,7 @@ class InteropJavaSerializableSpec {
   def `Java defined transient fields in classes are ignored`(): Unit = {
     val interop = new JavaInteropEntrypoint()
     val foo = interop.transientSerializable
-    spore {
+    val s = spore {
       val captured = foo
       () =>
         captured

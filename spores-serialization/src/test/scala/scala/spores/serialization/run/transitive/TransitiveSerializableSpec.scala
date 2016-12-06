@@ -14,7 +14,7 @@ class TransitiveSerializableSpec {
     final class Bar extends Serializable
     final class Foo(val bar: Bar) extends Serializable
     val foo = new Foo(new Bar)
-    spore {
+    val s = spore {
       val captured = foo
       () =>
         captured
@@ -27,7 +27,7 @@ class TransitiveSerializableSpec {
     final class Bar(val baz: Baz) extends Serializable
     final class Foo(val bar: Bar) extends Serializable
     val foo = new Foo(new Bar(new Baz {}))
-    spore {
+    val s = spore {
       val captured = foo
       () =>
         captured
@@ -41,7 +41,7 @@ class TransitiveSerializableSpec {
     final class Bar(val baz: Baz) extends Serializable
     final class Foo(val bar: Bar) extends Serializable
     val foo = new Foo(new Bar(new Baz(new Baz2 {}) {}))
-    spore {
+    val s = spore {
       val captured = foo
       () =>
         captured
@@ -81,7 +81,7 @@ class TransitiveSerializableSpec {
     final case class ::[+H, +T <: HList](head : H, tail : T) extends HList
     case object HNil extends HList
     val foo = ::("", ::(1, HNil))
-    spore {
+    val s = spore {
       val captured = foo
       () => captured
     }
@@ -136,7 +136,7 @@ class TransitiveSerializableSpec {
   @Test
   def `Allow user to assume closed hierarchies for java/scala binaries in captured variables`(): Unit = {
     val foo: JavaFoo = new JavaBar("Hello, World!")
-    spore {
+    val s = spore {
       val captured = foo: @assumeClosed
       () => captured
     }
@@ -148,7 +148,7 @@ class TransitiveSerializableSpec {
     sealed class Wrapper[T <: java.io.Serializable](foo: T) extends Serializable
 
     val wrapper = new Wrapper(foo: JavaFoo @assumeClosed)
-    spore {
+    val s = spore {
       val captured: Wrapper[JavaFoo @assumeClosed] = wrapper
       () => captured
     }
@@ -160,7 +160,7 @@ class TransitiveSerializableSpec {
     sealed class Wrapper(foo: JavaFoo @assumeClosed) extends Serializable
 
     val wrapper: Wrapper = new Wrapper(foo)
-    spore {
+    val s = spore {
       val captured = wrapper
       () => captured
     }
@@ -171,7 +171,7 @@ class TransitiveSerializableSpec {
     sealed trait Foo[T] extends Serializable {val foo: T}
     final case class Bar[T](foo: T) extends Foo[T]
     val foo = Bar("muahaha")
-    spore {
+    val s = spore {
       val captured = foo
       () => captured
     }
@@ -182,7 +182,7 @@ class TransitiveSerializableSpec {
     sealed trait Foo[T] extends Serializable {val foo: T}
     final case class ExtraBar[T, U](foo: T, bar: U) extends Foo[T]
     val foo = ExtraBar("muahaha", new Integer(1))
-    spore {
+    val s = spore {
       val captured = foo
       () => captured
     }
@@ -194,7 +194,7 @@ class TransitiveSerializableSpec {
     sealed trait Foo[T] extends Serializable
     final case class ReversedExtraBar[T, U](foo: T, bar: U) extends Foo[U]
     val foo = ReversedExtraBar("muahaha", new Integer(1))
-    spore {
+    val s = spore {
       val captured = foo
       () => captured
     }

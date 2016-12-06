@@ -13,7 +13,7 @@ class TransientSerializableSpec {
     final class Bar(@transient val b: Function[Int, Int]) extends Serializable
     final class Foo(val bar: Bar) extends Serializable
     val foo = new Foo(new Bar(i => i))
-    spore {
+    val s = spore {
       val captured = foo
       () =>
         captured
@@ -26,7 +26,7 @@ class TransientSerializableSpec {
     final class Bar(val baz: Baz) extends Serializable
     final class Foo(val bar: Bar) extends Serializable
     val foo = new Foo(new Bar(new Baz(new Object) {}))
-    spore {
+    val s = spore {
       val captured = foo
       () =>
         captured
@@ -40,7 +40,7 @@ class TransientSerializableSpec {
     final class Bar(val baz: Baz) extends Serializable
     final class Foo(val bar: Bar) extends Serializable
     val foo = new Foo(new Bar(new Baz(new Baz2(new Object)) {}))
-    spore {
+    val s = spore {
       val captured = foo
       () =>
         captured
@@ -52,7 +52,7 @@ class TransientSerializableSpec {
     sealed trait Bar extends Serializable { val b: Function[Int, Int] }
     final class Foo(val bar: Bar) extends Serializable
     val foo = new Foo(new Bar { @transient val b = (i: Int) => i})
-    spore {
+    val s = spore {
       val captured = foo
       () =>
         captured
@@ -65,7 +65,7 @@ class TransientSerializableSpec {
     final class Bar(val baz: Baz) extends Serializable
     final class Foo(val bar: Bar) extends Serializable
     val foo = new Foo(new Bar(new Baz { @transient val b = (i: Int) => i}))
-    spore {
+    val s = spore {
       val captured = foo
       () =>
         captured
@@ -79,7 +79,7 @@ class TransientSerializableSpec {
     final class Bar(val baz: Baz) extends Serializable
     final class Foo(val bar: Bar) extends Serializable
     val foo = new Foo(new Bar(new Baz(new Baz2 { @transient val b = (i: Int) => i}) {}))
-    spore {
+    val s = spore {
       val captured = foo
       () =>
         captured
@@ -91,7 +91,7 @@ class TransientSerializableSpec {
     sealed trait Base extends Serializable { val b: Function[Int, Int] }
     final class Foo(@transient val b: Function[Int, Int]) extends Base
     val foo = new Foo(i => i)
-    spore {
+    val s = spore {
       val captured = foo
       () =>
         captured

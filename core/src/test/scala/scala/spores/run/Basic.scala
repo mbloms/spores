@@ -1,7 +1,6 @@
 package scala.spores.run
 
 import scala.spores._
-import Conversions._
 
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -345,7 +344,7 @@ class BasicSpec {
 
   @Test
   def `Allow to select functions on top-level modules`(): Unit = {
-    spore { () =>
+    val s = spore { () =>
       TrapUtil.defWithSeveralArgs("Hello", "World", "END.")
     }
   }

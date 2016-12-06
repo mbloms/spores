@@ -21,7 +21,8 @@ private[spores] class MacroModule[C <: whitebox.Context](val c: C) {
   private val sporesPath = q"scala.spores"
 
   type Env = List[(Symbol, Tree)]
-  def conforms(funTree: c.Tree): (List[Symbol], Type, Tree, Env) = {
+  def conforms(funTree: c.Tree,
+               excluded: c.Type): (List[Symbol], Type, Tree, Env) = {
     val analysis = new SporeAnalysis[c.type](c)
     val (explicitSporeEnv, sporeFunDef) = analysis.stripSporeStructure(funTree)
     explicitSporeEnv foreach (s => debug(s"Explicitly captured symbol: $s"))
@@ -29,23 +30,24 @@ private[spores] class MacroModule[C <: whitebox.Context](val c: C) {
     val (funOpt, vparams, sporeBody) = analysis.readSporeFunDef(sporeFunDef)
     val functionSymbol = funOpt.map(_.symbol)
     val nonExplicitEnv = analysis.collectCaptured(sporeBody)
-    val captured = nonExplicitEnv.map(_._1)
     val declared = analysis.collectDeclared(sporeBody)
-    val symbolsEnv = explicitSporeEnv.map(_.symbol)
-    val checker = new SporeChecker[c.type](c)(symbolsEnv,
-                                              functionSymbol,
-                                              captured,
-                                              declared)
+    val env = explicitSporeEnv.map(_.symbol) ++ nonExplicitEnv.map(_._1)
+    val checker = new SporeChecker[c.type](c)(env, functionSymbol, declared)
 
     debug(s"Checking conformance of ${showCode(sporeBody)}...")
     checker.checkReferencesInBody(sporeBody)
+    checker.checkExcludedTypesInBody(excluded, sporeBody)
     val explicitEnv = explicitSporeEnv.map(vd => vd.symbol -> vd.rhs)
     val fullSporeEnv = nonExplicitEnv ++ explicitEnv
     (vparams.map(_.symbol), sporeBody.tpe, sporeBody, fullSporeEnv)
   }
 
-  def createSpore(funTree: c.Tree, targs: List[c.Type]): c.Tree = {
-    val (paramSyms, retTpe, funBody, fullSporeEnv) = conforms(funTree)
+  def createSpore(funTree: c.Tree,
+                  targs: List[c.Type],
+                  expectedCapturedType: c.Type,
+                  expectedExcludedType: c.Type): c.Tree = {
+    val (paramSyms, retTpe, funBody, fullSporeEnv) =
+      conforms(funTree, expectedExcludedType)
     val (symbolsEnv, explicitRhsEnv) = fullSporeEnv.unzip
     val generator = new SporeGenerator[c.type](c)
     val sporeName = c.freshName(anonSporeName)
@@ -101,7 +103,11 @@ private[spores] class MacroModule[C <: whitebox.Context](val c: C) {
           tq"$sporesPath.Spore22[..$targs]"
         else c.abort(funTree.pos, Feedback.UnsupportedAritySpore)
 
-      generator.generateSpore(sporeName, sporeType, Nil, sporeBody)
+      generator.generateSpore(sporeName,
+                              sporeType,
+                              expectedCapturedType,
+                              expectedExcludedType,
+                              sporeBody)
     } else {
       val capturedTypes = symbolsEnv.map(_.typeSignature).toArray
       debug(s"Captured types: ${capturedTypes.mkString(",")}")
@@ -165,7 +171,8 @@ private[spores] class MacroModule[C <: whitebox.Context](val c: C) {
         else c.abort(funTree.pos, Feedback.UnsupportedAritySpore)
       generator.generateSpore(sporeName,
                               sporeType,
-                              List(capturedType),
+                              capturedType,
+                              expectedExcludedType,
                               sporeBody,
                               constructorParams)
     }

@@ -1,7 +1,6 @@
 package scala.spores.run
 
 import scala.spores._
-import Conversions._
 
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -9,7 +8,6 @@ import org.junit.runners.JUnit4
 
 @RunWith(classOf[JUnit4])
 class ExcludedBasic {
-
   @Test
   def spore2Avoidance(): Unit = {
     val s: Spore2[Int, Unit, Unit] { type Excluded = String } = spore {
