@@ -140,8 +140,7 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
     *   1. A symbol `s` is declared in the spore header or using `capture`.
     *   2. A symbol `s` is owned by a spore.
     *   3. A symbol `s` is declared inside the spore body.
-    *   4. A symbol `s` is a method, a constructor or a macro definition.
-    *   5. A symbol `s` is __static__.
+    *   4. A symbol `s` is __static__.
     *
     * @param s Symbol of a given tree inside a spore.
     * @return Whether the symbol is valid or not.
@@ -150,7 +149,6 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
     sporeEnvironment.contains(s) ||
     isSymbolChildOfSpore(s) ||
     declaredSymbols.contains(s) ||
-    s.isMethod || s.isConstructor || s.isMacro ||
     isStaticPath(s)
   }
 
