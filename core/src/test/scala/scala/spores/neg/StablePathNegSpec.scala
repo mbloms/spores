@@ -11,9 +11,13 @@ import scala.spores.util.Feedback
 class StablePathNegSpec {
   @Test
   def `blocks aren't stable`() {
+    val predef =
+      if (scala.util.Properties.versionString.contains("2.12"))
+        "scala.Predef"
+      else "scala.this.Predef"
     val errorMsg =
-      """{
-        |  def x: Nothing = scala.this.Predef.???;
+      s"""{
+        |  def x: Nothing = $predef.???;
         |  a
         |}""".stripMargin
     expectError(Feedback.InvalidOuterReference(errorMsg)) {
