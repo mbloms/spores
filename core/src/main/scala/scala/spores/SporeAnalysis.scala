@@ -92,6 +92,13 @@ protected class SporeAnalysis[C <: whitebox.Context with Singleton](val ctx: C) 
   }
 }
 
+/** Check that several spore properties hold in user-defined code.
+  *
+  * @param ctx Compiler context.
+  * @param sporeEnvironment Symbols defined in header or `capture`d.
+  * @param funSymbol Symbol of function to be converted to spore.
+  * @param declaredSymbols Symbols declared in the spore body.
+  */
 protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
     val sporeEnvironment: List[C#Symbol],
     val funSymbol: Option[C#Symbol],
@@ -113,6 +120,11 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
   @inline private def isSymbolChildOfSpore(childSym: Symbol) =
     funSymbol.exists(sym => isOwner(childSym, sym.asInstanceOf[Symbol]))
 
+  /** Check that a symbol is an object or a package statically accessible
+    * (note that scalac hoists up objects defined into functions).
+    *
+    * @param s Symbol of a given tree inside a spore.
+    */
   @inline def isStaticPath(s: Symbol): Boolean = {
     // Disclaimer: Static does not work as the reflect docs say
     s != NoSymbol && {
@@ -125,13 +137,11 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
 
   /** Check the validity of symbols. Spores allow refs to symbols if:
     *
-    *   1. A symbol `s` is declared in the spore header.
-    *   2. A symbol `s` is captured using the `capture` syntax.
-    *   3. A symbol `s` is declared within a function.
-    *   4. A symbol `s` has already been declared inside the body.
-    *   5. A symbol `s` is [[scala.reflect.api.Universe.NoSymbol]].
-    *   6. A symbol `s` is static.
-    *   7. A symbol `s` is defined within [[scala.Predef]].
+    *   1. A symbol `s` is declared in the spore header or using `capture`.
+    *   2. A symbol `s` is owned by a spore.
+    *   3. A symbol `s` is declared inside the spore body.
+    *   4. A symbol `s` is a method, a constructor or a macro definition.
+    *   5. A symbol `s` is __static__.
     *
     * @param s Symbol of a given tree inside a spore.
     * @return Whether the symbol is valid or not.
@@ -140,7 +150,7 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
     sporeEnvironment.contains(s) ||
     isSymbolChildOfSpore(s) ||
     declaredSymbols.contains(s) ||
-    s == NoSymbol ||
+    s.isMethod || s.isConstructor || s.isMacro ||
     isStaticPath(s)
   }
 
@@ -153,7 +163,8 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
       tree match {
         case Ident(_) | This(_) | Super(_) =>
           debug(s"Checking ident | this | super: $tree")
-          if (!isSymbolValid(tree.symbol))
+          val sym = tree.symbol
+          if (sym != NoSymbol && !isSymbolValid(tree.symbol))
             ctx.abort(tree.pos,
                       Feedback.InvalidReferenceTo(tree.symbol.toString))
         case _ => super.traverse(tree)
@@ -164,7 +175,8 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
   def checkReferencesInBody(sporeBody: Tree) =
     ReferenceInspector.traverse(sporeBody)
 
-  private object ExcludedInspector extends Traverser {
+  /** Collect all type trees inside a spore body. */
+  private object ExcludedCollector extends Traverser {
     var collected: List[TypeTree] = Nil
     override def traverse(tree: Tree): Unit = tree match {
       case tt @ TypeTree() => collected = tt :: collected
@@ -176,14 +188,20 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
     btm =:= definitions.NothingTpe && !(tpe =:= btm)
 
   val sporeEnvironmentCasted = sporeEnvironment.asInstanceOf[List[Symbol]]
+
+  /** Check that expected excluded type holds for a concrete spore body.
+    *
+    * @param excluded Expected user-defined excluded type member.
+    * @param sporeBody Spore body to be analyzed.
+    */
   def checkExcludedTypesInBody(excluded: Type, sporeBody: Tree) = {
     if (!(excluded =:= definitions.NothingTpe)) {
       val isTuple = definitions.TupleClass.seq.exists(c =>
         excluded.typeSymbol.typeSignature =:= c.typeSignature)
       val blacklist = if (isTuple) excluded.typeArgs else List(excluded)
       debug(s"Excluded types are $blacklist")
-      ExcludedInspector.traverse(sporeBody)
-      val usedTypes = ExcludedInspector.collected.map(_.symbol)
+      ExcludedCollector.traverse(sporeBody)
+      val usedTypes = ExcludedCollector.collected.map(_.symbol)
       (usedTypes ++ sporeEnvironmentCasted).foreach { sym =>
         val tpe = sym.typeSignature
         blacklist.foreach { blacklisted =>
