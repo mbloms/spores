@@ -16,6 +16,12 @@ sealed trait SporeBase extends Serializable {
     */
   type Captured
 
+  /** Represent the type of the excluded types.
+    *
+    * For more than one captured variable, the type is a tuple of types.
+    */
+  type Excluded
+
   /** Enable the creation of spores via reflection. */
   def className: String = _className
   protected[this] var _className: String = null
