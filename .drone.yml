@@ -15,7 +15,7 @@ pipeline:
       - /platform:/keys
     pull: true
     commands:
-      - sbt clean spores/test  spores-serialization/test playground/run
+      - sbt clean spores/test spores-serialization/test spores/publishLocal spores-serialization/publishLocal playground/run
 
   sftp_cache:
     image: plugins/sftp-cache
