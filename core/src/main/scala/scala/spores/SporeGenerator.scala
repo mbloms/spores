@@ -117,18 +117,20 @@ protected class SporeGenerator[C <: whitebox.Context](val ctx: C) {
     val length = capturedTypes.length
     if (length == 1) capturedTypes(0)
     else if (length > 1 || length <= 22) {
-      val tupleClass = definitions.TupleClass.seq.apply(capturedTypes.length - 1)
+      val tupleClass =
+        definitions.TupleClass.seq.apply(capturedTypes.length - 1)
       appliedType(tupleClass, capturedTypes.toList)
     } else ctx.abort(ctx.enclosingPosition, Feedback.TupleFormatError)
   }
 
-  private val selectorForNoTuple = q"self.captured"
+  private val selfCaptured =
+    Select(Ident(TermName("self")), TermName("captured"))
   def generateCapturedReferences(env: List[Symbol]): List[Tree] = {
-    if (env.size == 1) List(selectorForNoTuple)
+    if (env.size == 1) List(selfCaptured)
     else
       env.indices
         .map(i => TermName(s"_${i + 1}"))
-        .map(selector => q"$selectorForNoTuple.$selector")
+        .map(selector => Select(selfCaptured, selector))
         .toList
   }
 
@@ -257,31 +259,92 @@ protected class SporeGenerator[C <: whitebox.Context](val ctx: C) {
   private def typeTransformerFrom(m: Map[Symbol, Tree]): Tree => Tree =
     new TypeTransformer(m).transform(_: Tree)
 
-  val nothingType = tq"scala.Nothing"
-  val getName = q"this.getClass.getName"
+  private val sporesPath = q"scala.spores"
+  def generateSporeType(arity: Int, targs: List[Type], withEnv: Boolean) = {
+    if (arity > 22)
+      ctx.abort(ctx.enclosingPosition, Feedback.UnsupportedAritySpore)
+    val sporeTypeName =
+      if (arity == 0) "NullarySpore"
+      else if (arity == 1) "Spore"
+      else s"Spore$arity"
+    val finalSporeName = ctx.universe.TypeName(
+      if (!withEnv) s"$sporeTypeName"
+      else s"${sporeTypeName}WithEnv"
+    )
+    tq"$sporesPath.$finalSporeName[..$targs]"
+  }
 
-  /** Generate a spore and instantiate based on its extracted information. */
+  /** Rename the already created spore type to a simple spore. */
+  private class WithEnvRemover(sporeTypeTree: Tree) extends Transformer {
+    override def transform(tree: Tree): Tree = tree match {
+      case a @ AppliedTypeTree(s @ Select(prefix, name), targs) =>
+        val nameString = name.decodedName.toString
+        val newSporeName = TypeName(nameString.replace("WithEnv", ""))
+        val newSporeType = treeCopy.Select(s, prefix, newSporeName)
+        treeCopy.AppliedTypeTree(a, newSporeType, targs)
+      case _ => super.transform(tree)
+    }
+  }
+
+  private val getName = q"this.getClass.getName"
+  private val nothingTpe = definitions.NothingTpe
+
+  /** Generate a spore and instantiate based on its extracted information.
+    *
+    * The spore generation depends on what type users expects of a spore.
+    * Because of the `spore` macro definitions, we need to respect when the
+    * Scala typechecker tries luck inferring [[Nothing]] for Captured types.
+    *
+    * Depending on the situation, [[Nothing]] is respected or not. `explicitCaptured`
+    * is false when the user has not introduced [[Nothing]] explicitly, but the
+    * typechecker has. This happens when a spore is a parameter of a method with
+    * type Function. In these cases, whiteboxity does not apply and we are forced
+    * to generate a captured member of type [[Nothing]] even though we are capturing
+    * something. However, we don't care that our spore properties are not reflected
+    * in the type because this will happen when users don't expect a spore type.
+    *
+    * But if users expect a concrete `Captured` type, then we generate the correct
+    * `Captured` type member and make the typechecker fail. This will only happen
+    * when whitebox macros are not applicable (on the right hand side of a ValDef,
+    * for example).
+    * */
   def generateSpore(sporeName: TypeName,
                     sporeType: Tree,
                     captured: Type,
                     excluded: Type,
                     sporeBody: Tree,
-                    constructorParams: List[Tree] = Nil) = {
-    val capturedParam =
-      if (captured =:= definitions.NothingTpe) Nil
-      else List(q"val captured: $captured")
-    val generatedCode = q"""
-      class $sporeName(..$capturedParam) extends $sporeType { self =>
-        type Captured = $captured
+                    constructorParams: List[Tree],
+                    forceCaptured: Boolean,
+                    expectedCaptured: Type) = {
+
+    /* We create a new spore type because in case that the user
+     * does not require a concrete spore type and Captured is nothing,
+     * the initializer for `SporeWithEnv` is executed and throws `???`.
+     * To avoid this, we convert `SporeWithEnv` to `Spore`. */
+    val (params, capturedTypeMember, finalSporeType) = {
+      if (captured =:= nothingTpe) // type is Spore, not SporeWithEnv
+        (Nil, q"type Captured = $captured", sporeType)
+      else if (forceCaptured)
+        (List(q"val captured: $captured"),
+         q"type Captured = $captured",
+         sporeType)
+      else
+        (List(q"val captured: $captured"),
+         q"type Captured = $expectedCaptured",
+         new WithEnvRemover(sporeType).transform(sporeType))
+    }
+
+    val generatedCode = ctx.typecheck(q"""
+      class $sporeName(..$params) extends $finalSporeType { self =>
+        $capturedTypeMember
         type Excluded = $excluded
         this._className = $getName
         def skipScalaSamConversion: Nothing = ???
-
         $sporeBody
       }
       new $sporeName(..$constructorParams)
-    """
+    """)
     debug(s"Generated code is: $generatedCode")
-    generatedCode
+    ctx.typecheck(generatedCode)
   }
 }

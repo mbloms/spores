@@ -358,6 +358,95 @@ class BasicSpec {
   def `Allow referencing to extended members using delayed within an object definition`: Unit = {
     assert(ValidObject2.s(9) == "19!")
   }
+
+  @Test
+  def `Compile normal uses of spores`: Unit = {
+    class OuterReference {
+      val text = Some("Hello, World!")
+      def alphabeticPattern = "^a"
+
+
+      val s2: Spore[String, _] {type Captured = OuterReference} = spore {
+        val thisRef = this
+        (t: String) =>
+          t.trim
+            .split(thisRef.alphabeticPattern)
+            .map(word => (word, ""))
+            .toTraversable
+      }
+      s2("")
+
+      val s3: Spore[String, _] {
+        type Captured = OuterReference
+        type Excluded = Nothing
+      } = spore {
+        val thisRef = this
+        (t: String) =>
+          t.trim
+            .split(thisRef.alphabeticPattern)
+            .map(word => (word, ""))
+            .toTraversable
+      }
+      s3("")
+
+      val s4 = spore {
+        val thisRef = this
+        (t: String) =>
+          t.trim
+            .split(thisRef.alphabeticPattern)
+            .map(word => (word, ""))
+            .toTraversable
+      }: Spore[String, Traversable[(String, String)]] {
+        type Captured = OuterReference
+        type Excluded = Nothing
+      }
+      s4("")
+
+      text.map(spore {
+        val thisRef = this
+        (t: String) =>
+          t.trim
+            .split(thisRef.alphabeticPattern)
+            .map(word => (word, ""))
+            .toTraversable
+      })
+
+      text.map(spore[String, Traversable[(String, String)], OuterReference, Nothing] {
+        val thisRef = this
+        (t: String) =>
+          t.trim
+            .split(thisRef.alphabeticPattern)
+            .map(word => (word, ""))
+            .toTraversable
+      })
+
+      def expectsNothingCapturingSpore(s: Spore[String, _] {
+        type Captured = Nothing
+      }) = println(s)
+
+      expectsNothingCapturingSpore(spore {
+        val thisRef = this
+        (t: String) =>
+          t.trim
+            .split(thisRef.alphabeticPattern)
+            .map(word => (word, ""))
+            .toTraversable
+      })
+
+      val s: Spore[String, Traversable[(String, String)]] {
+        type Captured = OuterReference
+        type Excluded = Nothing
+      } = spore {
+        val thisRef = this
+        (t: String) =>
+          t.trim
+            .split(thisRef.alphabeticPattern)
+            .map(word => (word, ""))
+            .toTraversable
+      }
+      s("")
+    }
+  }
 }
 
 object TrapUtil {
@@ -393,4 +482,3 @@ object Outer {
     }
   }
 }
-

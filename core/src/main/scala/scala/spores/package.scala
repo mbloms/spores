@@ -63,20 +63,6 @@ package object spores extends Versioning {
     type Excluded = E
   } = macro nullarySporeImpl[R, C, E]
 
-  /** Converts a block of statements and an anonymous function to a spore,
-    * checking the captured paths and ensuring the spore semantics.
-    *
-    * The following spore will be returned if the body of the anonymous
-    * function only accesses local variables or stable paths.
-    *
-    * {{{
-    * spore {
-    *   val x = outerX
-    *   val y = outerY
-    *   (p: T) => <body>
-    * }
-    * }}}
-    */
   def spore[T, R, C, E](fun: T => R)
     : Spore[T, R] {
     type Captured = C
@@ -260,6 +246,64 @@ package object spores extends Versioning {
     else definitions.NothingTpe
   }
 
+  /** Figure out whether the user explicitly set a spore type or not.
+    *
+    * We check the original tree before typer to figure out if
+    * the user used type args for [[scala.spores.spore]] or there is a
+    * type ascription surrounding the spore tree. For more details,
+    * see the docs in [[SporeGenerator]].
+    */
+  def capturedIsSetByUser(ctx: whitebox.Context) = {
+    val ctxFields = ctx.getClass.getDeclaredFields
+    // Hijack macro implementation to get scala compiler
+    val universe = ctxFields.find(_.getName == "universe").get
+    universe.setAccessible(true)
+    val g = universe.get(ctx).asInstanceOf[scala.tools.nsc.Global]
+    val ts = g.analyzer.asInstanceOf[scala.tools.nsc.typechecker.Typers]
+
+    // Access typer created by the macros framework
+    val tper = ctxFields.find(_.getName == "callsiteTyper").get
+    tper.setAccessible(true)
+    val typer = tper.get(ctx).asInstanceOf[ts.Typer]
+
+    // Get typed tree under macro application
+    val expandedSpore = ctx.macroApplication
+    val sporePos = expandedSpore.pos
+    // Get tree that went to independent macro typer
+    val originalTree = typer.context.tree.asInstanceOf[g.Tree]
+
+    // Find the original spore untyped tree
+    var found: g.Tree = null
+    originalTree.foreach { t =>
+      if (found == null && t.pos == sporePos)
+        found = t
+    }
+
+    // Check if user sets concrete type args
+    var hasExplicitTypeArgs = found match {
+      case g.Apply(_: g.TypeApply, _) => true
+      case _ => false
+    }
+    if (!hasExplicitTypeArgs) {
+      originalTree foreach {
+        case g.Typed(t, _) if t == found =>
+          hasExplicitTypeArgs = true
+        case g.ValDef(_, _, sporeType, rhs) if rhs == found =>
+          var expectsCaptured = false
+          sporeType.foreach {
+            case g.TypeDef(_, name, _, _) =>
+              if (name.decodedName.toString == "Captured")
+                expectsCaptured = true
+            case _ =>
+          }
+          if (!hasExplicitTypeArgs && expectsCaptured)
+            hasExplicitTypeArgs = expectsCaptured
+        case _ =>
+      }
+    }
+    hasExplicitTypeArgs
+  }
+
   def nullarySporeImpl[R: ctx.WeakTypeTag,
                        C: ctx.WeakTypeTag,
                        E: ctx.WeakTypeTag](ctx: whitebox.Context)(
@@ -268,8 +312,9 @@ package object spores extends Versioning {
     val impl = new MacroModule[ctx.type](ctx)
     val targs = List(weakTypeOf[R])
     val captured = materializeType[ctx.type, C](ctx)
+    val forceCapturedType = capturedIsSetByUser(ctx)
     val excluded = materializeType[ctx.type, E](ctx)
-    impl.createSpore(fun, targs, captured, excluded)
+    impl.createSpore(fun, targs, captured, excluded, forceCapturedType)
   }
 
   def sporeImpl[T: ctx.WeakTypeTag,
@@ -281,8 +326,9 @@ package object spores extends Versioning {
     val impl = new MacroModule[ctx.type](ctx)
     val targs = List(weakTypeOf[T], weakTypeOf[R])
     val captured = materializeType[ctx.type, C](ctx)
+    val forceCapturedType = capturedIsSetByUser(ctx)
     val excluded = materializeType[ctx.type, E](ctx)
-    impl.createSpore(fun, targs, captured, excluded)
+    impl.createSpore(fun, targs, captured, excluded, forceCapturedType)
   }
 
   def spore2Impl[T1: ctx.WeakTypeTag,
@@ -297,8 +343,9 @@ package object spores extends Versioning {
                      weakTypeOf[T2],
                      weakTypeOf[R])
     val captured = materializeType[ctx.type, C](ctx)
+    val forceCapturedType = capturedIsSetByUser(ctx)
     val excluded = materializeType[ctx.type, E](ctx)
-    impl.createSpore(fun, targs, captured, excluded)
+    impl.createSpore(fun, targs, captured, excluded, forceCapturedType)
   }
 
   def spore3Impl[T1: ctx.WeakTypeTag,
@@ -315,8 +362,9 @@ package object spores extends Versioning {
                      weakTypeOf[T3],
                      weakTypeOf[R])
     val captured = materializeType[ctx.type, C](ctx)
+    val forceCapturedType = capturedIsSetByUser(ctx)
     val excluded = materializeType[ctx.type, E](ctx)
-    impl.createSpore(fun, targs, captured, excluded)
+    impl.createSpore(fun, targs, captured, excluded, forceCapturedType)
   }
 
   def spore4Impl[T1: ctx.WeakTypeTag,
@@ -335,8 +383,9 @@ package object spores extends Versioning {
                      weakTypeOf[T4],
                      weakTypeOf[R])
     val captured = materializeType[ctx.type, C](ctx)
+    val forceCapturedType = capturedIsSetByUser(ctx)
     val excluded = materializeType[ctx.type, E](ctx)
-    impl.createSpore(fun, targs, captured, excluded)
+    impl.createSpore(fun, targs, captured, excluded, forceCapturedType)
   }
 
   def spore5Impl[T1: ctx.WeakTypeTag,
@@ -357,8 +406,9 @@ package object spores extends Versioning {
                      weakTypeOf[T5],
                      weakTypeOf[R])
     val captured = materializeType[ctx.type, C](ctx)
+    val forceCapturedType = capturedIsSetByUser(ctx)
     val excluded = materializeType[ctx.type, E](ctx)
-    impl.createSpore(fun, targs, captured, excluded)
+    impl.createSpore(fun, targs, captured, excluded, forceCapturedType)
   }
 
   def spore6Impl[T1: ctx.WeakTypeTag,
@@ -381,8 +431,9 @@ package object spores extends Versioning {
                      weakTypeOf[T6],
                      weakTypeOf[R])
     val captured = materializeType[ctx.type, C](ctx)
+    val forceCapturedType = capturedIsSetByUser(ctx)
     val excluded = materializeType[ctx.type, E](ctx)
-    impl.createSpore(fun, targs, captured, excluded)
+    impl.createSpore(fun, targs, captured, excluded, forceCapturedType)
   }
 
   def spore7Impl[T1: ctx.WeakTypeTag,
@@ -407,8 +458,9 @@ package object spores extends Versioning {
                      weakTypeOf[T7],
                      weakTypeOf[R])
     val captured = materializeType[ctx.type, C](ctx)
+    val forceCapturedType = capturedIsSetByUser(ctx)
     val excluded = materializeType[ctx.type, E](ctx)
-    impl.createSpore(fun, targs, captured, excluded)
+    impl.createSpore(fun, targs, captured, excluded, forceCapturedType)
   }
 
   def spore8Impl[T1: ctx.WeakTypeTag,
@@ -435,8 +487,9 @@ package object spores extends Versioning {
                      weakTypeOf[T8],
                      weakTypeOf[R])
     val captured = materializeType[ctx.type, C](ctx)
+    val forceCapturedType = capturedIsSetByUser(ctx)
     val excluded = materializeType[ctx.type, E](ctx)
-    impl.createSpore(fun, targs, captured, excluded)
+    impl.createSpore(fun, targs, captured, excluded, forceCapturedType)
   }
 
   def spore9Impl[T1: ctx.WeakTypeTag,
@@ -465,8 +518,9 @@ package object spores extends Versioning {
                      weakTypeOf[T9],
                      weakTypeOf[R])
     val captured = materializeType[ctx.type, C](ctx)
+    val forceCapturedType = capturedIsSetByUser(ctx)
     val excluded = materializeType[ctx.type, E](ctx)
-    impl.createSpore(fun, targs, captured, excluded)
+    impl.createSpore(fun, targs, captured, excluded, forceCapturedType)
   }
 
   def spore10Impl[T1: ctx.WeakTypeTag,
@@ -497,8 +551,9 @@ package object spores extends Versioning {
                      weakTypeOf[T10],
                      weakTypeOf[R])
     val captured = materializeType[ctx.type, C](ctx)
+    val forceCapturedType = capturedIsSetByUser(ctx)
     val excluded = materializeType[ctx.type, E](ctx)
-    impl.createSpore(fun, targs, captured, excluded)
+    impl.createSpore(fun, targs, captured, excluded, forceCapturedType)
   }
 
   def spore11Impl[T1: ctx.WeakTypeTag,
@@ -531,8 +586,9 @@ package object spores extends Versioning {
                      weakTypeOf[T11],
                      weakTypeOf[R])
     val captured = materializeType[ctx.type, C](ctx)
+    val forceCapturedType = capturedIsSetByUser(ctx)
     val excluded = materializeType[ctx.type, E](ctx)
-    impl.createSpore(fun, targs, captured, excluded)
+    impl.createSpore(fun, targs, captured, excluded, forceCapturedType)
   }
 
   def spore12Impl[T1: ctx.WeakTypeTag,
@@ -567,8 +623,9 @@ package object spores extends Versioning {
                      weakTypeOf[T12],
                      weakTypeOf[R])
     val captured = materializeType[ctx.type, C](ctx)
+    val forceCapturedType = capturedIsSetByUser(ctx)
     val excluded = materializeType[ctx.type, E](ctx)
-    impl.createSpore(fun, targs, captured, excluded)
+    impl.createSpore(fun, targs, captured, excluded, forceCapturedType)
   }
 
   def spore13Impl[T1: ctx.WeakTypeTag,
@@ -605,8 +662,9 @@ package object spores extends Versioning {
                      weakTypeOf[T13],
                      weakTypeOf[R])
     val captured = materializeType[ctx.type, C](ctx)
+    val forceCapturedType = capturedIsSetByUser(ctx)
     val excluded = materializeType[ctx.type, E](ctx)
-    impl.createSpore(fun, targs, captured, excluded)
+    impl.createSpore(fun, targs, captured, excluded, forceCapturedType)
   }
 
   def spore14Impl[T1: ctx.WeakTypeTag,
@@ -645,8 +703,9 @@ package object spores extends Versioning {
                      weakTypeOf[T14],
                      weakTypeOf[R])
     val captured = materializeType[ctx.type, C](ctx)
+    val forceCapturedType = capturedIsSetByUser(ctx)
     val excluded = materializeType[ctx.type, E](ctx)
-    impl.createSpore(fun, targs, captured, excluded)
+    impl.createSpore(fun, targs, captured, excluded, forceCapturedType)
   }
 
   def spore15Impl[T1: ctx.WeakTypeTag,
@@ -687,8 +746,9 @@ package object spores extends Versioning {
                      weakTypeOf[T15],
                      weakTypeOf[R])
     val captured = materializeType[ctx.type, C](ctx)
+    val forceCapturedType = capturedIsSetByUser(ctx)
     val excluded = materializeType[ctx.type, E](ctx)
-    impl.createSpore(fun, targs, captured, excluded)
+    impl.createSpore(fun, targs, captured, excluded, forceCapturedType)
   }
 
   def spore16Impl[T1: ctx.WeakTypeTag,
@@ -731,8 +791,9 @@ package object spores extends Versioning {
                      weakTypeOf[T16],
                      weakTypeOf[R])
     val captured = materializeType[ctx.type, C](ctx)
+    val forceCapturedType = capturedIsSetByUser(ctx)
     val excluded = materializeType[ctx.type, E](ctx)
-    impl.createSpore(fun, targs, captured, excluded)
+    impl.createSpore(fun, targs, captured, excluded, forceCapturedType)
   }
 
   def spore17Impl[T1: ctx.WeakTypeTag,
@@ -777,8 +838,9 @@ package object spores extends Versioning {
                      weakTypeOf[T17],
                      weakTypeOf[R])
     val captured = materializeType[ctx.type, C](ctx)
+    val forceCapturedType = capturedIsSetByUser(ctx)
     val excluded = materializeType[ctx.type, E](ctx)
-    impl.createSpore(fun, targs, captured, excluded)
+    impl.createSpore(fun, targs, captured, excluded, forceCapturedType)
   }
 
   def spore18Impl[T1: ctx.WeakTypeTag,
@@ -825,8 +887,9 @@ package object spores extends Versioning {
                      weakTypeOf[T18],
                      weakTypeOf[R])
     val captured = materializeType[ctx.type, C](ctx)
+    val forceCapturedType = capturedIsSetByUser(ctx)
     val excluded = materializeType[ctx.type, E](ctx)
-    impl.createSpore(fun, targs, captured, excluded)
+    impl.createSpore(fun, targs, captured, excluded, forceCapturedType)
   }
 
   def spore19Impl[T1: ctx.WeakTypeTag,
@@ -875,8 +938,9 @@ package object spores extends Versioning {
                      weakTypeOf[T19],
                      weakTypeOf[R])
     val captured = materializeType[ctx.type, C](ctx)
+    val forceCapturedType = capturedIsSetByUser(ctx)
     val excluded = materializeType[ctx.type, E](ctx)
-    impl.createSpore(fun, targs, captured, excluded)
+    impl.createSpore(fun, targs, captured, excluded, forceCapturedType)
   }
 
   def spore20Impl[T1: ctx.WeakTypeTag,
@@ -927,8 +991,9 @@ package object spores extends Versioning {
                      weakTypeOf[T20],
                      weakTypeOf[R])
     val captured = materializeType[ctx.type, C](ctx)
+    val forceCapturedType = capturedIsSetByUser(ctx)
     val excluded = materializeType[ctx.type, E](ctx)
-    impl.createSpore(fun, targs, captured, excluded)
+    impl.createSpore(fun, targs, captured, excluded, forceCapturedType)
   }
 
   def spore21Impl[T1: ctx.WeakTypeTag,
@@ -981,8 +1046,9 @@ package object spores extends Versioning {
                      weakTypeOf[T21],
                      weakTypeOf[R])
     val captured = materializeType[ctx.type, C](ctx)
+    val forceCapturedType = capturedIsSetByUser(ctx)
     val excluded = materializeType[ctx.type, E](ctx)
-    impl.createSpore(fun, targs, captured, excluded)
+    impl.createSpore(fun, targs, captured, excluded, forceCapturedType)
   }
 
   def spore22Impl[T1: ctx.WeakTypeTag,
@@ -1037,7 +1103,8 @@ package object spores extends Versioning {
                      weakTypeOf[T22],
                      weakTypeOf[R])
     val captured = materializeType[ctx.type, C](ctx)
+    val forceCapturedType = capturedIsSetByUser(ctx)
     val excluded = materializeType[ctx.type, E](ctx)
-    impl.createSpore(fun, targs, captured, excluded)
+    impl.createSpore(fun, targs, captured, excluded, forceCapturedType)
   }
 }

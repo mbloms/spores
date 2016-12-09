@@ -344,6 +344,76 @@ class CaptureNegSpec {
     }
   }
 
+  @Test
+  def `User-written captured type parameter takes precedence over macro implementation`(): Unit = {
+    expectError("type mismatch") {
+      s"""import scala.spores._
+         |
+         |class OuterReference {
+         |  val text = Some("Hello, World!")
+         |  def alphabeticPattern = "^a"
+         |
+         |text.map(spore[String, Traversable[(String, String)], Nothing, Nothing] {
+         |  val thisRef = this
+         |  (t: String) =>
+         |    t.trim
+         |      .split(thisRef.alphabeticPattern)
+         |      .map(word => (word, ""))
+         |      .toTraversable
+         |})
+         |}
+         |
+       """.stripMargin
+    }
+  }
+
+  @Test
+  def `User-written captured type parameter takes precedence over macro implementation II`(): Unit = {
+    expectError("type mismatch") {
+      s"""import scala.spores._
+         |
+         |class OuterReference {
+         |  val text = Some("Hello, World!")
+         |  def alphabeticPattern = "^a"
+         |
+         |text.map((spore {
+         |  val thisRef = this
+         |  (t: String) =>
+         |    t.trim
+         |      .split(thisRef.alphabeticPattern)
+         |      .map(word => (word, ""))
+         |      .toTraversable
+         |}): Spore[String, Traversable[(String, String)]] { type Captured = Nothing; type Excluded = Nothing })
+         |}
+         |
+       """.stripMargin
+    }
+  }
+
+  @Test
+  def `Explicit and wrong captured type member in lhs of ValDef produces type mismatch`(): Unit = {
+    expectError("type mismatch") {
+      s"""import scala.spores._
+         |class OuterReference {
+         |  val text = Some("Hello, World!")
+         |  def alphabeticPattern = "^a"
+         |
+         |  val s3: Spore[String, _] {
+         |    type Captured = Nothing
+         |    type Excluded = Nothing
+         |  } = spore {
+         |    val thisRef = this
+         |    (t: String) =>
+         |      t.trim
+         |        .split(thisRef.alphabeticPattern)
+         |        .map(word => (word, ""))
+         |        .toTraversable
+         |  }
+         |  s3("")
+         |}
+       """.stripMargin
+    }
+  }
 
   @Test
   def `Ensure that apply arguments are checked`(): Unit = {

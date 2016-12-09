@@ -30,4 +30,7 @@ private[spores] object Feedback {
 
   def InvalidReferenceToExcludedType(tpe: String) =
     s"Unexpected expression with type '$tpe', but type '$tpe' is Excluded."
+
+  def CapturedTypeMismatch(found: String, required: String) =
+    s"type mismatch in `Captured` type member;\n  found   : $found\n  required: $required"
 }

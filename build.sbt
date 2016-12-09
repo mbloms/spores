@@ -109,6 +109,8 @@ lazy val `spores-core` = project
   .settings(allSettings)
   .settings(baseDependencies)
   .settings(
+    libraryDependencies +=
+      "org.scala-lang" % "scala-compiler" % scalaVersion.value,
     resourceDirectory in Compile := baseDirectory.value / "resources",
     parallelExecution in Test := false,
     /* Write all the compile-time dependencies of the spores macro to a file,
