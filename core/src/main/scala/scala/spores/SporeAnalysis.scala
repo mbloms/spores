@@ -160,6 +160,7 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
   private object ReferenceInspector extends Traverser {
     override def traverse(tree: Tree): Unit = {
       tree match {
+        case New(_) =>
         case Ident(_) | This(_) | Super(_) =>
           debug(s"Checking ident | this | super: $tree")
           val sym = tree.symbol

@@ -25,6 +25,18 @@ package somepackage {
 abstract class X { def g(f: Int => Unit): Unit }
 abstract class TestCl[T] { val x: X }
 
+class Box {
+  def open(fun: Spore[Int, Unit]): Unit = {
+    fun(5)
+  }
+}
+class NonSneaky {
+  def process(a: Array[Int]): Unit = {
+    for (i <- 0 until a.length)
+      a(i) = a(i) + 1
+  }
+}
+
 @RunWith(classOf[JUnit4])
 class BasicSpec {
 
@@ -349,18 +361,26 @@ class BasicSpec {
     }
   }
 
+  @Test def createHarmlessInstance(): Unit = {
+    val b = new Box
+    b.open(spore { (x: Int) =>
+      // OK: create instance of harmless class
+      val ns = new NonSneaky
+    })
+  }
+
   @Test
-  def `Allow referencing to extended members within an object definition`: Unit = {
+  def `Allow referencing to extended members within an object definition`(): Unit = {
     assert(ValidObject.s() == "1!")
   }
 
   @Test
-  def `Allow referencing to extended members using delayed within an object definition`: Unit = {
+  def `Allow referencing to extended members using delayed within an object definition`(): Unit = {
     assert(ValidObject2.s(9) == "19!")
   }
 
   @Test
-  def `Compile normal uses of spores`: Unit = {
+  def `Compile normal uses of spores`(): Unit = {
     class OuterReference {
       val text = Some("Hello, World!")
       def alphabeticPattern = "^a"
