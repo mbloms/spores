@@ -79,15 +79,15 @@ lazy val compilerOptions = Seq(
   "-Xlint"
 )
 
+val SporesLogFlag = "-Xprint:spores"
 lazy val commonSettings = Seq(
   triggeredMessage in ThisBuild := Watched.clearWhenTriggered,
   watchSources += baseDirectory.value / "resources",
-  javaOptions += "-Dspores.debug=true",
   initialCommands in console in Compile := "import scala.spores._",
   scalacOptions in (Compile, console) ++=
-    compilerOptions :+ "-Xprint:spores",
+    compilerOptions :+ SporesLogFlag,
   scalacOptions in Test ++=
-    compilerOptions :+ "-Xprint:spores",
+    compilerOptions :+ SporesLogFlag,
   testOptions in Test ++=
     List(Tests.Argument("-v"), Tests.Argument("-s"))
 )
@@ -209,6 +209,9 @@ lazy val docs: Project = project
     ornateSourceDir := Some(tutTargetDirectory.value),
     ornateTargetDir := Some(target.value / "site"),
     siteSourceDirectory := ornateTargetDir.value.get,
+    scalacOptions in Test :=
+      (scalacOptions in Test).value.filterNot(s =>
+        s.contains(SporesLogFlag) || s.contains("-Ydebug")),
     libraryDependencies ++= Seq(
       "ch.epfl.scala" %% "spores" % version.value,
       compilerPlugin("ch.epfl.scala" %% "spores-serialization" % version.value)

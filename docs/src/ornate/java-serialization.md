@@ -114,9 +114,7 @@ Because:
 positives if these externally defined classes are not serializable.
 1. Intermediate super classes cannot be `final`. Scala needs to guarantee that these classes
 are only defined in the current compilation unit, otherwise false positives could happen.
-1. The Scala compiler does not give us access to direct subclasses if the class hierarchy
-is not sealed. This is a well-known [limitation](https://issues.scala-lang.org/browse/SI-7046) of the Scala typer
-and may have a [partial fix soon](https://github.com/scala/scala/pull/5284).
+1. The Scala compiler does not give us access to direct subclasses if the class hierarchy is not sealed.
 
 #### The class Metamorphosis
 
@@ -126,7 +124,6 @@ have class definitions scattered across different packages, bring them to the sa
 and baptise the class hierarchy with `sealed` and `final` as described before.
 
 ```tut
-import scala.spores._
 sealed trait Foo extends Serializable
 final class Bar(b: Int) extends Foo
 final case class Baz(b: Int) extends Foo
@@ -143,21 +140,27 @@ spore {
 }
 ```
 
-The previous example compiles. If you don't seal the hierarchy, `spores-serialization`
-outputs the following error:
+The previous example compiles as expected. Let's see what happens with an open class hierarchy:
 
-```
-[warn] /your/path/File.scala:93: Detected open class hierarchy in `trait Foo`.
-[warn]   Transitive inspection cannot ensure that trait Foo is not being extended somewhere else. For a complete serializable check, class hierarchies need to be closed.
-[warn] 
-[warn] Solution: Close the class hierarchy by marking super classes as `sealed` and sub classes as `final`.
-[warn]      
-[warn]     trait Foo extends Serializable {val foo: String}
-[warn]           ^
+```tut
+trait Foo extends Serializable
+final class Bar(b: Int) extends Foo
+final case class Baz(b: Int) extends Foo
+
+// Force cast to Foo
+val foo1: Foo = Baz(1)
+val foo2: Foo = new Bar(2)
+val bar = new Bar(2)
+spore {
+  val capturedFoo1 = foo1
+  val capturedFoo2 = foo2
+  val capturedBar = bar
+  () => // spore logic using `capturedFoo1`, `capturedFoo2` and `capturedBar`
+}
 ```
 
-Notice that capturing subclasses like `Bar` or `Baz` will never cause an error
-because they are final and, by definition, have no subclass.
+Note that capturing subclasses like `Bar` or `Baz` is fine because they are
+final and, by definition, have no subclasses.
 
 #### An escape hatch
 
@@ -191,6 +194,11 @@ For the following code snippet, assume that `Foo` is a closed class hierarchy.
 ```tut
 import scala.spores._
 
+// Foo is now a closed class hierarchy
+sealed trait Foo extends Serializable
+final class Bar(b: Int) extends Foo
+final case class Baz(s: String) extends Foo
+
 class Wrapper[T <: Foo](val wrapped: List[T]) {
   val zippingSpore = spore {
     val captured = wrapped
@@ -218,16 +226,15 @@ val s = spore {
 }
 ```
 
-Why are these working examples? Because `Foo` is ensured to be an upper bound of
+Note that these examples work because `Foo` is ensured to be an upper bound of
 the type parameter and `Foo` is a closed class hierarchy.
 
-While the previous examples work, users can also set the upper bound to be
-`Serializable`:
+Users can also set the upper bound to be `Serializable`:
 
 ```tut
 import scala.spores._
 
-class Wrapper[T <: Serializable](val wrapped: List[T]) {
+class SerializableWrapper[T <: Serializable](val wrapped: List[T]) {
   val zippingSpore = spore {
     val captured = wrapped
     (xs: List[Int]) => xs.zip(captured)
@@ -235,17 +242,13 @@ class Wrapper[T <: Serializable](val wrapped: List[T]) {
 }
 ```
 
-But this results in the following warning when flag X is passed (TBD):
+But this is totally discouraged as it defeats the purpose of the transitive checker,
+which cannot prove from this point the full serializability of every type parameter of
+`SerializableWrapper`.
 
-```
-TBD
-```
-
-Generally, verifying that a type parameter extends `scala.Serializable` is not enough
+Verifying that a type parameter extends `scala.Serializable` is not enough
 to ensure the lack of type members because "serializable" classes may have fields
-that are not. The previous code snippet is **not the recommended way** to use `spores-serialization`.
-It's better to allow the compiler plugin to do all the work if you don't necessarily
-like debugging a runtime serialization error on a Sunday night.
+that are not.
 
 ### Transient fields
 
