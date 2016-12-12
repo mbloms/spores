@@ -11,7 +11,7 @@ import scala.spores.util.Feedback
 @RunWith(classOf[JUnit4])
 class CaptureNegSpec {
   @Test
-  def `wrong shape, incorrect val def list`() {
+  def `wrong shape, incorrect val def list`(): Unit = {
     expectError(Feedback.IncorrectSporeHeader) {
       """
         import scala.spores._
@@ -26,7 +26,7 @@ class CaptureNegSpec {
   }
 
   @Test
-  def `no lazy vals allowed`() {
+  def `no lazy vals allowed`(): Unit = {
     expectError(Feedback.InvalidLazyMember("v1")) {
       """
         import scala.spores._
@@ -39,7 +39,7 @@ class CaptureNegSpec {
   }
 
   @Test
-  def `no static selects are allowed in any path in 'capture'`() {
+  def `no static selects are allowed in any path in 'capture'`(): Unit = {
     expectError(Feedback.InvalidOuterReference("NoSelect.v1")) {
       """
         object NoSelect {
@@ -54,7 +54,7 @@ class CaptureNegSpec {
   }
 
   @Test
-  def `no selects are allowed in any path in 'capture'`() {
+  def `no selects are allowed in any path in 'capture'`(): Unit = {
     expectError(Feedback.InvalidOuterReference("noSelect.v1")) {
       """
         class NoSelect {
@@ -70,7 +70,7 @@ class CaptureNegSpec {
   }
 
   @Test
-  def `this is not allowed in 'capture'`() {
+  def `this is not allowed in 'capture'`(): Unit = {
     expectError(Feedback.InvalidOuterReference("this.v1")) {
       """
         class NoThisReference {
@@ -85,7 +85,7 @@ class CaptureNegSpec {
   }
 
   @Test
-  def `implicit this is not allowed in 'capture'`() {
+  def `implicit this is not allowed in 'capture'`(): Unit = {
     expectError(Feedback.InvalidOuterReference("NoThisReference.this.v1")) {
       """
         class NoThisReference {
