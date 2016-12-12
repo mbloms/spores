@@ -249,7 +249,7 @@ package object spores extends Versioning {
   /** Figure out whether the user explicitly set a spore type or not.
     *
     * We check the original tree before typer to figure out if
-    * the user used type args for [[scala.spores.spore]] or there is a
+    * the user used type args for `scala.spores.spore` or there is a
     * type ascription surrounding the spore tree. For more details,
     * see the docs in [[SporeGenerator]].
     */
