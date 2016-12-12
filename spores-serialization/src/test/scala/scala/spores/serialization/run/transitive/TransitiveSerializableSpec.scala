@@ -49,9 +49,10 @@ class TransitiveSerializableSpec {
   }
 
   @Test
-  def `Compile correctly type params annotated with Serializable, by default`(): Unit = {
+  def `Compile correctly type params annotated with Serializable, by default`()
+    : Unit = {
     import scala.spores.PrimitiveSerializationWitnesses._
-    final class SerializableTypeParam[T : CanSerialize](typedValue: T)
+    final class SerializableTypeParam[T: CanSerialize](typedValue: T)
         extends Serializable
     val foo = new SerializableTypeParam(1)
     val s = spore {
@@ -63,9 +64,9 @@ class TransitiveSerializableSpec {
   }
 
   @Test
-  def `Compile correctly type params not annotated with Serializable, by default`(): Unit = {
-    final class NoSerializableTypeParam[T](typedValue: T)
-      extends Serializable
+  def `Compile correctly type params not annotated with Serializable, by default`()
+    : Unit = {
+    final class NoSerializableTypeParam[T](typedValue: T) extends Serializable
     val foo = new NoSerializableTypeParam[Int](1)
     val s = spore {
       val captured = foo
@@ -78,19 +79,21 @@ class TransitiveSerializableSpec {
   @Test
   def `Correctly check recursive type`(): Unit = {
     sealed trait HList extends Product with Serializable
-    final case class ::[+H, +T <: HList](head : H, tail : T) extends HList
+    final case class ::[+H, +T <: HList](head: H, tail: T) extends HList
     case object HNil extends HList
     val foo = ::("", ::(1, HNil))
     val s = spore {
       val captured = foo
-      () => captured
+      () =>
+        captured
     }
   }
 
   @Test
-  def `Ignore type parameters that are bounded with closed hierarchies`(): Unit = {
+  def `Ignore type parameters that are bounded with closed hierarchies`()
+    : Unit = {
     final class DamnHowSerializableIAm extends Serializable
-    sealed trait Foo extends Serializable {val foo: String}
+    sealed trait Foo extends Serializable { val foo: String }
     final case class Bar(foo: String, bar: Int) extends Foo
     final case class Bar2(foo: String, bar2: Float) extends Foo
     final case class Baz(foo: String, damn: DamnHowSerializableIAm) extends Foo
@@ -98,105 +101,164 @@ class TransitiveSerializableSpec {
     class Wrapper[T <: Foo](val wrapped: T) {
       spore {
         val captured = wrapped
-        () => captured
+        () =>
+          captured
       }
     }
     assert(new Wrapper(Bar(new String(""), 11111)).wrapped.bar == 11111)
   }
 
   @Test
-  def `Ignore type parameters that are bounded with closed hierarchies in the presence of transitive parameters`(): Unit = {
+  def `Ignore type parameters that are bounded with closed hierarchies in the presence of transitive parameters`()
+    : Unit = {
     final class DamnHowSerializableIAm extends Serializable
-    sealed trait Foo extends Serializable {val foo: String}
+    sealed trait Foo extends Serializable { val foo: String }
     sealed class Bar2(val foo: String, val bar2: Float) extends Foo
     final case class Baz(foo: String, damn: DamnHowSerializableIAm) extends Foo
     sealed trait Bar3 extends Foo { val hehe: String }
-    final case class CatchMe(@transient a: Object, hehe: String, foo: String) extends Bar3
+    final case class CatchMe(@transient a: Object, hehe: String, foo: String)
+        extends Bar3
 
     class Wrapper[T <: Foo](val wrapped: T) {
       spore {
-          val captured = wrapped
-          () => captured
+        val captured = wrapped
+        () =>
+          captured
       }
     }
-    assert(new Wrapper(CatchMe(new String(""), "Hello, World!", "")).wrapped.hehe == "Hello, World!")
+    assert(
+      new Wrapper(CatchMe(new String(""), "Hello, World!", "")).wrapped.hehe == "Hello, World!")
   }
 
   @Test
-  def `Allow user to assume closed hierarchies for java/scala binaries in type parameters`(): Unit = {
+  def `Allow user to assume closed hierarchies for java/scala binaries in type parameters`()
+    : Unit = {
     class JavaWrapper[@assumeClosed T <: JavaFoo](val wrapped: T) {
       spore {
         val captured = wrapped
-        () => captured
+        () =>
+          captured
       }
     }
     assert(new JavaWrapper(new JavaBar("haha")).wrapped.getName == "haha")
   }
 
   @Test
-  def `Allow user to assume closed hierarchies for java/scala binaries in captured variables`(): Unit = {
+  def `Allow user to assume closed hierarchies for java/scala binaries in captured variables`()
+    : Unit = {
     val foo: JavaFoo = new JavaBar("Hello, World!")
     val s = spore {
       val captured = foo: @assumeClosed
-      () => captured
+      () =>
+        captured
     }
   }
 
   @Test
-  def `Allow user to assume closed hierarchies for java/scala binaries in type parameters of captured variables`(): Unit = {
+  def `Allow user to assume closed hierarchies for java/scala binaries in type parameters of captured variables`()
+    : Unit = {
     val foo: JavaFoo = new JavaBar("Hello, World!")
-    sealed class Wrapper[T <: java.io.Serializable](foo: T) extends Serializable
+    sealed class Wrapper[T <: java.io.Serializable](foo: T)
+        extends Serializable
 
     val wrapper = new Wrapper(foo: JavaFoo @assumeClosed)
     val s = spore {
       val captured: Wrapper[JavaFoo @assumeClosed] = wrapper
-      () => captured
+      () =>
+        captured
     }
   }
 
   @Test
-  def `Allow user to assume closed hierarchies for java/scala binaries in fields of captured variables`(): Unit = {
+  def `Allow user to assume closed hierarchies for java/scala binaries in fields of captured variables`()
+    : Unit = {
     val foo: JavaFoo = new JavaBar("Hello, World!")
     sealed class Wrapper(foo: JavaFoo @assumeClosed) extends Serializable
 
     val wrapper: Wrapper = new Wrapper(foo)
     val s = spore {
       val captured = wrapper
-      () => captured
+      () =>
+        captured
     }
   }
 
   @Test
   def `Compile a concrete instantiated closed class hierarchy`(): Unit = {
-    sealed trait Foo[T] extends Serializable {val foo: T}
+    sealed trait Foo[T] extends Serializable { val foo: T }
     final case class Bar[T](foo: T) extends Foo[T]
     val foo = Bar("muahaha")
     val s = spore {
       val captured = foo
-      () => captured
+      () =>
+        captured
     }
   }
 
   @Test
-  def `Compile a HK closed class hierarchy whose subclass defines more type parameters`(): Unit = {
-    sealed trait Foo[T] extends Serializable {val foo: T}
+  def `Compile a HK closed class hierarchy whose subclass defines more type parameters`()
+    : Unit = {
+    sealed trait Foo[T] extends Serializable { val foo: T }
     final case class ExtraBar[T, U](foo: T, bar: U) extends Foo[T]
     val foo = ExtraBar("muahaha", new Integer(1))
     val s = spore {
       val captured = foo
-      () => captured
+      () =>
+        captured
     }
   }
 
-
   @Test
-  def `Compile a HK closed class hierarchy whose subclass defines more type parameters and applies them in a reverse way`(): Unit = {
+  def `Compile a HK closed class hierarchy whose subclass defines more type parameters and applies them in a reverse way`()
+    : Unit = {
     sealed trait Foo[T] extends Serializable
     final case class ReversedExtraBar[T, U](foo: T, bar: U) extends Foo[U]
     val foo = ReversedExtraBar("muahaha", new Integer(1))
     val s = spore {
       val captured = foo
-      () => captured
+      () =>
+        captured
+    }
+  }
+
+  @Test
+  def `Handle refinement types when analysing closed class hierarchies`()
+    : Unit = {
+    sealed trait Foo extends Serializable
+    final class Bar(b: Int) extends Foo
+    final case class Baz(s: String) extends Foo
+
+    sealed class Wrapper[T <: Foo](val wrapped: List[T]) extends Serializable {
+      val zippingSpore = spore {
+        val captured = (wrapped, 1)
+        (xs: List[Foo]) =>
+          xs.zip(captured._1)
+      }
+    }
+  }
+
+  @Test
+  def `Handle refinement types when analysing closed class hierarchies II`()
+    : Unit = {
+    sealed trait Foo extends Serializable
+    final class Bar(b: Int) extends Foo
+    final case class Baz(s: String) extends Foo
+
+    sealed class Wrapper[T <: Foo](val wrapped: List[T]) extends Serializable {
+      // inferred as function
+      val zippingSpore = spore {
+        val captured = (wrapped, 1)
+        (xs: List[Foo]) =>
+          xs.zip(captured._1)
+      }
+      zippingSpore.apply(wrapped)
+    }
+
+    val wrapper = new Wrapper(List(Baz("Hello"), Baz("Hello")))
+    val s = spore {
+      val serializedWrapper = wrapper
+      () =>
+        serializedWrapper
     }
   }
 }

@@ -106,6 +106,9 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
       }
     }
 
+    @inline def isSpore(sym: Symbol) =
+      sym.tpe.finalResultType <:< sporeBaseType
+
     /** Analyze a class hierarchy based on its symbol info and the
       * annotations that were captured in the concrete field definition. */
     def analyzeClassHierarchy(sym: Symbol,
@@ -139,8 +142,7 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
 
     def checkMembers(sym: Symbol,
                      concreteType0: Option[Type] = None,
-                     concreteTypeArgs: List[Symbol] = Nil,
-                     isSpore: Boolean = false): Unit = {
+                     concreteTypeArgs: List[Symbol] = Nil): Unit = {
       val symbol = sym.initialize
       if (!canBeSerialized(symbol)) reportError(symbol)
       else {
@@ -162,11 +164,12 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
         val allMembers = (termMembers ++ tparamsBaseClassMembers).toList
         val noTransientFields = pruneScope(newScopeWith(allMembers: _*))
 
-        // Spores are not final => Excluded conversion macro
-        if (!isSpore && nonPrimitive(symbol)) {
+        // Spores class hierarchy is safe to serialize
+        val symIsSpore = isSpore(symbol)
+        if (!symIsSpore && nonPrimitive(symbol)) {
           val definedAnns = concreteType0.map(_.annotations).toList.flatten
           analyzeClassHierarchy(symbol, definedAnns, concreteType0)
-        } else if (isSpore) {
+        } else if (symIsSpore) {
           val captured = members.lookup(TermName(capturedSporeFieldName))
           if (!(captured eq NoSymbol)) {
             val capturedTpe = captured.tpe.finalResultType
@@ -202,11 +205,11 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
 
         // Inspect types of the captured class
         noTransientFields.foreach { field =>
-          val fieldSymbol = field.info.typeSymbol
+          val fieldSymbol = field.info.finalResultType.typeSymbol
           debuglog(s"Inspecting field of ${fieldSymbol.tpe}")
           if (fieldSymbol.isClass) {
             if (!fieldSymbol.asClass.isPrimitive) {
-              if (!canBeSerialized(field)) reportError(field)
+              if (!canBeSerialized(fieldSymbol)) reportError(field)
               else {
                 val typeArgs = field.info.typeArgs.map(_.typeSymbol)
                 debuglog(field.info.typeParams.mkString)
@@ -292,7 +295,7 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
       tree match {
         case cls: ClassDef if cls.symbol.tpe <:< sporeBaseType =>
           debuglog(s"First target of transitive analysis: ${cls.symbol}")
-          checkMembers(cls.symbol, isSpore = true)
+          checkMembers(cls.symbol)
           super.transform(tree)
           tree
         case _ =>
