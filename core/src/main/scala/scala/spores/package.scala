@@ -32,20 +32,16 @@ package object spores extends Versioning {
     }
   }
 
-  def settingToBoolean(expectedBoolean: String, default: => Boolean = false) = {
-    Try { expectedBoolean.toBoolean } recover {
-      // If value cannot be parsed as Boolean, default to false
-      case t: Throwable => default
-    } get
+  /* Check that the debug or print:spores flags are passed to output logs. */
+  @inline private[spores] def isDebugEnabled(ctx: whitebox.Context) = {
+    val settings = ctx.compilerSettings
+    settings.contains("-Xprint:spores") || settings.contains("-Ydebug")
   }
 
-  // TODO(jvican): Change this for compiler flag
-  // Change the default value to enable the macro debugging
-  private val defaultDebugProperty = System.getProperty("spores.debug")
-  val isDebugEnabled = settingToBoolean(defaultDebugProperty, default = true)
   private[spores] def debug(s: => String)(implicit line: sourcecode.Line,
-                                          file: sourcecode.File): Unit = {
-    if (isDebugEnabled) logger.elem(s)
+                                          file: sourcecode.File,
+                                          ctx: whitebox.Context): Unit = {
+    if (isDebugEnabled(ctx)) logger.elem(s)
   }
 
   /** Transform a term into a the body of a function. */

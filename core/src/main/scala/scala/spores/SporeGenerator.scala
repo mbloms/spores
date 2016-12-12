@@ -12,6 +12,7 @@ import scala.reflect.macros.whitebox
 import scala.spores.util.Feedback
 
 protected class SporeGenerator[C <: whitebox.Context](val ctx: C) {
+  implicit val c0 = ctx
   import ctx.universe._
 
   /** Create a tuple from trees. Note that signature is different than `createCapturedType`. */

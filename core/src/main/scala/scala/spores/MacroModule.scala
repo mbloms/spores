@@ -11,6 +11,7 @@ package scala.spores
 import scala.reflect.macros.whitebox
 
 private[spores] class MacroModule[C <: whitebox.Context](val c: C) {
+  implicit val c0 = c
   import c.universe._
 
   /* Don't change this name since it's used

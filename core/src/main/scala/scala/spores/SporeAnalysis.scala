@@ -4,7 +4,7 @@ import scala.reflect.macros.whitebox
 import scala.spores.util.Feedback
 
 protected class SporeAnalysis[C <: whitebox.Context with Singleton](val ctx: C) {
-
+  implicit val c0 = ctx
   import ctx.universe.Flag._
   import ctx.universe._
 
@@ -103,6 +103,7 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
     val sporeEnvironment: List[C#Symbol],
     val funSymbol: Option[C#Symbol],
     var declaredSymbols: List[C#Symbol]) {
+  implicit val c0 = ctx
   import ctx.universe._
 
   /** Check whether the owner chain of `sym` contains `owner`.

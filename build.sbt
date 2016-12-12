@@ -84,7 +84,10 @@ lazy val commonSettings = Seq(
   watchSources += baseDirectory.value / "resources",
   javaOptions += "-Dspores.debug=true",
   initialCommands in console in Compile := "import scala.spores._",
-  scalacOptions in (Compile, console) ++= compilerOptions,
+  scalacOptions in (Compile, console) ++=
+    compilerOptions :+ "-Xprint:spores",
+  scalacOptions in Test ++=
+    compilerOptions :+ "-Xprint:spores",
   testOptions in Test ++=
     List(Tests.Argument("-v"), Tests.Argument("-s"))
 )
