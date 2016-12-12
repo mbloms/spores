@@ -18,7 +18,7 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
   private val classPath = global.classPath.asURLs
   val JavaClassLoader = new URLClassLoader(classPath.toArray)
   val alreadyAnalyzed = new scala.collection.mutable.HashSet[Symbol]()
-  val areSerializable = new scala.collection.mutable.HashSet[Symbol]()
+  val serializable = new scala.collection.mutable.HashSet[Symbol]()
 
   /* Fetch `WeakTypeTag`s independently to avoid initialization issues. */
   object ExistentialShield {
@@ -94,7 +94,7 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
                         concreteType: Type = NoType) = {
       debuglog(s"Checking serializability of $sym")
       sym.isSerializable ||
-      areSerializable.contains(sym.tpe.typeSymbolDirect) || {
+      serializable.contains(sym.tpe.typeSymbolDirect) || {
         val evidences = members.filter(m =>
           m.isTerm && !m.isMethod && !m.isModule && m.isImplicit)
         evidences.filter { implicitEvidence =>
@@ -183,7 +183,7 @@ class TransitiveChecker[G <: scala.tools.nsc.Global](val global: G)
                 safeInferImplicit(canSerializeTpe, localTyper.context)
               debuglog(s"Implicit search result is $search")
               if (search.isSuccess)
-                areSerializable += targetTpe.typeSymbolDirect
+                serializable += targetTpe.typeSymbolDirect
               else debuglog(s"No `CanSerialize` implicit for $targetTpe")
             }
           }
