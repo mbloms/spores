@@ -204,11 +204,17 @@ package object spores extends Versioning {
     *
     * We check the original tree before typer to figure out if
     * the user used type args for `scala.spores.spore` or there is a
-    * type ascription surrounding the spore tree. For more details,
-    * see the docs in [[SporeGenerator]].
+    * type ascription surrounding the spore tree.
+    *
+    * This is necessary because whitebox macros override [[Nothing]]
+    * types because the type inferencer usually tries with it when
+    * type arguments are not explicit in the call site. We want to
+    * prevent any user from capturing [[Nothing]] and returning a
+    * capturing spore , so we whitelist these situations from the tree.
     */
   def isUserCapturingNothing(ctx: whitebox.Context) = {
     val ctxFields = ctx.getClass.getDeclaredFields
+
     // Hijack macro implementation to get scala compiler
     val universe = ctxFields.find(_.getName == "universe").get
     universe.setAccessible(true)
@@ -220,10 +226,9 @@ package object spores extends Versioning {
     tper.setAccessible(true)
     val typer = tper.get(ctx).asInstanceOf[ts.Typer]
 
-    // Get typed tree under macro application
+    // Get typed tree and untyped tree that went to typer
     val expandedSpore = ctx.macroApplication
     val sporePos = expandedSpore.pos
-    // Get tree that went to independent macro typer
     val originalTree = typer.context.tree.asInstanceOf[g.Tree]
 
     // Find the original spore untyped tree
@@ -245,7 +250,7 @@ package object spores extends Versioning {
       expectsCaptured
     }
 
-    // Check if user sets concrete type args
+    // Check if user invokes spore with a concrete `Nothing`
     var hasCapturedNothing = found match {
       case g.Apply(ta: g.TypeApply, _) =>
         val capturedType = ta.args.init.last
@@ -253,6 +258,7 @@ package object spores extends Versioning {
       case _ => false
     }
 
+    // Check if user explicitly captures `Nothing`
     if (!hasCapturedNothing) {
       originalTree foreach {
         case g.Typed(t, sporeType: g.Tree) if t == found =>

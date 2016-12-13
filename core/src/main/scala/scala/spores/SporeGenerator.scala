@@ -290,25 +290,7 @@ protected class SporeGenerator[C <: whitebox.Context](val ctx: C) {
   private val getName = q"this.getClass.getName"
   private val nothingTpe = definitions.NothingTpe
 
-  /** Generate a spore and instantiate based on its extracted information.
-    *
-    * The spore generation depends on what type users expects of a spore.
-    * Because of the `spore` macro definitions, we need to respect when the
-    * Scala typechecker tries luck inferring [[Nothing]] for Captured types.
-    *
-    * Depending on the situation, [[Nothing]] is respected or not. `explicitCaptured`
-    * is false when the user has not introduced [[Nothing]] explicitly, but the
-    * typechecker has. This happens when a spore is a parameter of a method with
-    * type Function. In these cases, whiteboxity does not apply and we are forced
-    * to generate a captured member of type [[Nothing]] even though we are capturing
-    * something. However, we don't care that our spore properties are not reflected
-    * in the type because this will happen when users don't expect a spore type.
-    *
-    * But if users expect a concrete `Captured` type, then we generate the correct
-    * `Captured` type member and make the typechecker fail. This will only happen
-    * when whitebox macros are not applicable (on the right hand side of a ValDef,
-    * for example).
-    * */
+  /** Generate a spore and instantiate based on its extracted information. */
   def generateSpore(sporeName: TypeName,
                     sporeType: Tree,
                     captured: Type,
@@ -318,22 +300,13 @@ protected class SporeGenerator[C <: whitebox.Context](val ctx: C) {
                     forceCaptured: Boolean,
                     expectedCaptured: Type) = {
 
-    /* We create a new spore type because in case that the user
-     * does not require a concrete spore type and Captured is nothing,
-     * the initializer for `SporeWithEnv` is executed and throws `???`.
-     * To avoid this, we convert `SporeWithEnv` to `Spore`. */
-    val (params, capturedTypeMember, finalSporeType) = {
-      if (captured =:= nothingTpe) // type is Spore, not SporeWithEnv
-        (Nil, q"type Captured = $captured", sporeType)
-      else
-        (List(q"val captured: $captured"),
-         q"type Captured = $captured",
-         sporeType)
-    }
+    val (params, capturedTypeMember) =
+      if (captured =:= nothingTpe) (Nil, q"type Captured = $captured")
+      else (List(q"val captured: $captured"), q"type Captured = $captured")
 
     val generatedCode = ctx.typecheck(q"""
       @scala.spores.sporeInfo[$captured, $excluded]
-      class $sporeName(..$params) extends $finalSporeType { self =>
+      class $sporeName(..$params) extends $sporeType { self =>
         $capturedTypeMember
         type Excluded = $excluded
         this._className = $getName
