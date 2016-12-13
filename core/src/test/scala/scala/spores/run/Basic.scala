@@ -441,7 +441,7 @@ class BasicSpec {
       })
 
       def expectsNothingCapturingSpore(s: Spore[String, _] {
-        type Captured = Nothing
+        type Captured = OuterReference
       }) = println(s)
 
       expectsNothingCapturingSpore(spore {

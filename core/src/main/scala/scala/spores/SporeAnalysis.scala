@@ -90,6 +90,38 @@ protected class SporeAnalysis[C <: whitebox.Context with Singleton](val ctx: C) 
     collector.traverse(sporeBody)
     collector.declaredSymbols
   }
+
+  private def isBottomType(btm: Type, tpe: Type) =
+    btm =:= definitions.NothingTpe && !(tpe =:= btm)
+
+  private val tuples = definitions.TupleClass.seq
+  def isTuple(tp: Type): Boolean =
+    tuples.exists(t => tp.typeSymbol.typeSignature =:= t.typeSignature)
+
+  /** Check that expected excluded type holds for a concrete spore body.
+    *
+    * @param excluded Expected user-defined excluded type member.
+    * @param captured Captured type to check for `Excluded` types.
+    */
+  def checkExcludedTypesInBody(excluded: Type, captured: Type) = {
+    if (!(excluded =:= definitions.NothingTpe)) {
+      val blacklist =
+        if (isTuple(excluded)) excluded.typeArgs
+        else List(excluded)
+      debug(s"Excluded types are $blacklist")
+      val usedTypes =
+        if (isTuple(captured)) captured.typeArgs
+        else List(captured)
+      usedTypes.foreach { tpe =>
+        blacklist.foreach { blacklisted =>
+          if (tpe <:< blacklisted && !isBottomType(tpe, blacklisted)) {
+            ctx.abort(ctx.enclosingPosition,
+                      Feedback.InvalidReferenceToExcludedType(tpe.toString))
+          }
+        }
+      }
+    }
+  }
 }
 
 /** Check that several spore properties hold in user-defined code.
@@ -174,43 +206,4 @@ protected class SporeChecker[C <: whitebox.Context with Singleton](val ctx: C)(
 
   def checkReferencesInBody(sporeBody: Tree) =
     ReferenceInspector.traverse(sporeBody)
-
-  /** Collect all type trees inside a spore body. */
-  private object ExcludedCollector extends Traverser {
-    var collected: List[TypeTree] = Nil
-    override def traverse(tree: Tree): Unit = tree match {
-      case tt @ TypeTree() => collected = tt :: collected
-      case _ => super.traverse(tree)
-    }
-  }
-
-  private def isBottomType(btm: Type, tpe: Type) =
-    btm =:= definitions.NothingTpe && !(tpe =:= btm)
-
-  val sporeEnvironmentCasted = sporeEnvironment.asInstanceOf[List[Symbol]]
-
-  /** Check that expected excluded type holds for a concrete spore body.
-    *
-    * @param excluded Expected user-defined excluded type member.
-    * @param sporeBody Spore body to be analyzed.
-    */
-  def checkExcludedTypesInBody(excluded: Type, sporeBody: Tree) = {
-    if (!(excluded =:= definitions.NothingTpe)) {
-      val isTuple = definitions.TupleClass.seq.exists(c =>
-        excluded.typeSymbol.typeSignature =:= c.typeSignature)
-      val blacklist = if (isTuple) excluded.typeArgs else List(excluded)
-      debug(s"Excluded types are $blacklist")
-      ExcludedCollector.traverse(sporeBody)
-      val usedTypes = ExcludedCollector.collected.map(_.symbol)
-      (usedTypes ++ sporeEnvironmentCasted).foreach { sym =>
-        val tpe = sym.typeSignature
-        blacklist.foreach { blacklisted =>
-          if (tpe <:< blacklisted && !isBottomType(tpe, blacklisted)) {
-            ctx.abort(sym.pos,
-                      Feedback.InvalidReferenceToExcludedType(tpe.toString))
-          }
-        }
-      }
-    }
-  }
 }

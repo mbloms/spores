@@ -325,14 +325,10 @@ protected class SporeGenerator[C <: whitebox.Context](val ctx: C) {
     val (params, capturedTypeMember, finalSporeType) = {
       if (captured =:= nothingTpe) // type is Spore, not SporeWithEnv
         (Nil, q"type Captured = $captured", sporeType)
-      else if (forceCaptured)
+      else
         (List(q"val captured: $captured"),
          q"type Captured = $captured",
          sporeType)
-      else
-        (List(q"val captured: $captured"),
-         q"type Captured = $expectedCaptured",
-         new WithEnvRemover(sporeType).transform(sporeType))
     }
 
     val generatedCode = ctx.typecheck(q"""
@@ -347,6 +343,6 @@ protected class SporeGenerator[C <: whitebox.Context](val ctx: C) {
       new $sporeName(..$constructorParams)
     """)
     debug(s"Generated code is: $generatedCode")
-    ctx.typecheck(generatedCode)
+    generatedCode
   }
 }
