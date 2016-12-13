@@ -469,4 +469,22 @@ class CaptureNegSpec {
        """.stripMargin
     }
   }
+
+
+  @Test def `Example in getting started`(): Unit = {
+    expectError(Feedback.InvalidReferenceTo("value outer1")) {
+      """import scala.spores._
+         |
+         |case class Person(name: String, age: Int)
+         |val outer1 = 0
+         |val outer2 = Person("Jim", 35)
+         |val s = spore {
+         |  val inner = outer2
+         |  (x: Int) => {
+         |    s"The result is: ${x + inner.age + outer1}"
+         |  }
+         |}
+       """.stripMargin
+    }
+  }
 }
