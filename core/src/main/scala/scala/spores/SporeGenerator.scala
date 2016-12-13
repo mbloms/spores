@@ -300,14 +300,14 @@ protected class SporeGenerator[C <: whitebox.Context](val ctx: C) {
                     forceCaptured: Boolean,
                     expectedCaptured: Type) = {
 
-    val (params, capturedTypeMember) =
-      if (captured =:= nothingTpe) (Nil, q"type Captured = $captured")
-      else (List(q"val captured: $captured"), q"type Captured = $captured")
+    val params =
+      if (captured =:= nothingTpe) Nil
+      else List(q"val captured: $captured")
 
     val generatedCode = ctx.typecheck(q"""
       @scala.spores.sporeInfo[$captured, $excluded]
       class $sporeName(..$params) extends $sporeType { self =>
-        $capturedTypeMember
+        type Captured = $captured
         type Excluded = $excluded
         this._className = $getName
         def skipScalaSamConversion: Nothing = ???
