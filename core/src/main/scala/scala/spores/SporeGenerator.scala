@@ -275,18 +275,6 @@ protected class SporeGenerator[C <: whitebox.Context](val ctx: C) {
     tq"$sporesPath.$finalSporeName[..$targs]"
   }
 
-  /** Rename the already created spore type to a simple spore. */
-  private class WithEnvRemover(sporeTypeTree: Tree) extends Transformer {
-    override def transform(tree: Tree): Tree = tree match {
-      case a @ AppliedTypeTree(s @ Select(prefix, name), targs) =>
-        val nameString = name.decodedName.toString
-        val newSporeName = TypeName(nameString.replace("WithEnv", ""))
-        val newSporeType = treeCopy.Select(s, prefix, newSporeName)
-        treeCopy.AppliedTypeTree(a, newSporeType, targs)
-      case _ => super.transform(tree)
-    }
-  }
-
   private val getName = q"this.getClass.getName"
   private val nothingTpe = definitions.NothingTpe
 
