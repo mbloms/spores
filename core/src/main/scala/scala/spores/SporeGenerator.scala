@@ -336,6 +336,7 @@ protected class SporeGenerator[C <: whitebox.Context](val ctx: C) {
     }
 
     val generatedCode = ctx.typecheck(q"""
+      @scala.spores.sporeInfo[$captured, $excluded]
       class $sporeName(..$params) extends $finalSporeType { self =>
         $capturedTypeMember
         type Excluded = $excluded
