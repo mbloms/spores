@@ -79,7 +79,7 @@ lazy val compilerOptions = Seq(
   "-Xlint"
 )
 
-val SporesLogFlag = "-Xprint:spores"
+val SporesLogFlag = "-Xmacro-settings:debug-spores"
 lazy val commonSettings = Seq(
   triggeredMessage in ThisBuild := Watched.clearWhenTriggered,
   watchSources += baseDirectory.value / "resources",

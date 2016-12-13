@@ -34,8 +34,8 @@ package object spores extends Versioning {
 
   /* Check that the debug or print:spores flags are passed to output logs. */
   @inline private[spores] def isDebugEnabled(ctx: whitebox.Context) = {
-    val settings = ctx.compilerSettings
-    settings.contains("-Xprint:spores") || settings.contains("-Ydebug")
+    ctx.settings.contains("debug-spores") ||
+    ctx.compilerSettings.contains("-Ydebug")
   }
 
   private[spores] def debug(s: => String)(implicit line: sourcecode.Line,
