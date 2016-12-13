@@ -118,6 +118,7 @@ of the closure body have to be either:
 4. *statically* accessible (members of objects | packages).
 
 ```tut
+{
 case class Person(name: String, age: Int)
 val outer1 = 0
 val outer2 = Person("Jim", 35)
@@ -126,6 +127,7 @@ val s = spore {
   (x: Int) => {
     s"The result is: ${x + inner.age + outer1}"
   }
+}
 }
 ```
 
