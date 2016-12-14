@@ -108,7 +108,26 @@ lazy val root = project
              `spores-serialization`)
   .dependsOn(`spores-core-jvm`, `spores-core-js`)
 
+/* Write all the compile-time dependencies of the spores macro to a file,
+ * in order to read it from the created Toolbox to run the neg tests. */
+lazy val generateToolboxClasspath = Def.task {
+  val classpathAttributes = (dependencyClasspath in Compile).value
+  val dependenciesClasspath =
+    classpathAttributes.map(_.data.getAbsolutePath).mkString(":")
+  val scalaBinVersion = (scalaBinaryVersion in Compile).value
+  val targetDir = (target in Compile).value
+  val compiledClassesDir = targetDir / s"scala-$scalaBinVersion/classes"
+  val testClassesDir = targetDir / s"scala-$scalaBinVersion/test-classes"
+  val classpath = s"$compiledClassesDir:$testClassesDir:$dependenciesClasspath"
+  val resourceDir = (resourceDirectory in Compile).value
+  resourceDir.mkdir() // In case it doesn't exist
+  val toolboxTestClasspath = resourceDir / "toolbox.classpath"
+  IO.write(toolboxTestClasspath, classpath)
+  List(toolboxTestClasspath.getAbsoluteFile)
+}
+
 lazy val `spores-core` = crossProject
+  .crossType(CrossType.Pure)
   .in(file("core"))
   .settings(allSettings: _*)
   .settings(baseDependencies: _*)
@@ -117,22 +136,7 @@ lazy val `spores-core` = crossProject
       "org.scala-lang" % "scala-compiler" % scalaVersion.value,
     resourceDirectory in Compile := baseDirectory.value / "resources",
     parallelExecution in Test := false,
-    /* Write all the compile-time dependencies of the spores macro to a file,
-     * in order to read it from the created Toolbox to run the neg tests. */
-    resourceGenerators in Compile += Def.task {
-      val classpathAttributes = (dependencyClasspath in Compile).value
-      val dependenciesClasspath =
-        classpathAttributes.map(_.data.getAbsolutePath).mkString(":")
-      val scalaBinVersion = (scalaBinaryVersion in Compile).value
-      val targetDir = (target in Compile).value
-      val compiledClassesDir = targetDir / s"scala-$scalaBinVersion/classes"
-      val classpath = s"$compiledClassesDir:$dependenciesClasspath"
-      val resourceDir = (resourceDirectory in Compile).value
-      resourceDir.mkdir() // In case it doesn't exist
-      val toolboxTestClasspath = resourceDir / "toolbox.classpath"
-      IO.write(toolboxTestClasspath, classpath)
-      List(toolboxTestClasspath.getAbsoluteFile)
-    }.taskValue
+    resourceGenerators in Compile += generateToolboxClasspath.taskValue
   )
   .jsSettings()
   .jvmSettings(fork in Test := true)
@@ -165,6 +169,10 @@ lazy val `spores-serialization` = project
     assemblyOption in assembly :=
       (assemblyOption in assembly).value
         .copy(includeScala = false, includeDependency = true),
+    assemblyMergeStrategy in assembly := {
+      case "toolbox.classpath" => MergeStrategy.last
+      case x => (assemblyMergeStrategy in assembly).value(x)
+    },
     scalacOptions in Test ++= {
       val compiledPlugin = assembly.value
       Seq(
@@ -175,6 +183,7 @@ lazy val `spores-serialization` = project
     },
     scalacOptions in console in Compile ++= (scalacOptions in Test).value,
     javaOptions in console in Compile ++= (javaOptions in Test).value,
+    resourceGenerators in Compile += generateToolboxClasspath.taskValue,
     resourceGenerators in Test += Def.task {
       val options = (scalacOptions in Test).value
       val extraOptions = options.filterNot(_ == "-Ydebug").mkString(" ")
