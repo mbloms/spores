@@ -39,7 +39,7 @@ correct serializability of your spores.
 
 ### An example
 
-```tut
+```tut:book
 import scala.spores._
 val s = spore {
   val capturedInt = 8
@@ -123,7 +123,7 @@ Ensure that all the captured variables in your spores are serializable and close
 have class definitions scattered across different packages, bring them to the same file
 and baptise the class hierarchy with `sealed` and `final` as described before.
 
-```tut
+```tut:book
 sealed trait Foo extends Serializable
 final class Bar(b: Int) extends Foo
 final case class Baz(b: Int) extends Foo
@@ -142,7 +142,7 @@ spore {
 
 The previous example compiles as expected. Let's see what happens with an open class hierarchy:
 
-```tut
+```tut:book
 trait Foo extends Serializable
 final class Bar(b: Int) extends Foo
 final case class Baz(b: Int) extends Foo
@@ -169,7 +169,7 @@ close their class hierarchy. The annotation tells the compiler to assume that th
 capturing is closed, but unfortunately no analysis of the subclasses is performed (SI-7046).
 Therefore, its use is discouraged and only left for intrepid developers that like risk.
 
-```tut
+```tut:book
 import scala.spores._
 trait Foo extends Serializable
 final class Bar(b: Int) extends Foo
@@ -191,7 +191,7 @@ the captured types are not fully defined.
 
 For the following code snippet, assume that `Foo` is a closed class hierarchy.
 
-```tut
+```tut:book
 import scala.spores._
 
 // Foo is now a closed class hierarchy
@@ -209,7 +209,7 @@ class Wrapper[T <: Foo](val wrapped: List[T]) {
 
 And if the wrapper is `Serializable`, you can even send it accross the wire:
 
-```tut
+```tut:book
 import scala.spores._
 
 sealed class Wrapper[T <: Foo](val wrapped: List[T]) extends Serializable {
@@ -231,7 +231,7 @@ the type parameter and `Foo` is a closed class hierarchy.
 
 Users can also set the upper bound to be `Serializable`:
 
-```tut
+```tut:book
 import scala.spores._
 
 class SerializableWrapper[T <: Serializable](val wrapped: List[T]) {
@@ -269,7 +269,7 @@ To overcome this limitation, the compiler plugin uses implicits to prove that a 
 For proving it, you need to provide an implicit `CanSerialize[FooVal]` in the scope of
 the spore definition.
 
-```tut
+```tut:book
 import scala.spores._
 
 // Value class definition somewhere

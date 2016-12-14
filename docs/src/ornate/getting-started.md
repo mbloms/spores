@@ -28,7 +28,7 @@ import scala.spores._
 
 Spores have a few modes of usage. The simplest form is:
 
-```tut
+```tut:book
 val outerInt = 1717
 val s = spore {
   val i = outerInt
@@ -63,7 +63,7 @@ Finally, a regular function literal can be used as a spore. That is, a method
 that expects a spore can be passed a function literal so long as the function
 literal is well-formed.
 
-```tut
+```tut:book
 def sendOverWire(s: Spore[Int, Int]): Unit = println(s)
 sendOverWire((x: Int) => x * x - 2)
 ```
@@ -75,7 +75,7 @@ closure-like objects, in a way where the environment is controlled.
 
 A spore is created as follows.
 
-```tut
+```tut:book
 val outerInt = 1717
 val s = spore {
   val i = outerInt
@@ -117,7 +117,7 @@ of the closure body have to be either:
 3. marked using `capture` (see corresponding section below), or
 4. *statically* accessible (members of objects | packages).
 
-```tut
+```tut:fail:book
 {
 case class Person(name: String, age: Int)
 val outer1 = 0
