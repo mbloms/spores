@@ -77,7 +77,10 @@ private[spores] class MacroModule[C <: whitebox.Context](val c: C) {
     })
 
     val q"new ${_}(...$init)" = instantiation
-    val conversion = q"{$newSporeDef; new $newName(...$init)}"
+    val conversion = q"""{
+      $newSporeDef: @scala.spores.sporeInfo[$captured, $expectedExcluded]
+      new $newName(...$init)
+    }"""
     debug(s"Generated conversion:\n$conversion")
     conversion
   }
