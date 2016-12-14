@@ -7,8 +7,7 @@ lazy val buildSettings = Seq(
   organizationHomepage := Some(new URL("https://scala.epfl.ch")),
   scalaVersion := "2.11.8",
   // 2.12 is not yet available because of SI-10009
-  crossScalaVersions := Seq("2.11.8", "2.12.1"),
-  fork in Test := true
+  crossScalaVersions := Seq("2.11.8", "2.12.1")
 )
 
 lazy val testDependencies = Seq(
@@ -20,8 +19,8 @@ lazy val baseDependencies = {
   libraryDependencies ++= Seq(
     "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
     "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test",
-    "com.lihaoyi" %% "sourcecode" % "0.1.3",
-    "com.lihaoyi" %% "fansi" % "0.2.3"
+    "com.lihaoyi" %%% "sourcecode" % "0.1.3",
+    "com.lihaoyi" %%% "fansi" % "0.2.3"
   ) ++ testDependencies
 }
 
@@ -103,17 +102,17 @@ lazy val root = project
   .in(file("."))
   .settings(allSettings)
   .settings(noPublish)
-  .aggregate(`spores-core`, `spores-pickling`, `spores-serialization`)
-  .dependsOn(`spores-core`)
+  .aggregate(`spores-core-jvm`,
+             `spores-core-js`,
+             `spores-pickling`,
+             `spores-serialization`)
+  .dependsOn(`spores-core-jvm`, `spores-core-js`)
 
-lazy val `spores-core` = project
-  .copy(id = "spores")
+lazy val `spores-core` = crossProject
   .in(file("core"))
-  .settings(allSettings)
-  .settings(baseDependencies)
+  .settings(allSettings: _*)
+  .settings(baseDependencies: _*)
   .settings(
-    libraryDependencies +=
-      "org.scala-lang" % "scala-compiler" % scalaVersion.value,
     resourceDirectory in Compile := baseDirectory.value / "resources",
     parallelExecution in Test := false,
     /* Write all the compile-time dependencies of the spores macro to a file,
@@ -133,11 +132,23 @@ lazy val `spores-core` = project
       List(toolboxTestClasspath.getAbsoluteFile)
     }.taskValue
   )
+  .jvmSettings(
+    fork in Test := true,
+    libraryDependencies +=
+      "org.scala-lang" % "scala-compiler" % scalaVersion.value
+  )
+  .jsSettings(
+    libraryDependencies +=
+      "org.scala-lang" %%% "scala-compiler" % scalaVersion.value
+  )
+
+lazy val `spores-core-jvm` = `spores-core`.jvm
+lazy val `spores-core-js` = `spores-core`.js
 
 lazy val `spores-pickling` = project
   .settings(allSettings)
   .settings(baseDependencies)
-  .dependsOn(`spores-core`)
+  .dependsOn(`spores-core-jvm`)
   .settings(
     libraryDependencies +=
       "org.scala-lang.modules" %% "scala-pickling" % "0.11.0-M2",
@@ -147,12 +158,12 @@ lazy val `spores-pickling` = project
 
 lazy val `spores-serialization` = project
   .settings(allSettings)
-  .dependsOn(`spores-core`)
+  .dependsOn(`spores-core-jvm`)
   .settings(
     // Make sure that java classes are in the classpath
     compileOrder := CompileOrder.JavaThenScala,
     resourceDirectories in Test +=
-      (resourceDirectory in Compile in `spores-core`).value,
+      (resourceDirectory in Compile in `spores-core-jvm`).value,
     libraryDependencies ++= testDependencies :+
       "org.scala-lang" % "scala-compiler" % scalaVersion.value,
     test in assembly := {},
