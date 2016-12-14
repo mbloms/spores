@@ -1,8 +1,8 @@
 # Getting started
 
-> {.note}
-> If you want to use spores for serialization, read the [Basics](#basics)
-> and jump to the [Java Serialization guide](java-serialization.md).
+In this tutorial, we dive into spores, explain its foundations and why they are
+necessary. If you want to use spores for serialization, read on the [Basics](#basics)
+and jump to the [Java Serialization guide](java-serialization.md).
 
 
 ## Installation
