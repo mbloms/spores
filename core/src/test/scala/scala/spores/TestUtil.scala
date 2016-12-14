@@ -38,7 +38,7 @@ object TestUtil {
 
   def expectError(
       errorSnippet: String,
-      compileOptions: String = "",
+      compileOptions: String = "-Xmacro-settings:debug-spores",
       baseCompileOptions: String = s"-cp $toolboxClasspath")(code: String) {
     val errorMessage = intercept[ToolBoxError] {
       eval(code, s"$compileOptions $baseCompileOptions")
