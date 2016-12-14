@@ -173,11 +173,113 @@ package object spores extends Versioning {
   ////////////////////////////// SPORE CONVERSIONS //////////////////////////////
   ///////////////////////////////////////////////////////////////////////////////
 
-  /** Implicit conversions from functions to spore do not always kick in the
-    * presence of type members due to some misbehaviours of the type checker.
-    * Use a non-refined return type to dodge them and rely on whiteboxity. */
   implicit def function2Spore[T, R, C, E](fun: T => R): Spore[T, R] =
     macro sporeImpl[T, R, C, E]
+
+  implicit def function2Spore[T1, T2, R, C, E](
+    fun: (T1, T2) => R)
+  : Spore2[T1, T2, R] =
+    macro spore2Impl[T1, T2, R, C, E]
+      
+  implicit def function2Spore[T1, T2, T3, R, C, E](
+    fun: (T1, T2, T3) => R)
+  : Spore3[T1, T2, T3, R] =
+    macro spore3Impl[T1, T2, T3, R, C, E]
+      
+  implicit def function2Spore[T1, T2, T3, T4, R, C, E](
+    fun: (T1, T2, T3, T4) => R)
+  : Spore4[T1, T2, T3, T4, R] =
+    macro spore4Impl[T1, T2, T3, T4, R, C, E]
+      
+  implicit def function2Spore[T1, T2, T3, T4, T5, R, C, E](
+    fun: (T1, T2, T3, T4, T5) => R)
+  : Spore5[T1, T2, T3, T4, T5, R] =
+    macro spore5Impl[T1, T2, T3, T4, T5, R, C, E]
+      
+  implicit def function2Spore[T1, T2, T3, T4, T5, T6, R, C, E](
+    fun: (T1, T2, T3, T4, T5, T6) => R)
+  : Spore6[T1, T2, T3, T4, T5, T6, R] =
+    macro spore6Impl[T1, T2, T3, T4, T5, T6, R, C, E]
+      
+  implicit def function2Spore[T1, T2, T3, T4, T5, T6, T7, R, C, E](
+    fun: (T1, T2, T3, T4, T5, T6, T7) => R)
+  : Spore7[T1, T2, T3, T4, T5, T6, T7, R] =
+    macro spore7Impl[T1, T2, T3, T4, T5, T6, T7, R, C, E]
+      
+  implicit def function2Spore[T1, T2, T3, T4, T5, T6, T7, T8, R, C, E](
+    fun: (T1, T2, T3, T4, T5, T6, T7, T8) => R)
+  : Spore8[T1, T2, T3, T4, T5, T6, T7, T8, R] =
+    macro spore8Impl[T1, T2, T3, T4, T5, T6, T7, T8, R, C, E]
+      
+  implicit def function2Spore[T1, T2, T3, T4, T5, T6, T7, T8, T9, R, C, E](
+    fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9) => R)
+  : Spore9[T1, T2, T3, T4, T5, T6, T7, T8, T9, R] =
+    macro spore9Impl[T1, T2, T3, T4, T5, T6, T7, T8, T9, R, C, E]
+      
+  implicit def function2Spore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, R, C, E](
+    fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10) => R)
+  : Spore10[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, R] =
+    macro spore10Impl[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, R, C, E]
+      
+  implicit def function2Spore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, R, C, E](
+    fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11) => R)
+  : Spore11[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, R] =
+    macro spore11Impl[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, R, C, E]
+      
+  implicit def function2Spore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, R, C, E](
+    fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12) => R)
+  : Spore12[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, R] =
+    macro spore12Impl[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, R, C, E]
+      
+  implicit def function2Spore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, R, C, E](
+    fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13) => R)
+  : Spore13[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, R] =
+    macro spore13Impl[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, R, C, E]
+      
+  implicit def function2Spore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, R, C, E](
+    fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14) => R)
+  : Spore14[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, R] =
+    macro spore14Impl[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, R, C, E]
+      
+  implicit def function2Spore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, R, C, E](
+    fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15) => R)
+  : Spore15[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, R] =
+    macro spore15Impl[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, R, C, E]
+      
+  implicit def function2Spore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, R, C, E](
+    fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16) => R)
+  : Spore16[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, R] =
+    macro spore16Impl[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, R, C, E]
+      
+  implicit def function2Spore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, R, C, E](
+    fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17) => R)
+  : Spore17[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, R] =
+    macro spore17Impl[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, R, C, E]
+      
+  implicit def function2Spore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, R, C, E](
+    fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18) => R)
+  : Spore18[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, R] =
+    macro spore18Impl[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, R, C, E]
+      
+  implicit def function2Spore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, R, C, E](
+    fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19) => R)
+  : Spore19[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, R] =
+    macro spore19Impl[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, R, C, E]
+      
+  implicit def function2Spore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, R, C, E](
+    fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20) => R)
+  : Spore20[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, R] =
+    macro spore20Impl[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, R, C, E]
+      
+  implicit def function2Spore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, R, C, E](
+    fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21) => R)
+  : Spore21[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, R] =
+    macro spore21Impl[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, R, C, E]
+      
+  implicit def function2Spore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, R, C, E](
+    fun: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22) => R)
+  : Spore22[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, R] =
+    macro spore22Impl[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, R, C, E]
 
   ///////////////////////////////////////////////////////////////////////////////
   //////////////////////////// SPORE MACRO PROXIES //////////////////////////////
@@ -250,11 +352,20 @@ package object spores extends Versioning {
       expectsCaptured
     }
 
+    def isSporeFunTree(funTree: g.Tree) = funTree match {
+      case g.Ident(name) =>
+        val funName = name.decodedName.toString
+        funName == "spore" || funName == "scala.spores.spore"
+      case _ => false
+    }
+
     // Check if user invokes spore with a concrete `Nothing`
     var hasCapturedNothing = found match {
-      case g.Apply(ta: g.TypeApply, _) =>
-        val capturedType = ta.args.init.last
-        capturedType.toString == "Nothing"
+      case g.Apply(ta @ g.TypeApply(funTree: g.Tree, _), _) =>
+        isSporeFunTree(funTree) && {
+          val capturedType = ta.args.init.last
+          capturedType.toString == "Nothing"
+        }
       case _ => false
     }
 
