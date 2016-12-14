@@ -340,12 +340,21 @@ package object spores extends Versioning {
         found = t
     }
 
+    def isCapturedNothing(tree: g.Tree) = tree match {
+      case g.Ident(name0) =>
+        val name = name0.decodedName.toString
+        name0.isTypeName &&
+        name == "Nothing" || name == "scala.Nothing"
+      case _ => false
+    }
+
     def capturesNothing(sporeType: g.Tree) = {
       var expectsCaptured = false
       sporeType.foreach {
-        case g.TypeDef(_, name, _, g.Ident(nothingIdent))
-          if name.decodedName.toString == "Captured" &&
-            nothingIdent.decodedName.toString == "Nothing" =>
+        case g.TypeDef(_, name, _, rhs: g.Tree)
+          if name.isTypeName &&
+             name.decodedName.toString == "Captured" &&
+             isCapturedNothing(rhs) =>
           expectsCaptured = true
         case _ =>
       }
@@ -362,10 +371,8 @@ package object spores extends Versioning {
     // Check if user invokes spore with a concrete `Nothing`
     var hasCapturedNothing = found match {
       case g.Apply(ta @ g.TypeApply(funTree: g.Tree, _), _) =>
-        isSporeFunTree(funTree) && {
-          val capturedType = ta.args.init.last
-          capturedType.toString == "Nothing"
-        }
+        isSporeFunTree(funTree) &&
+        isCapturedNothing(ta.args.init.last.asInstanceOf[g.Tree])
       case _ => false
     }
 
@@ -373,7 +380,8 @@ package object spores extends Versioning {
     if (!hasCapturedNothing) {
       originalTree foreach {
         case g.Typed(t, sporeType: g.Tree) if t == found =>
-          capturesNothing(sporeType)
+          if (!hasCapturedNothing)
+            hasCapturedNothing = capturesNothing(sporeType)
         case g.ValDef(_, _, sporeType: g.Tree, rhs) if rhs == found =>
           val expectsCaptured = capturesNothing(sporeType)
           if (!hasCapturedNothing && expectsCaptured)
