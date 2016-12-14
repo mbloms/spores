@@ -18,6 +18,7 @@ trait SimpleSporePicklers {
   def genSimpleSporePicklerUnpicklerTemplate(c: blackbox.Context)
     (seedPicklerName: String, sporeType: c.Tree): c.Tree = {
 
+    implicit val ctx0 = c
     import c.universe._
 
     val utils = new PicklerUtils[c.type](c)
@@ -65,6 +66,7 @@ trait SimpleSporePicklers {
   def genNullarySporePicklerImpl
       [T: c.WeakTypeTag](c: blackbox.Context): c.Tree = {
 
+    implicit val ctx0 = c
     import c.universe._
 
     val ttpe = weakTypeOf[T]
@@ -80,6 +82,7 @@ trait SimpleSporePicklers {
   def genSimpleSporePicklerImpl
       [T: c.WeakTypeTag, R: c.WeakTypeTag](c: blackbox.Context): c.Tree = {
 
+    implicit val ctx0 = c
     import c.universe._
 
     val ttpe = weakTypeOf[T]
@@ -97,6 +100,7 @@ trait SimpleSporePicklers {
       [T1: c.WeakTypeTag, T2: c.WeakTypeTag, R: c.WeakTypeTag]
       (c: blackbox.Context): c.Tree = {
 
+    implicit val ctx0 = c
     import c.universe._
 
     val t1tpe = weakTypeOf[T1]
@@ -115,6 +119,7 @@ trait SimpleSporePicklers {
       [T1: c.WeakTypeTag, T2: c.WeakTypeTag, T3: c.WeakTypeTag, R: c.WeakTypeTag]
       (c: blackbox.Context): c.Tree = {
 
+    implicit val ctx0 = c
     import c.universe._
 
     val t1tpe = weakTypeOf[T1]

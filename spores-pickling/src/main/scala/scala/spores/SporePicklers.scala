@@ -50,6 +50,7 @@ trait SporePicklers extends SimpleSporePicklers {
   def genSporePicklerUnpicklerTemplate[U: c.WeakTypeTag]
       (c: blackbox.Context)(sporeType: c.Tree, sporeSubType: c.Tree): c.Tree = {
 
+    implicit val ctx0 = c
     import c.universe._
 
     val utpe = weakTypeOf[U].dealias
@@ -126,6 +127,7 @@ trait SporePicklers extends SimpleSporePicklers {
   def genNullarySporePicklerUnpicklerImpl
       [T: c.WeakTypeTag, U: c.WeakTypeTag](c: blackbox.Context): c.Tree = {
 
+    implicit val ctx0 = c
     import c.universe._
 
     val ttpe = weakTypeOf[T]
@@ -147,6 +149,7 @@ trait SporePicklers extends SimpleSporePicklers {
       [T: c.WeakTypeTag, R: c.WeakTypeTag, U: c.WeakTypeTag]
       (c: blackbox.Context): c.Tree = {
 
+    implicit val ctx0 = c
     import c.universe._
 
     val ttpe = weakTypeOf[T]
@@ -169,6 +172,7 @@ trait SporePicklers extends SimpleSporePicklers {
       [T: c.WeakTypeTag, R: c.WeakTypeTag, U: c.WeakTypeTag]
       (c: blackbox.Context): c.Tree = {
 
+    implicit val ctx0 = c
     import c.universe._
 
     val ttpe = weakTypeOf[T]
@@ -190,6 +194,7 @@ trait SporePicklers extends SimpleSporePicklers {
       [T: c.WeakTypeTag, U: c.WeakTypeTag]
       (c: blackbox.Context): c.Tree = {
 
+    implicit val ctx0 = c
     import c.universe._
 
     val ttpe = weakTypeOf[T]
@@ -210,6 +215,7 @@ trait SporePicklers extends SimpleSporePicklers {
       [T1: c.WeakTypeTag, T2: c.WeakTypeTag, R: c.WeakTypeTag, U: c.WeakTypeTag]
       (c: blackbox.Context): c.Tree = {
 
+    implicit val ctx0 = c
     import c.universe._
 
     val t1pe = weakTypeOf[T1]
@@ -233,6 +239,7 @@ trait SporePicklers extends SimpleSporePicklers {
       [T1: c.WeakTypeTag, T2: c.WeakTypeTag, R: c.WeakTypeTag, U: c.WeakTypeTag]
       (c: blackbox.Context): c.Tree = {
 
+    implicit val ctx0 = c
     import c.universe._
 
     val t1pe = weakTypeOf[T1]
@@ -255,6 +262,7 @@ trait SporePicklers extends SimpleSporePicklers {
       [T1: c.WeakTypeTag, T2: c.WeakTypeTag, T3: c.WeakTypeTag, R: c.WeakTypeTag, U: c.WeakTypeTag]
       (c: blackbox.Context): c.Tree = {
 
+    implicit val ctx0 = c
     import c.universe._
 
     val t1pe = weakTypeOf[T1]
@@ -279,6 +287,7 @@ trait SporePicklers extends SimpleSporePicklers {
       [T1: c.WeakTypeTag, T2: c.WeakTypeTag, T3: c.WeakTypeTag, R: c.WeakTypeTag, U: c.WeakTypeTag]
       (c: blackbox.Context): c.Tree = {
 
+    implicit val ctx0 = c
     import c.universe._
 
     val t1pe = weakTypeOf[T1]
@@ -310,7 +319,7 @@ trait SporePicklers extends SimpleSporePicklers {
     */
   def genSporeUnpicklerFetcherTemplate(c: blackbox.Context)
                                       (sporeType: c.Tree): c.Tree = {
-
+    implicit val ctx0 = c
     import c.universe._
 
     val utils = new PicklerUtils[c.type](c)
@@ -346,6 +355,7 @@ trait SporePicklers extends SimpleSporePicklers {
   def genSporeUnpicklerImpl
     [T: c.WeakTypeTag, R: c.WeakTypeTag](c: blackbox.Context): c.Tree = {
 
+    implicit val ctx0 = c
     import c.universe._
 
     val ttpe = weakTypeOf[T]
@@ -360,6 +370,7 @@ trait SporePicklers extends SimpleSporePicklers {
   def genNullarySporeUnpicklerImpl
     [T: c.WeakTypeTag](c: blackbox.Context): c.Tree = {
 
+    implicit val ctx0 = c
     import c.universe._
 
     val ttpe = weakTypeOf[T]
@@ -374,6 +385,7 @@ trait SporePicklers extends SimpleSporePicklers {
       [T: c.WeakTypeTag, R: c.WeakTypeTag, U: c.WeakTypeTag]
       (c: blackbox.Context): c.Tree = {
 
+    implicit val ctx0 = c
     import c.universe._
 
     val ttpe = weakTypeOf[T]
@@ -399,6 +411,7 @@ trait SporePicklers extends SimpleSporePicklers {
   def genNullarySporeCapturedUnpicklerImpl
       [T: c.WeakTypeTag, U: c.WeakTypeTag](c: blackbox.Context): c.Tree = {
 
+    implicit val ctx0 = c
     import c.universe._
 
     val ttpe = weakTypeOf[T]
@@ -424,6 +437,7 @@ trait SporePicklers extends SimpleSporePicklers {
       [T1: c.WeakTypeTag, T2: c.WeakTypeTag, R: c.WeakTypeTag]
       (c: blackbox.Context): c.Tree = {
 
+    implicit val ctx0 = c
     import c.universe._
 
     val t1pe = weakTypeOf[T1]
@@ -441,6 +455,7 @@ trait SporePicklers extends SimpleSporePicklers {
   [T1: c.WeakTypeTag, T2: c.WeakTypeTag, R: c.WeakTypeTag, U: c.WeakTypeTag]
   (c: blackbox.Context): c.Tree = {
 
+    implicit val ctx0 = c
     import c.universe._
 
     val t1pe = weakTypeOf[T1]
@@ -468,6 +483,7 @@ trait SporePicklers extends SimpleSporePicklers {
       [T1: c.WeakTypeTag, T2: c.WeakTypeTag, T3: c.WeakTypeTag, R: c.WeakTypeTag]
       (c: blackbox.Context): c.Tree = {
 
+    implicit val ctx0 = c
     import c.universe._
 
     val t1pe = weakTypeOf[T1]
@@ -486,6 +502,7 @@ trait SporePicklers extends SimpleSporePicklers {
   [T1: c.WeakTypeTag, T2: c.WeakTypeTag, T3: c.WeakTypeTag, R: c.WeakTypeTag, U: c.WeakTypeTag]
   (c: blackbox.Context): c.Tree = {
 
+    implicit val ctx0 = c
     import c.universe._
 
     val t1pe = weakTypeOf[T1]

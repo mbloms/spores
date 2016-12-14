@@ -10,7 +10,7 @@ package scala
 
 import scala.language.experimental.macros
 import scala.language.{implicitConversions, postfixOps}
-import scala.reflect.macros.whitebox
+import scala.reflect.macros.{blackbox, whitebox}
 import scala.spores.util.Versioning
 import scala.util.Try
 
@@ -33,14 +33,14 @@ package object spores extends Versioning {
   }
 
   /* Check that the debug or print:spores flags are passed to output logs. */
-  @inline private[spores] def isDebugEnabled(ctx: whitebox.Context) = {
+  @inline private[spores] def isDebugEnabled(ctx: blackbox.Context) = {
     ctx.settings.contains("debug-spores") ||
     ctx.compilerSettings.contains("-Ydebug")
   }
 
   private[spores] def debug(s: => String)(implicit line: sourcecode.Line,
                                           file: sourcecode.File,
-                                          ctx: whitebox.Context): Unit = {
+                                          ctx: blackbox.Context): Unit = {
     if (isDebugEnabled(ctx)) logger.elem(s)
   }
 
