@@ -6,7 +6,7 @@ lazy val buildSettings = Seq(
   organizationName := "Scala Center",
   organizationHomepage := Some(new URL("https://scala.epfl.ch")),
   scalaVersion := "2.11.8",
-  // 2.12 is not yet available because of SI-10009
+  // 2.12 is not yet available because of SI-10009 and SI-10026
   crossScalaVersions := Seq("2.11.8", "2.12.1")
 )
 
