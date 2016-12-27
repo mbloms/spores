@@ -1228,133 +1228,114 @@ package object spores extends Versioning {
   implicit def concreteSpore[T1, T2, T3, T4, R, C, E](
       spore: Spore4[T1, T2, T3, T4, R]
   ): Spore4[T1, T2, T3, T4, R] {
-    type Captured = C
     type Excluded = E
   } = macro convertSpore4To[T1, T2, T3, T4, R, C, E]
       
   implicit def concreteSpore[T1, T2, T3, T4, T5, R, C, E](
       spore: Spore5[T1, T2, T3, T4, T5, R]
   ): Spore5[T1, T2, T3, T4, T5, R] {
-    type Captured = C
     type Excluded = E
   } = macro convertSpore5To[T1, T2, T3, T4, T5, R, C, E]
       
   implicit def concreteSpore[T1, T2, T3, T4, T5, T6, R, C, E](
       spore: Spore6[T1, T2, T3, T4, T5, T6, R]
   ): Spore6[T1, T2, T3, T4, T5, T6, R] {
-    type Captured = C
     type Excluded = E
   } = macro convertSpore6To[T1, T2, T3, T4, T5, T6, R, C, E]
       
   implicit def concreteSpore[T1, T2, T3, T4, T5, T6, T7, R, C, E](
       spore: Spore7[T1, T2, T3, T4, T5, T6, T7, R]
   ): Spore7[T1, T2, T3, T4, T5, T6, T7, R] {
-    type Captured = C
     type Excluded = E
   } = macro convertSpore7To[T1, T2, T3, T4, T5, T6, T7, R, C, E]
       
   implicit def concreteSpore[T1, T2, T3, T4, T5, T6, T7, T8, R, C, E](
       spore: Spore8[T1, T2, T3, T4, T5, T6, T7, T8, R]
   ): Spore8[T1, T2, T3, T4, T5, T6, T7, T8, R] {
-    type Captured = C
     type Excluded = E
   } = macro convertSpore8To[T1, T2, T3, T4, T5, T6, T7, T8, R, C, E]
       
   implicit def concreteSpore[T1, T2, T3, T4, T5, T6, T7, T8, T9, R, C, E](
       spore: Spore9[T1, T2, T3, T4, T5, T6, T7, T8, T9, R]
   ): Spore9[T1, T2, T3, T4, T5, T6, T7, T8, T9, R] {
-    type Captured = C
     type Excluded = E
   } = macro convertSpore9To[T1, T2, T3, T4, T5, T6, T7, T8, T9, R, C, E]
       
   implicit def concreteSpore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, R, C, E](
       spore: Spore10[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, R]
   ): Spore10[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, R] {
-    type Captured = C
     type Excluded = E
   } = macro convertSpore10To[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, R, C, E]
       
   implicit def concreteSpore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, R, C, E](
       spore: Spore11[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, R]
   ): Spore11[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, R] {
-    type Captured = C
     type Excluded = E
   } = macro convertSpore11To[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, R, C, E]
       
   implicit def concreteSpore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, R, C, E](
       spore: Spore12[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, R]
   ): Spore12[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, R] {
-    type Captured = C
     type Excluded = E
   } = macro convertSpore12To[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, R, C, E]
       
   implicit def concreteSpore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, R, C, E](
       spore: Spore13[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, R]
   ): Spore13[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, R] {
-    type Captured = C
     type Excluded = E
   } = macro convertSpore13To[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, R, C, E]
       
   implicit def concreteSpore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, R, C, E](
       spore: Spore14[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, R]
   ): Spore14[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, R] {
-    type Captured = C
     type Excluded = E
   } = macro convertSpore14To[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, R, C, E]
       
   implicit def concreteSpore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, R, C, E](
       spore: Spore15[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, R]
   ): Spore15[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, R] {
-    type Captured = C
     type Excluded = E
   } = macro convertSpore15To[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, R, C, E]
       
   implicit def concreteSpore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, R, C, E](
       spore: Spore16[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, R]
   ): Spore16[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, R] {
-    type Captured = C
     type Excluded = E
   } = macro convertSpore16To[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, R, C, E]
       
   implicit def concreteSpore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, R, C, E](
       spore: Spore17[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, R]
   ): Spore17[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, R] {
-    type Captured = C
     type Excluded = E
   } = macro convertSpore17To[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, R, C, E]
       
   implicit def concreteSpore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, R, C, E](
       spore: Spore18[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, R]
   ): Spore18[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, R] {
-    type Captured = C
     type Excluded = E
   } = macro convertSpore18To[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, R, C, E]
       
   implicit def concreteSpore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, R, C, E](
       spore: Spore19[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, R]
   ): Spore19[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, R] {
-    type Captured = C
     type Excluded = E
   } = macro convertSpore19To[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, R, C, E]
       
   implicit def concreteSpore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, R, C, E](
       spore: Spore20[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, R]
   ): Spore20[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, R] {
-    type Captured = C
     type Excluded = E
   } = macro convertSpore20To[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, R, C, E]
       
   implicit def concreteSpore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, R, C, E](
       spore: Spore21[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, R]
   ): Spore21[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, R] {
-    type Captured = C
     type Excluded = E
   } = macro convertSpore21To[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, R, C, E]
       
   implicit def concreteSpore[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, R, C, E](
       spore: Spore22[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, R]
   ): Spore22[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, R] {
-    type Captured = C
     type Excluded = E
   } = macro convertSpore22To[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, R, C, E]
 
