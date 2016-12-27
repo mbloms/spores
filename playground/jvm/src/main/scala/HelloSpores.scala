@@ -11,4 +11,5 @@ object HelloSpores extends App {
         capturedList.map(_ + i).contains(capturedInt)
       }
   }
+  s(10)
 }

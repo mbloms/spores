@@ -126,7 +126,7 @@ lazy val generateToolboxClasspath = Def.task {
   List(toolboxTestClasspath.getAbsoluteFile)
 }
 
-lazy val `spores-core` = crossProject
+lazy val spores = crossProject
   .crossType(CrossType.Pure)
   .in(file("core"))
   .settings(allSettings: _*)
@@ -141,8 +141,8 @@ lazy val `spores-core` = crossProject
   .jsSettings()
   .jvmSettings(fork in Test := true)
 
-lazy val `spores-core-jvm` = `spores-core`.jvm
-lazy val `spores-core-js` = `spores-core`.js
+lazy val `spores-core-jvm` = spores.jvm
+lazy val `spores-core-js` = spores.js
 
 lazy val `spores-pickling` = project
   .settings(allSettings)
@@ -194,16 +194,19 @@ lazy val `spores-serialization` = project
     }.taskValue
   )
 
-lazy val playground = project
+lazy val playground = crossProject
   .settings(allSettings)
   .settings(
     scalacOptions in Compile += "-Ydebug",
     initialCommands in console in Compile := "import scala.spores._",
     libraryDependencies ++= Seq(
-      "ch.epfl.scala" %% "spores" % version.value,
+      "ch.epfl.scala" %%% "spores" % version.value,
       compilerPlugin("ch.epfl.scala" %% "spores-serialization" % version.value)
     )
   )
+
+lazy val `playground-js` = playground.js
+lazy val `playground-jvm` = playground.jvm
 
 val moveResources = taskKey[Unit]("Move resources from tut to ornate.")
 lazy val makeDocs = taskKey[Unit]("Make the process.")
