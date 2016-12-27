@@ -87,6 +87,6 @@ The Scala Center is supporting this project under the [Advisory Board proposal s
 by IBM](https://github.com/scalacenter/advisoryboard/blob/master/proposals/006-compile-time-serializibility-check.md).
 If you want to read more about the underlying theory, check the paper [Spores: A Type-based Foundation
 for Closures in the Age of Concurrency and Distribution](https://infoscience.epfl.ch/record/191239/files/spores_1.pdf)
-by [Heather Miller](https://heather.miller.am) and [Philipp Haller](http://lampwww.epfl.ch/~phaller/).
+by [Heather Miller](https://heather.miller.am) and [Philipp Haller](http://www.csc.kth.se/~phaller/).
 
 [search.maven]: http://search.maven.org/#search%7Cga%7C1%7Cch.epfl.scala.spores
