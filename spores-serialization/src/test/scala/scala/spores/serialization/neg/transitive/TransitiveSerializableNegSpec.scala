@@ -300,8 +300,40 @@ class TransitiveSerializableNegSpec {
   }
 
   @Test
-  def `Depth 1: Detect error in open class hierarchy if option is enabled`(): Unit = {
+  def `Depth 1: Detect error in open class hierarchy if option is enabled I`(): Unit = {
     expectError(openClassHierarchy("class SerializableTypeParam"), "-P:spores-transitive-plugin:force-closed-class-hierarchy") {
+      """
+        |import scala.spores._
+        |final class Foo extends Serializable
+        |class SerializableTypeParam[T <: Serializable](typedValue: T) extends Serializable
+        |val foo = new SerializableTypeParam(new Foo)
+        |spore {
+        |  val captured = foo
+        |  () => captured
+        |}
+      """.stripMargin
+    }
+  }
+
+  @Test
+  def `Depth 1: Detect error in open class hierarchy if option is enabled II`(): Unit = {
+    expectError(openClassHierarchy("class Foo"), "-P:spores-transitive-plugin:force-closed-class-hierarchy") {
+      """
+        |import scala.spores._
+        |class Foo extends Serializable
+        |sealed class SerializableTypeParam[T <: Serializable](typedValue: T) extends Serializable
+        |val foo = new SerializableTypeParam(new Foo)
+        |spore {
+        |  val captured = foo
+        |  () => captured
+        |}
+      """.stripMargin
+    }
+  }
+
+  @Test
+  def `Depth 1: Detect error in open class hierarchy if option is enabled III`(): Unit = {
+    expectError(openClassHierarchy("class Foo"), "-P:spores-transitive-plugin:force-closed-class-hierarchy") {
       """
         |import scala.spores._
         |class Foo extends Serializable
