@@ -261,4 +261,43 @@ class TransitiveSerializableSpec {
         serializedWrapper
     }
   }
+
+  @Test
+  def `Stop infinite type analysis in recursive type member`()
+    : Unit = {
+    sealed trait Foo extends Serializable
+    final class Bar(b: Int) extends Foo
+    final case class Baz(s: String) extends Foo
+
+    sealed class Wrapper[T <: Foo](val wrapped: List[T]) extends Serializable {
+      val zippingSpore = spore {
+        val captured: Wrapper[T] = this
+        (xs: List[Foo]) =>
+          xs.zip(captured.wrapped)
+      }
+    }
+
+    val wrapper = new Wrapper(List(new Bar(1), Baz("Hello")))
+    val s = spore {
+      val serializedWrapper = wrapper
+      () =>
+        serializedWrapper
+    }
+  }
+
+  @Test
+  def `Stop infinite type analysis when subclasses have members whose type is their superclass`()
+    : Unit = {
+    sealed trait Foo extends Serializable
+    final class Bar(b: Baz) extends Foo
+    final case class Baz(f: Foo) extends Foo
+
+    sealed class Wrapper[T <: Foo](val wrapped: List[T]) extends Serializable {
+      val zippingSpore = spore {
+        val captured = (wrapped, 1)
+        (xs: List[Foo]) =>
+          xs.zip(captured._1)
+      }
+    }
+  }
 }
