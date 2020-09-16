@@ -3,68 +3,24 @@ package scala.spores
 import scala.quoted._
 import scala.tasty.reflect._
 
-transparent inline def wtf(inline expr: Any): Unit =
-  ${wtfImpl('expr)}
-
-private def wtfImpl(expr: Expr[Any])(using qctx: QuoteContext): Expr[Unit] =
-  '{println(${Expr(expr.unseal.underlyingArgument.toString)})}
-
 transparent inline def spore[R](inline body: () => R) =
-  ${captured('body)}
+  ${sporeImpl('body)}
 
-private def nullarySporeImpl[R, C, E](body: Expr[R]): Expr[NullarySpore[R]] = ???
-
-private def captured[R: Type](expr: Expr[() => R])(using qctx: QuoteContext) = {
-  import qctx.tasty.{Block,Closure,Statement,ValDef,TypeDef}
-  
-  def capturedType(statements: List[Statement]) = statements match {
-    case x :: xs => x match {
-      case d: ValDef => d.tpt.tpe
-      case _ => ???
-    }
-    case _ => ???
-  } 
-  expr.unseal.underlyingArgument match {
+private def sporeImpl[R: Type](expr: Expr[() => R])(using qctx: QuoteContext) = {
+  import qctx.tasty.{Block,ValDef}
+  expr.unseal.underlyingArgument match
+    // For now just look at the first ValDef
     case block @ Block(statements,term) => statements.head match
       case ValDef(str, tpt, Some(term)) => term.seal match
-        case '{$c: $ct} => '{
-          new NullarySporeWithEnv[${summon[Type[R]]}] {
-            override type Captured = $ct
-            override val captured = $c
-            override def apply() = {
-              println("Look! I captured a " + ${Expr(capturedType(statements).seal.show)})
-              println(${Expr('[Captured].show)})
-              println("This is a block.")
-              println("It looks like this:")
-              println(${Expr(block.toString)})
-              ${expr}.apply()
+        case '{$c: $ct} =>
+          '{
+            new NullarySporeWithEnv[${summon[Type[R]]}] {
+              override type Captured = $ct
+              override val captured = $c
+              override def apply() = ${expr}.apply()
+              override def skipScalaSamConversion: Nothing = ???
             }
-            override def skipScalaSamConversion: Nothing = ???
           }
-        }
-    case Closure(meth,tpt) => {
-      '{
-      println("This is a closure!")
-      new NullarySpore[${summon[Type[R]]}] {
-        override def apply() = {
-          println("This is a closure.")
-          ${expr}.apply()
-        }
-        override def skipScalaSamConversion: Nothing = ???
-      }}
-    }
-    case somethingElse => {
-      '{
-      println("This is something else???")
-      println(${Expr(expr.show)})
-      new NullarySpore[${summon[Type[R]]}] {
-        override def apply() = {
-          println("This is something else???")
-          println(${Expr(expr.show)})
-          ${expr}.apply()
-        }
-        override def skipScalaSamConversion: Nothing = ???
-      }}
-    }
-  }
+      case _ => report.throwError("Only val declarations are allowed in the spore header.")
+    case _ => ???
 }
