@@ -2,12 +2,14 @@ import scala.spores._
 
 object CapturedTest {
   def main(args: Array[String]): Unit = {
-    val (t,s: NullarySpore[Unit]) =
+    val hejdu = "hejdu"
+    val s: NullarySporeWithEnv[Unit] =
       spore {
-        val str = "hejduu";
+        val str = hejdu;
         {() => println(str)}
       }
     s.apply()
-    println(t.toString)
+    val c: String = s.captured.asInstanceOf[String]
+    println(c)
   }
 }
