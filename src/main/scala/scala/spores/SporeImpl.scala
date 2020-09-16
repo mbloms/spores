@@ -25,21 +25,12 @@ private def captured[R: Type](expr: Expr[() => R])(using qctx: QuoteContext) = {
     case _ => ???
   } 
   expr.unseal.underlyingArgument match {
-    case block @ Block(statements,term) => {
-      '{
-        {
-          println("This is a block!")
+    case block @ Block(statements,term) => statements.head match
+      case ValDef(str, tpt, Some(term)) => term.seal match
+        case '{$c: $ct} => '{
           new NullarySporeWithEnv[${summon[Type[R]]}] {
-            val captive =
-              ${statements.head match
-                case ValDef(str, tpt, Some(term)) => '{
-                  println(${Expr(str)})
-                  println(${Expr(tpt.show)})
-                  ${term.seal}
-                }
-              }
-            override type Captured = ${capturedType(statements)} //captive.type
-            override val captured = captive
+            override type Captured = $ct
+            override val captured = $c
             override def apply() = {
               println("Look! I captured a " + ${Expr(capturedType(statements).seal.show)})
               println(${Expr('[Captured].show)})
@@ -51,8 +42,6 @@ private def captured[R: Type](expr: Expr[() => R])(using qctx: QuoteContext) = {
             override def skipScalaSamConversion: Nothing = ???
           }
         }
-      }
-    }
     case Closure(meth,tpt) => {
       '{
       println("This is a closure!")
