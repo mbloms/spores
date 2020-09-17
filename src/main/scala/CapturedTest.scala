@@ -3,9 +3,7 @@ import scala.spores._
 object CapturedTest {
   def main(args: Array[String]): Unit = {
     val hejdu: String = "hejdu"
-    // Note that the type declaration isn't necessary
-    // Inferred type: NullarySporeWithEnv[Unit]{type Captured = hejdu.type}
-    val s /* : NullarySporeWithEnv[Unit] {type Captured <: String}*/ =
+    val s =
     spore {
       val str = hejdu;
       val num = 2;
@@ -15,8 +13,5 @@ object CapturedTest {
       }
     }
     s.apply()
-    //It even infers this:
-    //val c: hejdu.type = s.captured
-    //println(c)
   }
 }
