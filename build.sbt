@@ -1,4 +1,5 @@
-val dottyVersion = "0.27.0-RC1"
+val majorVersion = "0.27"
+val dottyVersion = s"$majorVersion.0-RC1"
 
 lazy val root = project
   .in(file("."))
@@ -8,6 +9,7 @@ lazy val root = project
 
     scalaVersion := dottyVersion,
 
-    libraryDependencies += "com.novocode" % "junit-interface" % "0.11" % "test",
+    libraryDependencies += "com.novocode" % "junit-interface" % "0.11" % "test", 
+    libraryDependencies += "ch.epfl.lamp" % s"dotty-compiler_$majorVersion" % dottyVersion,
     scalacOptions += "-explain"
   )
