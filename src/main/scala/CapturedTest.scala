@@ -8,11 +8,15 @@ object CapturedTest {
     val s /* : NullarySporeWithEnv[Unit] {type Captured <: String}*/ =
     spore {
       val str = hejdu;
-      {() => println(str)}
+      val num = 2;
+      {() =>
+        println(str)
+        println(num)
+      }
     }
     s.apply()
     //It even infers this:
-    val c: hejdu.type = s.captured
-    println(c)
+    //val c: hejdu.type = s.captured
+    //println(c)
   }
 }

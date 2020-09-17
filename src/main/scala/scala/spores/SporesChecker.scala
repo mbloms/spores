@@ -32,7 +32,7 @@ object SporesChecker {
    * in current compilation run.
    */
   def sporeMethodSymbol(implicit ctx: Context): TermSymbol = {
-    requiredModule("spores.Spore").requiredMethod("spore")
+    requiredModule("scala.spores").requiredMethod("typedSpore")
   }
 
   @unused
