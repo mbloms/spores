@@ -1,0 +1,20 @@
+-- Info: Test.scala:58:29 ------------------------------------------------------
+58 |      new ActorRef[Data].send(packed.box)(spore[Any,Unit,packed.box.C] { x =>
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |(msg: spores.Box[T])
+   |  (cont: spores.Spore[Any, Unit]{Excluded = msg.C; Captured = spores.Data})
+   |    (implicit acc: spores.CanAccess{C = msg.C}): Unit
+MethodType(
+    List(msg),
+    List(AppliedType(TypeRef(ThisType(TypeRef(NoPrefix,module class spores)),trait Box),List(TypeRef(ThisType(TypeRef(ThisType(TypeRef(NoPrefix,module class spores)),class ActorRef)),type T)))),
+    MethodType(
+        List(cont),
+        List(
+            RefinedType(
+                RefinedType(
+                    AppliedType(TypeRef(ThisType(TypeRef(NoPrefix,module class spores)),class Spore),List(TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class <root>)),module scala),class Any), TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class <root>)),module scala),class Unit))),
+                    Excluded,
+                    TypeBounds(TypeRef(TermParamRef(msg),type C),TypeRef(TermParamRef(msg),type C))),
+                Captured,
+                TypeBounds(TypeRef(ThisType(TypeRef(NoPrefix,module class spores)),class Data),TypeRef(ThisType(TypeRef(NoPrefix,module class spores)),class Data)))),
+        ImplicitMethodType(List(acc), List(RefinedType(TypeRef(ThisType(TypeRef(NoPrefix,module class spores)),class CanAccess),C,TypeBounds(TypeRef(TermParamRef(msg),type C),TypeRef(TermParamRef(msg),type C)))), TypeRef(TermRef(ThisType(TypeRef(NoPrefix,module class <root>)),module scala),class Unit))))

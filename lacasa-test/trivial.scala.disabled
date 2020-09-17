@@ -1,0 +1,22 @@
+package witness
+package trivial
+
+final class Implements[+Super,+T <: Super] (val extract: T)
+  extends AnyVal with Witness[T] with Extract[T]
+
+object Implements {
+  implicit def prover[Super,T <: Super]: Exorcist[T,Implements[Super,T]] =
+    new Exorcist {
+      override def evictDemons(x: T): Implements[Super,x.type] = new Implements(x)
+    }
+}
+
+final class Identity[+T] (val extract: T)
+  extends AnyVal with Witness[T] with Extract[T]
+
+object Identity {
+  implicit def prover[T]: Exorcist[T,Identity[T]] =
+    new Exorcist {
+      override def evictDemons(x: T): Identity[x.type] = new Identity(x)
+    }
+}

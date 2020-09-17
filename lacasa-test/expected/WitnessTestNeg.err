@@ -1,0 +1,6 @@
+[31m-- [E007] Type Mismatch Error: WitnessTestNeg.scala:9:2 ------------------------[0m
+[31m9 |[0m  [35m@main[0m [33mdef[0m [36mtest[0m = {
+  |  [31m^^^^^[0m
+  |  Found:    main
+  |  Required: scala.annotation.Annotation
+1 error found

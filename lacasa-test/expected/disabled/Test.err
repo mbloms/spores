@@ -1,0 +1,16 @@
+[33m-- Warning: Test.scala:124:22 --------------------------------------------------[0m
+[33m124 |[0m      prev.open(spore { [34m// can simplify this: have access to prev.instance![0m
+    |                [33m^[0m
+    |                Ignoring excluding Any: {[33mtype[0m [35mExcluded[0m = Any}
+[33m125 |[0m        [33mval[0m [36mlocalFun[0m = fun
+[33m126 |[0m        ([36mprevValue[0m: [35mS[0m) =>
+[33m127 |[0m          [33mval[0m [36mb[0m = Box.make[[35mS[0m](prevValue)
+[33m128 |[0m          [33mval[0m [36mpacked[0m = b.pack()
+[33m129 |[0m          localFun(packed)
+[33m130 |[0m      })
+[31m-- Error: Test.scala:175:61 ----------------------------------------------------[0m
+[31m175 |[0m        actor.send(packed.box)(spore { [36mx[0m => println([31m"ajdå"[0m)})
+    |                                                             [31m^[0m
+    |[33mimplicit[0m val acc: spores.CanAccess{C = packed.box.C} has an excluded member [33mtype[0m [35mC[0m = packed.box.C
+1 warning found
+1 error found

@@ -1,0 +1,5 @@
+[31m-- Error: ExcludedTest.scala:18:4 ----------------------------------------------[0m
+[31m18 |[0m    arr(i) = [31m1[0m
+   |    [31m^^^[0m
+   |    var arr: Array[Int] is excluded
+1 error found
