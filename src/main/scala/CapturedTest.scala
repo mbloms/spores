@@ -1,11 +1,11 @@
 import scala.spores._
 
 object CapturedTest {
+  val hejdu: String = "hejdu"
   def main(args: Array[String]): Unit = {
-    val hejdu: String = "hejdu"
     val s =
     spore {
-      val str = hejdu;
+      lazy val str = hejdu;
       val num = 2;
       {() =>
         println(str)

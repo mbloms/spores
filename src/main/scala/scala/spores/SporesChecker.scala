@@ -68,10 +68,15 @@ object SporesChecker {
         /** resugar function literal */
         def unapply(block: Block): Option[(DefDef,Closure)] = block match {
           case Block(stats,block: Block) =>
-            /*for {
+            for {
               // Is it a val declaration?
               stat <- stats
-            } ctx.debugwarn("I'm not sure this is ok. This is owned by " + stat.symbol.owner.showLocated ,stat.sourcePos)*/
+            } {
+              stat match
+                //TODO: Double check that tpt is included in Captured.
+                case v @ ValDef(name,tpt,_) => report.log(s"Captured ${v.rhs.show} as ${name.show}: ${tpt.show}",v.rhs.sourcePos)
+                case _ => report.error("Incorrect spore header: Only val defs allowed at this position.",stat.sourcePos)
+            }
             unapply(block)
 
           case Block(List(anondef: DefDef),closure @ Closure(_,Ident(cname),_))
@@ -84,51 +89,66 @@ object SporesChecker {
         }
       }
 
+      /** Simplify node */
+      def peel(tree: Tree): Tree = tree match
+        case Block(List(),term) => peel(term)
+        case Inlined(call,bindings,expansion) => (call,bindings) match
+          case (EmptyTree,List()) => peel(expansion)
+          case _ =>
+            report.error(s"Plugin error: Don't know how to handle this: ${tree.toString}")
+            peel(expansion)
+        case _ => tree
+
       ap match {
         case Apply(TypeApply(ident,_),args)
           if ident.symbol equals sporeMethodSymbol => args match {
             case Nil =>
               report.error("Expected exactly one argument, but found none.",ap.sourcePos)
               None
+            case List(arg) => peel(arg) match
+              case block @ AnonFun(anondef,closure) =>
 
-            case List(block @ AnonFun(anondef,closure)) =>
+                /** The type of the Spore, the type checker will make sure this is a subtype of the expected type.*/
+                val sporeType = ap.typeOpt
 
-              /** The type of the Spore, the type checker will make sure this is a subtype of the expected type.*/
-              val sporeType = ap.typeOpt
+                /** Ignore `Excluded = Any` */
+                def notAny(excludedDenotation: Denotation): Boolean =
+                  if (excludedDenotation.info.bounds.contains(requiredModule("scala").requiredType("Any").typeRef)) {
+                        report.warning("Ignoring excluding Any: {" + excludedDenotation.show + excludedDenotation.info.show + "}",ap.sourcePos)
+                        false
+                  } else true
 
-              /** Ignore `Excluded = Any` */
-              def notAny(excludedDenotation: Denotation): Boolean =
-                if (excludedDenotation.info.bounds.contains(requiredModule("scala").requiredType("Any").typeRef)) {
-                      report.warning("Ignoring excluding Any: {" + excludedDenotation.show + excludedDenotation.info.show + "}",ap.sourcePos)
-                      false
-                } else true
-
-              Some(block, anondef.denot,
-                for {
-                  // name of spore.Excluded
-                  excludedName <- sporeType.memberNames(excludedTypeNameFilter).headOption
-                  // denotation of spore.Excluded
-                  excludedDenotation = sporeType.member(excludedName)
-                  // filter out Excluded = Any
-                  if notAny(excludedDenotation)
-                  } yield excludedDenotation,
-                  (for {
-                  // name of spore.CapturingWitness
-                  witnessName <- sporeType.memberNames(capturingWitnessTypeNameFilter)
-                  // denotation of spore.Excluded
-                  witnessDenotation = sporeType.member(witnessName)
-                  } yield witnessDenotation).headOption
-                  )
-
-
-            case List(arg) =>
-              report.error("Expected function litteral, but found " + arg.getClass.toString + " node.", arg.sourcePos)
-              None
+                Some(block, anondef.denot,
+                  for {
+                    // name of spore.Excluded
+                    excludedName <- sporeType.memberNames(excludedTypeNameFilter).headOption
+                    // denotation of spore.Excluded
+                    excludedDenotation = sporeType.member(excludedName)
+                    // filter out Excluded = Any
+                    if notAny(excludedDenotation)
+                    } yield excludedDenotation,
+                    (for {
+                    // name of spore.CapturingWitness
+                    witnessName <- sporeType.memberNames(capturingWitnessTypeNameFilter)
+                    // denotation of spore.Excluded
+                    witnessDenotation = sporeType.member(witnessName)
+                    } yield witnessDenotation).headOption
+                    )
+              case arg =>
+                report.error(s"Expected function litteral, but found a ${arg.getClass.toString} node.", arg.sourcePos)
+                report.log(arg.toString,arg.sourcePos)
+                None
             case lst =>
               report.error("Expected exactly one argument, but found " + lst.size + ": " + lst.map(_.showSummary).mkString(",\n"),lst.head.sourcePos)
               None
             }
-        case _ => None
+        case Apply(ident,args)
+          if ident.symbol equals sporeMethodSymbol =>
+            report.error(s"Plugin error: No type information in spores call, are after Erasure? ${ap.toString}",ap.sourcePos)
+            None
+        case _ =>
+          //report.warning(s"Not a spore: ${ap.toString}",ap.sourcePos)
+          None
       }
     }
   }
@@ -239,7 +259,7 @@ class SporesChecker extends PluginPhase with StandardPlugin {
   val phaseName = name
 
   override val runsAfter = Set(FirstTransform.name)
-  override val runsBefore = Set(CompleteJavaEnums.name)
+  override val runsBefore = Set(CompleteJavaEnums.name,Erasure.name)
 
   override def init(options: List[String]): List[PluginPhase] = this :: Nil
 
