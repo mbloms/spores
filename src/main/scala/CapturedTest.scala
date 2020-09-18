@@ -1,11 +1,11 @@
 import scala.spores._
 
 object CapturedTest {
-  val hejdu: String = "hejdu"
+  case class Data[T](x: T)
   def main(args: Array[String]): Unit = {
-    val s =
-    spore {
-      val str = hejdu
+    val d = Data("hejdu")
+    val s = spore {
+      val str = d.x
       val num = 2
       {() =>
         println(str)
