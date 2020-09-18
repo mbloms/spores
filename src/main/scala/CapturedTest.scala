@@ -8,8 +8,11 @@ object CapturedTest {
       val str = d.x
       val num = 2
       {() =>
+        var num2 = num*2
         println(str)
         println(num)
+        println(d.x)
+        println(num2)
       }
     }
     s.apply()
