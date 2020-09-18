@@ -5,8 +5,8 @@ object CapturedTest {
   def main(args: Array[String]): Unit = {
     val s =
     spore {
-      lazy val str = hejdu;
-      val num = 2;
+      val str = hejdu
+      val num = 2
       {() =>
         println(str)
         println(num)

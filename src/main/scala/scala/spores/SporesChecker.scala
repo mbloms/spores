@@ -19,6 +19,7 @@ import scala.collection.immutable._
 import util.{Store,SourcePosition}
 import Denotations._
 import SymDenotations._
+import Flags._
 
 import reporting.Diagnostic
 import reporting.ConsoleReporter
@@ -74,7 +75,15 @@ object SporesChecker {
             } {
               stat match
                 //TODO: Double check that tpt is included in Captured.
-                case v @ ValDef(name,tpt,_) => report.log(s"Captured ${v.rhs.show} as ${name.show}: ${tpt.show}",v.sourcePos)
+                case v @ ValDef(name,tpt,_) =>
+                  if v.mods.is(Lazy)
+                    report.error("Incorrect spore header: lazy val not allowed.", v.sourcePos)
+                  if v.mods.is(Mutable)
+                    report.error("Incorrect spore header: var not allowed.",v.sourcePos)
+                  else
+                    report.log(s"Captured ${v.rhs.show} as ${name.show}: ${tpt.show}",v.sourcePos)
+                //case d: NamedDefTree => report.error("Incorrect spore header: Only val defs allowed at this position.",
+                //                                     d.sourcePos.withSpan(d.sourcePos.span.withEnd(d.nameSpan.start-1)))
                 case _ => report.error("Incorrect spore header: Only val defs allowed at this position.", stat.sourcePos)
             }
             unapply(block)
