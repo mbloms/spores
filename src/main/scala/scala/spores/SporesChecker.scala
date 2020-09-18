@@ -74,8 +74,8 @@ object SporesChecker {
             } {
               stat match
                 //TODO: Double check that tpt is included in Captured.
-                case v @ ValDef(name,tpt,_) => report.log(s"Captured ${v.rhs.show} as ${name.show}: ${tpt.show}",v.rhs.sourcePos)
-                case _ => report.error("Incorrect spore header: Only val defs allowed at this position.",stat.sourcePos)
+                case v @ ValDef(name,tpt,_) => report.log(s"Captured ${v.rhs.show} as ${name.show}: ${tpt.show}",v.sourcePos)
+                case _ => report.error("Incorrect spore header: Only val defs allowed at this position.", stat.sourcePos)
             }
             unapply(block)
 
@@ -266,6 +266,18 @@ class SporesChecker extends PluginPhase with StandardPlugin {
   private implicit var sporectxloc: Store.Location[SporeContext] = _
   override def initContext(ctx: FreshContext) = {
     sporectxloc = ctx.addLocation[SporeContext](SporeContext.empty)
+    ctx.setReporter(new ConsoleReporter {
+      /** Normally, if code from source A is inlined in a call to B which is then inlined into A,
+       *  the stack of inlined sources is printed, despite the fact that the code originated from source A.
+       *  This implementation gets rid of that behaviour.
+       */
+      override def outer(pos: SourcePosition, prefix: String)(using Context): List[String] = {
+        if (!pos.outermost.contains(pos) && pos.outer.exists)
+          i"$prefix| This location contains code that was inlined from $pos" ::
+            outer(pos.outer, prefix)
+        else Nil
+      }
+    })
   }
 
 
