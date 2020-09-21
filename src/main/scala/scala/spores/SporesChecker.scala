@@ -65,8 +65,43 @@ object SporesChecker {
     case x :: xs => show(x) + comma + talkList(xs,show,comma,and)
   }
 
+  object SporeBody {
+    def unapply(block: Block): Option[(DefDef,Closure)] = block match
+      case Block(List(anondef: DefDef),closure @ Closure(_,Ident(cname),_))
+        if (anondef.name.isAnonymousFunctionName && cname == anondef.name) =>
+          Some(anondef,closure)
+      case _ => None
+  }
+  
+  object SporeBlock {
+    def unapply(tree: Tree)(using Context): Option[(List[Tree],DefDef,Closure)] = tree match
+      case Inlined(call,bindings,expansion) => (call,bindings) match
+        case (EmptyTree,List()) => unapply(expansion)
+        case _ =>
+          report.error(s"Plugin error: Don't know how to handle this: ${tree.toString}")
+          unapply(expansion)
+      case Block(stats, SporeBody(anondef,closure)) =>
+        Some(stats,anondef,closure)
+      case Block(outer, SporeBlock(inner,anondef,closure)) =>
+        Some(outer ++ inner, anondef,closure)
+      case _ => ???
+  }
+
   object Spore {
-    def unapply(ap: Apply)(implicit ctx: Context): Option[(Block,List[Denotation],Denotation,Option[Denotation],Option[Denotation])] = {
+    def unapply(ap: Apply)(using Context): Option[Tree] = ap match {
+      case Apply(TypeApply(ident,_),args)
+        if ident.symbol equals sporeMethodSymbol => args match
+          case List(arg) => Some(arg)
+          case _ =>
+            report.error(s"Expected exactly one argument, but found ${args.size}.", ap.sourcePos)
+            None
+      case Apply(ident,args)
+        if ident.symbol equals sporeMethodSymbol =>
+          report.error(s"Plugin error: No type information in spores call, are we after Erasure? ${ap.toString}",ap.sourcePos)
+          None
+      case _ => None
+    }
+    def unapply2(ap: Apply)(implicit ctx: Context): Option[(Block,List[Denotation],Denotation,Option[Denotation],Option[Denotation])] = {
       val capturedVars = ListBuffer[Denotation]()
       object AnonFun {
         /** resugar function literal */
@@ -160,7 +195,7 @@ object SporesChecker {
             }
         case Apply(ident,args)
           if ident.symbol equals sporeMethodSymbol =>
-            report.error(s"Plugin error: No type information in spores call, are after Erasure? ${ap.toString}",ap.sourcePos)
+            report.error(s"Plugin error: No type information in spores call, are we after Erasure? ${ap.toString}",ap.sourcePos)
             None
         case _ =>
           //report.warning(s"Not a spore: ${ap.toString}",ap.sourcePos)
@@ -306,18 +341,59 @@ class SporesChecker extends PluginPhase with StandardPlugin {
   override def prepareForApply(tree: Apply)(implicit ctx: Context): Context = {
     //report.log("Apply Node: " + tree.show,tree.sourcePos)
     tree match {
-      case Spore(block,capturedDenots,anondenot,optionExcludedDenotation,optionWitnessDenotation) => {
+      case Spore(SporeBlock(stats,anondef,closure)) =>
+        val sporeType = tree.typeOpt
+        val capturedVars: List[Symbol] = stats.collect({(stat: Tree) => stat match
+          case v @ ValDef(name,tpt,_) =>
+            if v.mods.is(Lazy) then {
+              report.error("Incorrect spore header: lazy val not allowed.", v.sourcePos)
+              None
+            }
+            else if v.mods.is(Mutable) then {
+              report.error("Incorrect spore header: var not allowed.",v.sourcePos)
+              None
+            } else {
+              report.log(s"Captured ${v.rhs.show} as ${name.show}: ${tpt.show}",v.sourcePos)
+              Some(v.denot.symbol)
+            }
+          //case d: NamedDefTree => report.error("Incorrect spore header: Only val defs allowed at this position.",
+          //                                     d.sourcePos.withSpan(d.sourcePos.span.withEnd(d.nameSpan.start-1)))
+          case stat =>
+            report.error("Incorrect spore header: Only val defs allowed at this position.", stat.sourcePos)
+            None
+        }.unlift)
+        val optionExcludedDenotation = {
+          /** Ignore `Excluded = Any` */
+          def notAny(excludedDenotation: Denotation): Boolean =
+            if (excludedDenotation.info.bounds.contains(requiredModule("scala").requiredType("Any").typeRef)) {
+              //report.warning("Ignoring excluding Any: {" + excludedDenotation.show + excludedDenotation.info.show + "}",ap.sourcePos)
+              false
+            } else true
+          for {
+            // name of spore.Excluded
+            excludedName <- sporeType.memberNames(excludedTypeNameFilter).headOption
+            // denotation of spore.Excluded
+            excludedDenotation = sporeType.member(excludedName)
+            // filter out Excluded = Any
+            if notAny(excludedDenotation)
+          } yield excludedDenotation
+        }
+        val optionWitnessDenotation = for {
+          // name of spore.CapturingWitness
+          witnessName <- sporeType.memberNames(capturingWitnessTypeNameFilter).headOption
+          // denotation of spore.Excluded
+        } yield sporeType.member(witnessName)
+
         report.log("Spore: " + tree.typeOpt.show,tree.sourcePos)
         SporeContext.update {sx =>
           var newSX = sx
-          newSX = newSX.capture(capturedDenots.map(_.symbol))
+          newSX = newSX.capture(capturedVars)
           if (optionWitnessDenotation.isDefined)
             newSX = newSX.requireWitness(optionWitnessDenotation.get)
           if (optionExcludedDenotation.isDefined)
             newSX = newSX.exclude(optionExcludedDenotation.get)
-          newSX.enterSporeAt(anondenot)
+          newSX.enterSporeAt(anondef.denot)
         }
-      }
       case _ => ctx
     }
   }
