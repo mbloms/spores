@@ -18,7 +18,7 @@ result:
 RESULT := $(addprefix result/,$(shell ls expected))
 prepare-result: $(RESULT)
 
-result/%.err result/%.out result/%.exit bin/%.class: src/%.scala result bin lib/dotty-spores.jar
+result/%.err result/%.out result/%.exit: src/%.scala result bin lib/dotty-spores.jar
 	@echo -e "[$*]\033[50D\033[18C\033[0;34mCompiling...\033[0m"
 	dotc -Xplugin:lib/dotty-spores.jar -classpath lib/dotty-spores.jar $< -d bin 2> result/$*.err 1> result/$*.out; echo $$? > result/$*.exit
 
@@ -28,6 +28,6 @@ result/%.err result/%.out result/%.exit bin/%.class: src/%.scala result bin lib/
 	@diff -u {expected,result}/$*.exit || (echo -e "[$*]\033[50D\033[18C\033[0;31mTest failed:\033[0m exit code did not match"; false)
 	@echo -e "[$*]\033[50D\033[18C\033[0;32mTest succeeded!\033[0m"
 
-%.debug result/%.debug: src/%.scala result bin lib/dotty-spores.jar
+%.debug result/%.debug bin/%.class: src/%.scala result bin lib/dotty-spores.jar
 	dotc -Xplugin:lib/dotty-spores.jar -classpath lib/dotty-spores.jar -Ylog:sporesChecker+ -Yshow-suppressed-errors -Ydebug $< -d bin; echo $$? > result/$*.debug
 	@diff -u expected/$*.exit result/$*.debug || (echo -e "\033[0;31mTest failed:\033[0m exit code did not match [$*]"; false)

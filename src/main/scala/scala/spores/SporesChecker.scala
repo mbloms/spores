@@ -80,11 +80,15 @@ object SporesChecker {
         case _ =>
           report.error(s"Plugin error: Don't know how to handle this: ${tree.toString}")
           unapply(expansion)
+      case SporeBody(anondef,closure) =>
+        Some(Nil,anondef,closure)
       case Block(stats, SporeBody(anondef,closure)) =>
         Some(stats,anondef,closure)
       case Block(outer, SporeBlock(inner,anondef,closure)) =>
         Some(outer ++ inner, anondef,closure)
-      case _ => ???
+      case _ =>
+        report.error(s"Unexpected: ${tree.show}",tree.sourcePos)
+        ???
   }
 
   object Spore {
@@ -264,9 +268,6 @@ object SporesChecker {
           report.log(tpe.show + " is excluded because it is a subtype of " + edenot.show + "'s higher bound, " + edenot.info.hiBound.show, sourcePos)
           ret = true
         }
-        else if (tpe.loBound.isBottomType) {
-          //ctx.debugwarn(tpe.show + " has lower bound " + tpe.loBound.show,sourcePos)
-        }
         else {
           if (tpe.loBound <:< edenot.info) {
             report.warning("Maybe " + tpe.show + " should have been excluded because it's lower bound, "+ tpe.loBound.show +", is a subtype of " + edenot.show + edenot.info.show, sourcePos)
@@ -275,7 +276,6 @@ object SporesChecker {
             report.warning("Maybe " + tpe.show + " should have been excluded because it's lower bound, "+ tpe.loBound.show +", is a subtype of " + edenot.show + "'s higher bound, " + edenot.info.hiBound.show, sourcePos)
           }
         }
-
       }
       ret
     }
@@ -343,7 +343,7 @@ class SporesChecker extends PluginPhase with StandardPlugin {
     tree match {
       case Spore(SporeBlock(stats,anondef,closure)) =>
         val sporeType = tree.typeOpt
-        val capturedVars: List[Symbol] = stats.collect({(stat: Tree) => stat match
+        val capturedVars: List[Denotation] = stats.collect({(stat: Tree) => stat match
           case v @ ValDef(name,tpt,_) =>
             if v.mods.is(Lazy) then {
               report.error("Incorrect spore header: lazy val not allowed.", v.sourcePos)
@@ -354,7 +354,7 @@ class SporesChecker extends PluginPhase with StandardPlugin {
               None
             } else {
               report.log(s"Captured ${v.rhs.show} as ${name.show}: ${tpt.show}",v.sourcePos)
-              Some(v.denot.symbol)
+              Some(v.denot)
             }
           //case d: NamedDefTree => report.error("Incorrect spore header: Only val defs allowed at this position.",
           //                                     d.sourcePos.withSpan(d.sourcePos.span.withEnd(d.nameSpan.start-1)))
@@ -365,10 +365,7 @@ class SporesChecker extends PluginPhase with StandardPlugin {
         val optionExcludedDenotation = {
           /** Ignore `Excluded = Any` */
           def notAny(excludedDenotation: Denotation): Boolean =
-            if (excludedDenotation.info.bounds.contains(requiredModule("scala").requiredType("Any").typeRef)) {
-              //report.warning("Ignoring excluding Any: {" + excludedDenotation.show + excludedDenotation.info.show + "}",ap.sourcePos)
-              false
-            } else true
+            !excludedDenotation.info.bounds.contains(requiredModule("scala").requiredType("Any").typeRef)
           for {
             // name of spore.Excluded
             excludedName <- sporeType.memberNames(excludedTypeNameFilter).headOption
@@ -384,10 +381,52 @@ class SporesChecker extends PluginPhase with StandardPlugin {
           // denotation of spore.Excluded
         } yield sporeType.member(witnessName)
 
-        report.log("Spore: " + tree.typeOpt.show,tree.sourcePos)
+        //Check excluded
+        for {
+          captured <- capturedVars
+          capturedType <- captured.info +: captured.info.typeMembers.map(_.info)
+          excluded <- optionExcludedDenotation
+          excludedType = excluded.info
+        }
+          if capturedType =:= excludedType then
+            report.error(ExcludedType(capturedType, s"It is the same as ${excluded.show} ${excludedType.show}."), captured.symbol.sourcePos)
+          else if capturedType <:< excludedType then
+            report.error(ExcludedType(capturedType, s"It is a subtype of ${excluded.show} ${excludedType.show}"), captured.symbol.sourcePos)
+          else if capturedType <:< excludedType.hiBound then
+            report.error(ExcludedType(capturedType, s"It is a subtype of ${excluded.show}'s higher bound, ${excludedType.hiBound.show}."), captured.symbol.sourcePos)
+          else {
+            if (capturedType.loBound <:< excludedType) {
+              report.warning(
+                s"""|Maybe ${capturedType.show} should have been excluded. It's lower bound, ${capturedType.loBound.show},
+                    |is a subtype of ${excluded.show} ${excludedType.show}""", captured.symbol.sourcePos)
+            }
+            if (capturedType.loBound <:< excludedType.hiBound) {
+              report.warning(
+                s"""|Maybe ${capturedType.show} should have been excluded. It's lower bound, ${capturedType.loBound.show},
+                    |is a subtype of ${excluded.show}'s higher bound, ${excludedType.hiBound.show}""", captured.symbol.sourcePos)
+            }
+          }
+
+        for {
+          captured <- capturedVars
+          capturedType = captured.info
+          witness <- optionWitnessDenotation
+          witnessType = witness.info
+        } {
+          val bounds = witnessType.asInstanceOf[TypeBounds]
+          val lambda = bounds.underlying.asInstanceOf[HKTypeLambda]
+          val res = lambda.resType
+
+          val current = capturedType.widenTermRefExpr
+
+          if (!(current.typeConstructor <:< res.typeConstructor)) {
+          report.error("This spore only allows capturing values wrapped in a " + res.typeConstructor.show + ". "
+                      + "Consider capturing it as a " + AppliedType(lambda, List(tree.typeOpt.widen)).show + " instead.", tree.sourcePos)
+          }
+        }
         SporeContext.update {sx =>
           var newSX = sx
-          newSX = newSX.capture(capturedVars)
+          newSX = newSX.capture(capturedVars.map(_.symbol))
           if (optionWitnessDenotation.isDefined)
             newSX = newSX.requireWitness(optionWitnessDenotation.get)
           if (optionExcludedDenotation.isDefined)

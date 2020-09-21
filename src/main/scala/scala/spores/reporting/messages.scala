@@ -8,10 +8,15 @@ import reporting._
 import ErrorMessageID._
 import Decorators.em
 import ast.tpd._
+import Types._
 
 abstract class SporeMessage extends Message(NoExplanationID) {
   def kind = "Spore"
   def explain = ""
+}
+
+class ExcludedType(typ: Type, override val explain: String)(using Context) extends SporeMessage {
+  def msg = s"${typ.show} is excluded"
 }
 
 class IllegalReference(tree: Tree)(using Context) extends SporeMessage {
