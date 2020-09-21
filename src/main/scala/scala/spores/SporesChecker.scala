@@ -1,5 +1,7 @@
 package scala.spores
 
+import reporting._
+
 import dotty.tools.dotc._
 import core._
 import Contexts.{Context,FreshContext}
@@ -334,7 +336,7 @@ class SporesChecker extends PluginPhase with StandardPlugin {
       else if SporeContext().captured.map(_.denot.current).contains(tree.symbol.denot.current)
         then report.log(s"Captured in header",tree.sourcePos)
       else {
-        report.error(s"Illegal reference: ${tree.show} owned by ${tree.symbol.owner.showFullName}",tree.sourcePos)
+        report.error(IllegalReference(tree),tree.sourcePos)
 
         if (SporeContext().hasExcluded) {
 
@@ -354,7 +356,6 @@ class SporesChecker extends PluginPhase with StandardPlugin {
                       + excludedMember.show + excludedMember.info.show,
                       tree.sourcePos)
                 case _ =>
-                  // change to ctx.log to make visible
                   report.inform(typ.show + " is not excluded. (unlike: " + talkList(SporeContext().excludedTypes.toList, (_.hiBound.show), ", ", " and ") + ")", tree.sourcePos)
         }
         // Skip checking if definition is local
