@@ -11,12 +11,14 @@ lazy val root = project
   .in(file("."))
   .settings(
     name := "dotty-spores",
-    
+
     libraryDependencies += "ch.epfl.lamp" % s"dotty-compiler_$majorVersion" % dottyVersion,
-    
+
     //This isn't hacky at all
     test := {
       val x = (Compile / packageBin).value
-      Process("make", new File("plugin-tests")).!
+      val status = Process("make", new File("plugin-tests")).!
+      if (status != 0)
+        sys.error("Some tests falied")
     },
   )

@@ -105,107 +105,6 @@ object SporesChecker {
           None
       case _ => None
     }
-    def unapply2(ap: Apply)(implicit ctx: Context): Option[(Block,List[Denotation],Denotation,Option[Denotation],Option[Denotation])] = {
-      val capturedVars = ListBuffer[Denotation]()
-      object AnonFun {
-        /** resugar function literal */
-        def unapply(block: Block): Option[(DefDef,Closure)] = block match {
-          case Block(stats,block: Block) =>
-            for {
-              // Is it a val declaration?
-              stat <- stats
-            } {
-              stat match
-                //TODO: Double check that tpt is included in Captured.
-                case v @ ValDef(name,tpt,_) =>
-                  if v.mods.is(Lazy)
-                    report.error("Incorrect spore header: lazy val not allowed.", v.sourcePos)
-                  if v.mods.is(Mutable)
-                    report.error("Incorrect spore header: var not allowed.",v.sourcePos)
-                  else {
-                    report.log(s"Captured ${v.rhs.show} as ${name.show}: ${tpt.show}",v.sourcePos)
-                    capturedVars += v.denot
-                  }
-                //case d: NamedDefTree => report.error("Incorrect spore header: Only val defs allowed at this position.",
-                //                                     d.sourcePos.withSpan(d.sourcePos.span.withEnd(d.nameSpan.start-1)))
-                case _ => report.error("Incorrect spore header: Only val defs allowed at this position.", stat.sourcePos)
-            }
-            unapply(block)
-
-          case Block(List(anondef: DefDef),closure @ Closure(_,Ident(cname),_))
-                if (anondef.name.isAnonymousFunctionName
-                 && cname == anondef.name) =>
-                  //report.log("This is expanded into this: " + anondef.show, anondef.sourcePos)
-                  //report.log("This is expanded into this: " + closure.show, closure.sourcePos)
-                  Some(anondef,closure)
-          case _ =>
-            report.error("No match", block.sourcePos)
-            None
-        }
-      }
-
-      /** Simplify node */
-      def peel(tree: Tree): Tree = tree match
-        //case Block(List(),term) => peel(term)
-        case Inlined(call,bindings,expansion) => (call,bindings) match
-          case (EmptyTree,List()) => peel(expansion)
-          case _ =>
-            report.error(s"Plugin error: Don't know how to handle this: ${tree.toString}")
-            peel(expansion)
-        case _ => tree
-
-      ap match {
-        case Apply(TypeApply(ident,_),args)
-          if ident.symbol equals sporeMethodSymbol => args match {
-            case Nil =>
-              report.error("Expected exactly one argument, but found none.",ap.sourcePos)
-              None
-            case List(arg) => peel(arg) match
-              case block @ AnonFun(anondef,closure) =>
-
-                /** The type of the Spore, the type checker will make sure this is a subtype of the expected type.*/
-                val sporeType = ap.typeOpt
-
-                /** Ignore `Excluded = Any` */
-                def notAny(excludedDenotation: Denotation): Boolean =
-                  if (excludedDenotation.info.bounds.contains(requiredModule("scala").requiredType("Any").typeRef)) {
-                        //report.warning("Ignoring excluding Any: {" + excludedDenotation.show + excludedDenotation.info.show + "}",ap.sourcePos)
-                        false
-                  } else true
-
-                Some(block, capturedVars.toList, anondef.denot,
-                  for {
-                    // name of spore.Excluded
-                    excludedName <- sporeType.memberNames(excludedTypeNameFilter).headOption
-                    // denotation of spore.Excluded
-                    excludedDenotation = sporeType.member(excludedName)
-                    // filter out Excluded = Any
-                    if notAny(excludedDenotation)
-                    } yield excludedDenotation,
-                    (for {
-                    // name of spore.CapturingWitness
-                    witnessName <- sporeType.memberNames(capturingWitnessTypeNameFilter)
-                    // denotation of spore.Excluded
-                    witnessDenotation = sporeType.member(witnessName)
-                    } yield witnessDenotation).headOption
-                    )
-              case arg =>
-                report.error(s"Expected function litteral, but found a ${arg.getClass.toString} node.", arg.sourcePos)
-                report.log(arg.toString,arg.sourcePos)
-                None
-            case lst =>
-              report.error("Expected exactly one argument, but found " + lst.size + ": " + lst.map(_.showSummary).mkString(",\n"),lst.head.sourcePos)
-              None
-            }
-        case Apply(ident,args)
-          if ident.symbol equals sporeMethodSymbol =>
-            report.error(s"Plugin error: No type information in spores call, are we after Erasure? ${ap.toString}",ap.sourcePos)
-            None
-        case _ =>
-          //report.warning(s"Not a spore: ${ap.toString}",ap.sourcePos)
-          None
-      }
-    }
   }
 
   object SporeContext {
@@ -407,6 +306,7 @@ class SporesChecker extends PluginPhase with StandardPlugin {
             }
           }
 
+        // Check Capturing Witness
         for {
           captured <- capturedVars
           capturedType = captured.info
@@ -447,56 +347,11 @@ class SporesChecker extends PluginPhase with StandardPlugin {
       if tree.symbol.owner.denot == scalaPredefSymbol.denot
         then report.log("Capturing scala.Predef is currently allowed.", tree.sourcePos)
       else if tree.symbol.ownersIterator.contains(SporeContext().entryPoint.get.current.symbol)
-        then report.log(s"Owned by spore",tree.sourcePos)
+        then report.log(s"Owned by spore body.",tree.sourcePos)
       else if SporeContext().captured.map(_.denot.current).contains(tree.symbol.denot.current)
-        then report.log(s"Captured in header",tree.sourcePos)
+        then report.log(s"Defined in header.",tree.sourcePos)
       else {
         report.error(IllegalReference(tree),tree.sourcePos)
-
-        if (SporeContext().hasExcluded) {
-
-          //val witness = SporeContext().capturingWitness
-          //if witness.isDefined
-          //ctx.log("CapturingWitness: " + witness.map(_.show))
-          //if (!tree.symbol.owner != SporeContext())
-          tree.typeOpt match
-            case NoType => report.error("Identifier has no type", tree.sourcePos)
-            case typ =>
-              if (SporeContext().isExcluded(typ))
-                report.error(tree.symbol.showDcl + " is excluded", tree.sourcePos)
-              else SporeContext().excludedMembers(typ) match
-                case es if es.nonEmpty =>
-                  for {excludedMember <- es}
-                    report.error(tree.symbol.showDcl + " has an excluded member "
-                      + excludedMember.show + excludedMember.info.show,
-                      tree.sourcePos)
-                case _ =>
-                  report.inform(typ.show + " is not excluded. (unlike: " + talkList(SporeContext().excludedTypes.toList, (_.hiBound.show), ", ", " and ") + ")", tree.sourcePos)
-        }
-        // Skip checking if definition is local
-        if (SporeContext().capturingWitness.isDefined) {
-          if (tree.symbol.owner == SporeContext().entryPoint.get.current.symbol) {
-            report.log("This is a local definition, not a captured variable and therefore ok.", tree.sourcePos)
-          } else {
-            val bounds = SporeContext().capturingWitness.get.current.info.asInstanceOf[TypeBounds]
-            val lambda = bounds.underlying.asInstanceOf[HKTypeLambda]
-            val res = lambda.resType
-
-            val current = tree.typeOpt.widenTermRefExpr
-
-            //ctx.log("Witness: " + res.show)
-            //ctx.log("Raw:     " + res.toString)
-            //ctx.log("Current: " + current.show)
-            //ctx.log("Raw:     " + current.toString)
-            //ctx.log("subtype?: " + (current.typeConstructor <:< res.typeConstructor).toString)
-
-            if (!(current.typeConstructor <:< res.typeConstructor)) {
-              report.error("This spore only allows capturing values wrapped in a " + res.typeConstructor.show + ". "
-                + "Consider capturing it as a " + AppliedType(lambda, List(tree.typeOpt.widen)).show + " instead.", tree.sourcePos)
-            }
-            else report.log("Capturing " + tree.typeOpt.show, tree.sourcePos)
-          }
-        }
       }
     }
     ctx

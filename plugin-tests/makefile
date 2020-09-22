@@ -1,12 +1,16 @@
 TESTS := $(shell ls expected/*.exit | sed 's/expected\///g' | sed 's/exit/test/g')
 DEBUG := $(shell ls expected/*.exit | sed 's/expected\///g' | sed 's/exit/debug/g')
+JAR := $(shell find ../target -type f -name "dotty-spores*.jar")
 
 test-all: $(TESTS)
 debug-all: $(DEBUG)
 
-lib/dotty-spores.jar: $(shell find ../src -type f)
+
+$(JAR): $(shell find ../src -type f)
 	cd .. && sbt package
-	install -D ../target/scala*/dotty-spores*.jar lib/dotty-spores.jar
+
+lib/dotty-spores.jar: $(JAR)
+	install -D $(JAR) lib/dotty-spores.jar
 
 bin:
 	install -d bin
