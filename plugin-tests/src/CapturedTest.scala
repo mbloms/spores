@@ -11,7 +11,6 @@ object CapturedTest {
         var num2 = num*2
         println(str)
         println(num)
-        println(d.x)
         println(num2)
       }
     }
