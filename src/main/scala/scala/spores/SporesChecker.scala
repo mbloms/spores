@@ -24,25 +24,11 @@ import Denotations._
 import SymDenotations._
 import Flags._
 
-import reporting.Diagnostic
-import reporting.ConsoleReporter
+import reporting._
 
 import annotation.unused
 
 object SporesChecker {
-
-  /*
-   * TODO: Currently everything breaks if there is no spores.Spore
-   * in current compilation run.
-   */
-  def sporeMethodSymbol(implicit ctx: Context): TermSymbol = {
-    requiredModule("scala.spores").requiredMethod("typedSpore")
-  }
-
-  @unused
-  def excludedTypeSymbol(implicit ctx: Context): TypeSymbol = {
-    requiredClass("spores.Spore").requiredType("Excluded")
-  }
 
   def scalaPredefSymbol(implicit ctx: Context): Symbol = {
     requiredPackage("scala").requiredClass("Predef$")
@@ -91,18 +77,25 @@ object SporesChecker {
         ???
   }
 
+  object SporeMethod {
+    /** An identifier is a spores method if it is owned by scala.spores and has name `typedSpore` */
+    def unapply(ident: Ident)(using Context): Boolean = {
+      val sporesPackage = requiredClass("scala.spores")
+      ident.symbol.denot.ownersIterator.contains(sporesPackage) && ident.name.mangledString == "typedSpore"
+    }
+  }
+
   object Spore {
     def unapply(ap: Apply)(using Context): Option[Tree] = ap match {
-      case Apply(TypeApply(ident,_),args)
-        if ident.symbol equals sporeMethodSymbol => args match
+      case Apply(TypeApply(SporeMethod(),_),args) =>
+        args match
           case List(arg) => Some(arg)
           case _ =>
             report.error(s"Expected exactly one argument, but found ${args.size}.", ap.sourcePos)
             None
-      case Apply(ident,args)
-        if ident.symbol equals sporeMethodSymbol =>
-          report.error(s"Plugin error: No type information in spores call, are we after Erasure? ${ap.toString}",ap.sourcePos)
-          None
+      case Apply(SporeMethod(),args) =>
+        report.error(s"Plugin error: No type information in spores call, are we after Erasure? ${ap.toString}",ap.sourcePos)
+        None
       case _ => None
     }
   }
@@ -338,6 +331,8 @@ class SporesChecker extends PluginPhase with StandardPlugin {
         then report.log(s"Owned by spore body.",tree.sourcePos)
       else if SporeContext().captured.map(_.denot.current).contains(tree.symbol.denot.current)
         then report.log(s"Defined in header.",tree.sourcePos)
+      else if tree.denot.symbol.isStatic
+        then report.warning(s"Capturing static variable ${tree.denot.symbol.showFullName}.",tree.sourcePos)
       else {
         report.error(IllegalReference(tree),tree.sourcePos)
       }
