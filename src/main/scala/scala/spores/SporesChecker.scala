@@ -222,18 +222,44 @@ class SporesChecker extends PluginPhase with StandardPlugin {
   private implicit var sporectxloc: Store.Location[SporeContext] = _
   override def initContext(ctx: FreshContext) = {
     sporectxloc = ctx.addLocation[SporeContext](SporeContext.empty)
-    ctx.setReporter(new ConsoleReporter {
-      /** Normally, if code from source A is inlined in a call to B which is then inlined into A,
-       *  the stack of inlined sources is printed, despite the fact that the code originated from source A.
-       *  This implementation gets rid of that behaviour.
-       */
-      override def outer(pos: SourcePosition, prefix: String)(using Context): List[String] = {
-        if (!pos.outermost.contains(pos) && pos.outer.exists)
-          i"$prefix| This location contains code that was inlined from $pos" ::
-            outer(pos.outer, prefix)
-        else Nil
-      }
-    })
+    
+    /** Using a custom reporter screws up exit codes */
+    ctx.reporter match
+      case outerReporter: ConsoleReporter if !outerReporter.hasErrors =>
+        ctx.setReporter(new ConsoleReporter {
+          override def errorCount: Int =
+            super.errorCount + outerReporter.errorCount
+          override def warningCount: Int =
+            super.warningCount + outerReporter.warningCount
+          override def isHidden(dia: Diagnostic)(using Context): Boolean =
+            super.isHidden(dia) || outerReporter.isHidden(dia)
+
+          override def allErrors =
+            super.allErrors ++ outerReporter.allErrors
+            
+          override def isReportedFeatureUseSite(featureTrait: Symbol): Boolean =
+            outerReporter.isReportedFeatureUseSite(featureTrait)
+          override def reportNewFeatureUseSite(featureTrait: Symbol): Unit =
+            outerReporter.reportNewFeatureUseSite(featureTrait)
+
+          unreportedWarnings = outerReporter.unreportedWarnings
+          
+          // THIS STILL EXITS WITH 0. WHY??
+          override def hasErrors = true
+          override def errorsReported: Boolean = true
+
+          /** Normally, if code from source A is inlined in a call to B which is then inlined into A,
+           *  the stack of inlined sources is printed, despite the fact that the code originated from source A.
+           *  This implementation gets rid of that behaviour.
+           */
+          override def outer(pos: SourcePosition, prefix: String)(using Context): List[String] = {
+            if (!pos.outermost.contains(pos) && pos.outer.exists)
+              i"$prefix| This location contains code that was inlined from $pos" ::
+                outer(pos.outer, prefix)
+            else Nil
+          }
+        })
+      case _ => ???
   }
 
 
