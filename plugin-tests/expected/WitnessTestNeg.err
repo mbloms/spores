@@ -1,0 +1,5 @@
+[31m-- Spore Error: src/WitnessTestNeg.scala:19:18 ---------------------------------[0m
+[31m19 |[0m          println(lst)
+   |                  [31m^^^[0m
+   |          lst owned by WitnessTest.test is not accessible in spore body.
+1 error found

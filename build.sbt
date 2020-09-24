@@ -17,8 +17,8 @@ lazy val root = project
     //This isn't hacky at all
     test := {
       val x = (Compile / packageBin).value
-      val status = Process("make", new File("plugin-tests")).!
+      val status = Process("make -k", new File("plugin-tests")).!
       if (status != 0)
-        sys.error("Some tests falied")
+        throw new TestsFailedException
     },
   )

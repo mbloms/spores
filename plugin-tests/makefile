@@ -28,19 +28,24 @@ result:
 RESULT := $(addprefix result/,$(shell ls expected))
 prepare-result: $(RESULT)
 
-compile := dotc -Xplugin:lib/dotty-spores.jar -classpath lib/dotty-spores.jar -d bin
+compile := dotc -Xplugin:lib/dotty-spores.jar -classpath lib/dotty-spores.jar -sourcepath src -d bin
+
+bin/%.class: src/%.scala bin lib/dotty-spores.jar
+	@echo -en "[\033[0;34mcompiling\033[0m] $*: "
+	$(compile) -Yshow-suppressed-errors $<
 
 result/%.err result/%.out result/%.exit: src/%.scala result bin lib/dotty-spores.jar
-	@echo -e "[\033[0;34mcompiling\033[0m] $*"
-	@$(compile) $< 2> result/$*.err 1> result/$*.out; echo $$? > result/$*.exit
+	@echo -en "[\033[0;34mcompiling\033[0m] $*: "
+	$(compile) $< 2> result/$*.err 1> result/$*.out; echo $$? > result/$*.exit
 
 %.test: result/%.err result/%.out result/%.exit expected/%.err expected/%.out expected/%.exit
-	@diff -u {expected,result}/$*.exit || echo -e "[\033[0;31mtest failed\033[0m] $*: Exited with code $(shell cat result/$*.debug), but expected $(shell cat expected/$*.exit)"
+	@diff -u {expected,result}/$*.exit || echo -e "[\033[0;31mtest failed\033[0m] $*: Exited with code $$(< result/$*.exit), but expected $$(< expected/$*.exit)"
 	@diff -u {expected,result}/$*.err  || echo -e "[\033[0;31mtest failed\033[0m] $*: stderr did not match"
 	@diff -u {expected,result}/$*.out  || echo -e "[\033[0;31mtest failed\033[0m] $*: stdout did not match"
 	@diff -u {expected,result}/$*.err > /dev/null && diff -u {expected,result}/$*.out > /dev/null && diff -u {expected,result}/$*.exit > /dev/null
 	@echo -e "[\033[0;32mtest succeeded\033[0m] $*"
 
-%.debug result/%.debug bin/%.class: src/%.scala result bin lib/dotty-spores.jar
+%.debug result/%.debug: src/%.scala result bin lib/dotty-spores.jar
+	@echo -en "[\033[0;34mcompiling\033[0m] $*: "
 	$(compile) -Ylog:sporesChecker+ -Yshow-suppressed-errors -Ydebug $< ; echo $$? > result/$*.debug
-	@diff -u expected/$*.exit result/$*.debug > /dev/null || (echo -e "[\033[0;31mtest failed\033[0m] $*: Exited with code $(shell cat result/$*.debug), but expected $(shell cat expected/$*.exit)"; false)
+	@diff -u expected/$*.exit result/$*.debug > /dev/null || (echo -e "[\033[0;31mtest failed\033[0m] $*: Exited with code $$(< result/$*.debug), but expected $$(< expected/$*.exit)"; false)

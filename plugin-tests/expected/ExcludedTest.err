@@ -1,0 +1,9 @@
+[31m-- Spore Error: src/ExcludedTest.scala:7:8 -------------------------------------[0m
+[31m7 |[0m    [33mval[0m [36mcarr[0m = arr
+  |        [31m^[0m
+  |        Array[Int] is excluded
+  | This location contains code that was inlined from ExcludedTest.scala:7
+  | This location contains code that was inlined from SporeImpl.scala:0
+
+longer explanation available when compiling with `-explain`
+1 error found

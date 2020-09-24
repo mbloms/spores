@@ -1,0 +1,7 @@
+[33m-- Warning: src/WitnessTest.scala:18:12 ----------------------------------------[0m
+[33m18 |[0m        [33mval[0m [36mcaptured_lst[0m: [35mImmutable[List[Int]][0m = Immutable(lst)
+   |            [33m^[0m
+   |Maybe  should have been excluded. It's lower bound, Nothing, is a subtype of [33mtype[0m [35mExcluded[0m  = packed.box.C
+   | This location contains code that was inlined from WitnessTest.scala:18
+   | This location contains code that was inlined from SporeImpl.scala:0
+1 warning found

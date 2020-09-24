@@ -1,7 +1,6 @@
 package scala.spores
 
-import reporting._
-
+import scala.language.implicitConversions
 import dotty.tools.dotc._
 import core._
 import Contexts.{Context,FreshContext}
@@ -23,9 +22,8 @@ import util.{Store,SourcePosition}
 import Denotations._
 import SymDenotations._
 import Flags._
-
 import reporting._
-
+import spores.reporting._
 import annotation.unused
 
 object SporesChecker {
@@ -73,8 +71,8 @@ object SporesChecker {
       case Block(outer, SporeBlock(inner,anondef,closure)) =>
         Some(outer ++ inner, anondef,closure)
       case _ =>
-        report.error(s"Unexpected: ${tree.show}",tree.sourcePos)
-        ???
+        report.error(s"Expected function litteral, but found a ${tree.getClass.toString} node.", tree.sourcePos)
+        None
   }
 
   object SporeMethod {
@@ -219,7 +217,6 @@ class SporesChecker extends PluginPhase with StandardPlugin {
 
 
   override def prepareForApply(tree: Apply)(implicit ctx: Context): Context = {
-    //report.log("Apply Node: " + tree.show,tree.sourcePos)
     tree match {
       case Spore(SporeBlock(stats,anondef,closure)) =>
         val sporeType = tree.typeOpt
@@ -277,13 +274,13 @@ class SporesChecker extends PluginPhase with StandardPlugin {
           else {
             if (capturedType.loBound <:< excludedType) {
               report.warning(
-                s"""|Maybe ${capturedType.show} should have been excluded. It's lower bound, ${capturedType.loBound.show},
-                    |is a subtype of ${excluded.show} ${excludedType.show}""", captured.symbol.sourcePos)
+                s"Maybe ${capturedType.show} should have been excluded. It's lower bound, ${capturedType.loBound.show}, "
+                + s"is a subtype of ${excluded.show} ${excludedType.show}", captured.symbol.sourcePos)
             }
             if (capturedType.loBound <:< excludedType.hiBound) {
               report.warning(
-                s"""|Maybe ${capturedType.show} should have been excluded. It's lower bound, ${capturedType.loBound.show},
-                    |is a subtype of ${excluded.show}'s higher bound, ${excludedType.hiBound.show}""", captured.symbol.sourcePos)
+                s"Maybe ${capturedType.show} should have been excluded. It's lower bound, ${capturedType.loBound.show}, "
+                + s"is a subtype of ${excluded.show}'s higher bound, ${excludedType.hiBound.show}", captured.symbol.sourcePos)
             }
           }
 

@@ -1,0 +1,7 @@
+[31m-- Error: src/Simple.scala:8:50 ------------------------------------------------[0m
+[31m8 |[0m  [33mdef[0m [36mbad[0m[[35mA[0m,[35mB[0m]([36mfun[0m: ([35mA[0m => [35mB[0m)): [35mSpore[A,B][0m = spore(fun)
+  |                                                  [31m^^^[0m
+  |Expected function litteral, but found a class dotty.tools.dotc.ast.Trees$Ident node.
+  | This location contains code that was inlined from Simple.scala:8
+  | This location contains code that was inlined from SporeImpl.scala:0
+1 error found

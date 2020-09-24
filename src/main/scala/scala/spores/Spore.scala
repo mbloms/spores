@@ -22,6 +22,8 @@ sealed trait SporeBase extends Serializable {
    */
   type Excluded
 
+  type CapturingWitness[T]
+
   /** Enable the creation of spores via reflection. */
   def className: String = _className
   protected var _className: String = null
