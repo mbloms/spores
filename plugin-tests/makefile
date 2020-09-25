@@ -5,6 +5,9 @@ DEBUG := $(shell ls expected/*.exit | sed 's/expected\///g' | sed 's/exit/debug/
 test-all: $(TESTS)
 debug-all: $(DEBUG)
 
+list-tests:
+	@ls expected/*.exit | sed 's/expected\///g' | sed 's/exit/test/g'
+
 .INTERMEDIATE: dotc
 
 dotty.mk: ../build.sbt
