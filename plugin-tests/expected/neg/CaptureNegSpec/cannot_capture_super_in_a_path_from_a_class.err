@@ -1,0 +1,5 @@
+[31m-- Error: src/neg/CaptureNegSpec/cannot_capture_super_in_a_path_from_a_class.scala:8:30 [0m
+[31m8 |[0m             [31ms"arg: [0m$x[31m, c1: [0m${[33msuper[0m.bar}[31m"[0m
+  |                              [31m^^^^^[0m
+  |                              Capturing [33msuper[0m is not allowed.
+1 error found

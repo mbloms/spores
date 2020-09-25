@@ -5,16 +5,16 @@ DEBUG := $(shell find expected -name "*.exit" | sed 's/expected/result/g' | sed 
 test-all: $(TESTS)
 debug-all: $(DEBUG)
 
-list-tests:
-	@ls expected/*.exit | sed 's/expected\///g' | sed 's/exit/test/g'
-
-.SECONDARY: dotty-$(dottyVersion).tar.gz
-
 dotty.mk: ../build.sbt
 	cd .. && sbt dottyMk
 
 # defines $(dottyVersion)
 include dotty.mk
+
+list-tests:
+	@ls expected/*.exit | sed 's/expected\///g' | sed 's/exit/test/g'
+
+.SECONDARY: dotty-$(dottyVersion) dotty-$(dottyVersion).tar.gz
 
 dotty-%.tar.gz:
 	@echo -en "[\033[0;34mdownloading\033[0m] dotty $*: "
@@ -23,11 +23,10 @@ dotty-%.tar.gz:
 dotty-%: dotty-%.tar.gz
 	tar -xzf $<
 
-dotc := dotty-$(dottyVersion)
+dotc: dotty-$(dottyVersion) bin
 
 export PATH := dotty-$(dottyVersion)/bin:$(PATH)
 
-JAR := $(shell find ../target -type f -name "dotty-spores*.jar")
 $(JAR): $(shell find ../src -type f)
 	cd .. && sbt package
 
@@ -52,11 +51,11 @@ prepare-result: $(RESULT)
 
 compile := dotc -Xplugin:lib/dotty-spores.jar -classpath lib/dotty-spores.jar -sourcepath src -d bin
 
-bin/%.class: src/%.scala bin lib/dotty-spores.jar $(dotc)
+bin/%.class: src/%.scala lib/dotty-spores.jar dotc
 	@echo -en "[\033[0;34mcompiling\033[0m] $*: "
 	$(compile) -Yshow-suppressed-errors "$<"
 
-result/%.err result/%.out result/%.exit: src/%.scala bin lib/dotty-spores.jar $(dotc)
+result/%.err result/%.out result/%.exit: src/%.scala lib/dotty-spores.jar dotc
 	@install -d $(@D)
 	@echo -en "[\033[0;34mcompiling\033[0m] $*: "
 	$(compile) "$<" 2> result/$*.err 1> result/$*.out; echo $$? > result/$*.exit
@@ -68,9 +67,9 @@ result/%.test: result/%.err result/%.out result/%.exit expected/%.err expected/%
 	@diff -u {expected,result}/$*.err > /dev/null && diff -u {expected,result}/$*.out > /dev/null && diff -u {expected,result}/$*.exit > /dev/null
 	@echo -e "[\033[0;32mtest succeeded\033[0m] $*"
 
-result/%.debug: src/%.scala bin lib/dotty-spores.jar $(dotc)
+result/%.debug: src/%.scala lib/dotty-spores.jar dotc
 	@install -d $(@D)
 	@echo -en "[\033[0;34mcompiling\033[0m] $*: "
 	$(compile) -Ylog:sporesChecker+ -Yshow-suppressed-errors -Ydebug "$<" ; echo $$? > result/$*.debug
 	@diff -u expected/$*.exit result/$*.debug > /dev/null || (echo -e "[\033[0;31mtest failed\033[0m] $*: Exited with code $$(< result/$*.debug), but expected $$(< expected/$*.exit)"; false)
-	@rm result/$*.debug
+	@rm $@

@@ -343,4 +343,12 @@ class SporesChecker extends PluginPhase with StandardPlugin {
         else report.error(s"Capturing ${tree.show} is not allowed.",tree.sourcePos)
     ctx
   }
+
+  override def prepareForSuper(tree: Super)(using ctx: Context): Context = {
+    if SporeContext().inSpore then
+      if tree.symbol.ownersIterator.contains(SporeContext().entryPoint.get.current.symbol)
+      then report.log(s"Owned by spore body.",tree.sourcePos)
+      else report.error(s"Capturing ${tree.show} is not allowed.",tree.sourcePos)
+    ctx
+  }
 }

@@ -17,7 +17,11 @@ lazy val root = project
     libraryDependencies += "ch.epfl.lamp" % s"dotty-compiler_$majorVersion" % dottyVersion,
 
     dottyMk := {
-      IO.write(new File("plugin-tests/dotty.mk"),s"dottyVersion := ${dottyVersion}\n")
+      val (art, jar) = (Compile / packageBin / packagedArtifact).value
+      IO.write(new File("plugin-tests/dotty.mk"),s"""
+dottyVersion := ${dottyVersion}
+JAR := ${jar.getAbsolutePath}
+""")
     },
     //This isn't hacky at all
     test := {
