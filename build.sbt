@@ -7,6 +7,8 @@ ThisBuild / scalaVersion := dottyVersion
 ThisBuild / version := "0.1.0"
 ThisBuild / organization := "se.mbloms"
 
+lazy val dottyMk = taskKey[Unit]("put dottyVersion in plugin-tests/dotty.mk")
+
 lazy val root = project
   .in(file("."))
   .settings(
@@ -14,9 +16,13 @@ lazy val root = project
 
     libraryDependencies += "ch.epfl.lamp" % s"dotty-compiler_$majorVersion" % dottyVersion,
 
+    dottyMk := {
+      IO.write(new File("plugin-tests/dotty.mk"),s"dottyVersion := ${dottyVersion}\n")
+    },
     //This isn't hacky at all
     test := {
-      val x = (Compile / packageBin).value
+      dottyMk.value
+      (Compile / packageBin).value
       val status = Process("make -k", new File("plugin-tests")).!
       if (status != 0)
         throw new TestsFailedException

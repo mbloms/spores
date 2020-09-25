@@ -8,9 +8,7 @@ debug-all: $(DEBUG)
 .INTERMEDIATE: dotc
 
 dotty.mk: ../build.sbt
-	@echo "[make] fetching scalaVersion"
-	@echo -n "dottyVersion := " > dotty.mk
-	@cd .. && sbt scalaVersion | tail -1 | sed 's/\[info\] //g' >> plugin-tests/dotty.mk
+	cd .. && sbt dottyMk
 
 include dotty.mk
 
