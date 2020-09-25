@@ -4,6 +4,25 @@ DEBUG := $(shell ls expected/*.exit | sed 's/expected\///g' | sed 's/exit/debug/
 test-all: $(TESTS)
 debug-all: $(DEBUG)
 
+.INTERMEDIATE: dotc
+
+dotty.mk: ../build.sbt
+	@echo "[info] fetching dottyVersion"
+	@echo -n "dottyVersion := " > dotty.mk
+	@cd .. && sbt scalaVersion | tail -1 | sed 's/\[info\] //g' >> plugin-tests/dotty.mk
+
+include dotty.mk
+
+dotty-%.tar.gz:
+	@echo -en "[\033[0;34mdownloading\033[0m] dotty $*: "
+	curl -LO https://github.com/lampepfl/dotty/releases/download/0.27.0-RC1/$@
+
+dotty-%: dotty-%.tar.gz
+	tar -xzf $<
+
+dotc: dotty-$(dottyVersion)
+
+export PATH := dotty-$(dottyVersion)/bin:$(PATH)
 
 JAR := $(shell find ../target -type f -name "dotty-spores*.jar")
 $(JAR): $(shell find ../src -type f)
@@ -30,11 +49,11 @@ prepare-result: $(RESULT)
 
 compile := dotc -Xplugin:lib/dotty-spores.jar -classpath lib/dotty-spores.jar -sourcepath src -d bin
 
-bin/%.class: src/%.scala bin lib/dotty-spores.jar
+bin/%.class: src/%.scala bin lib/dotty-spores.jar dotc
 	@echo -en "[\033[0;34mcompiling\033[0m] $*: "
 	$(compile) -Yshow-suppressed-errors $<
 
-result/%.err result/%.out result/%.exit: src/%.scala result bin lib/dotty-spores.jar
+result/%.err result/%.out result/%.exit: src/%.scala result bin lib/dotty-spores.jar dotc
 	@echo -en "[\033[0;34mcompiling\033[0m] $*: "
 	$(compile) $< 2> result/$*.err 1> result/$*.out; echo $$? > result/$*.exit
 
@@ -45,7 +64,7 @@ result/%.err result/%.out result/%.exit: src/%.scala result bin lib/dotty-spores
 	@diff -u {expected,result}/$*.err > /dev/null && diff -u {expected,result}/$*.out > /dev/null && diff -u {expected,result}/$*.exit > /dev/null
 	@echo -e "[\033[0;32mtest succeeded\033[0m] $*"
 
-%.debug result/%.debug: src/%.scala result bin lib/dotty-spores.jar
+%.debug result/%.debug: src/%.scala result bin lib/dotty-spores.jar dotc
 	@echo -en "[\033[0;34mcompiling\033[0m] $*: "
 	$(compile) -Ylog:sporesChecker+ -Yshow-suppressed-errors -Ydebug $< ; echo $$? > result/$*.debug
 	@diff -u expected/$*.exit result/$*.debug > /dev/null || (echo -e "[\033[0;31mtest failed\033[0m] $*: Exited with code $$(< result/$*.debug), but expected $$(< expected/$*.exit)"; false)
