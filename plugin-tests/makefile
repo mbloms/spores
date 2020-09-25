@@ -1,3 +1,4 @@
+SHELL := $(shell which bash)
 TESTS := $(shell ls expected/*.exit | sed 's/expected\///g' | sed 's/exit/test/g')
 DEBUG := $(shell ls expected/*.exit | sed 's/expected\///g' | sed 's/exit/debug/g')
 
@@ -7,7 +8,7 @@ debug-all: $(DEBUG)
 .INTERMEDIATE: dotc
 
 dotty.mk: ../build.sbt
-	@echo "[info] fetching dottyVersion"
+	@echo "[make] fetching scalaVersion"
 	@echo -n "dottyVersion := " > dotty.mk
 	@cd .. && sbt scalaVersion | tail -1 | sed 's/\[info\] //g' >> plugin-tests/dotty.mk
 
