@@ -8,11 +8,12 @@ debug-all: $(DEBUG)
 list-tests:
 	@ls expected/*.exit | sed 's/expected\///g' | sed 's/exit/test/g'
 
-.INTERMEDIATE: dotc
+.SECONDARY: dotty-$(dottyVersion).tar.gz
 
 dotty.mk: ../build.sbt
 	cd .. && sbt dottyMk
 
+# defines $(dottyVersion)
 include dotty.mk
 
 dotty-%.tar.gz:
@@ -22,7 +23,7 @@ dotty-%.tar.gz:
 dotty-%: dotty-%.tar.gz
 	tar -xzf $<
 
-dotc: dotty-$(dottyVersion)
+dotc := dotty-$(dottyVersion)
 
 export PATH := dotty-$(dottyVersion)/bin:$(PATH)
 
@@ -46,16 +47,16 @@ result:
 	install -d result
 
 # Needed for make to understand these are not "intermediate"
-RESULT := $(shell find expected -name "*.exit" | sed 's/expected/result/g')
+RESULT := $(shell find expected -type f | sed 's/expected/result/g')
 prepare-result: $(RESULT)
 
 compile := dotc -Xplugin:lib/dotty-spores.jar -classpath lib/dotty-spores.jar -sourcepath src -d bin
 
-bin/%.class: src/%.scala bin lib/dotty-spores.jar dotc
+bin/%.class: src/%.scala bin lib/dotty-spores.jar $(dotc)
 	@echo -en "[\033[0;34mcompiling\033[0m] $*: "
 	$(compile) -Yshow-suppressed-errors "$<"
 
-result/%.err result/%.out result/%.exit: src/%.scala bin lib/dotty-spores.jar dotc
+result/%.err result/%.out result/%.exit: src/%.scala bin lib/dotty-spores.jar $(dotc)
 	@install -d $(@D)
 	@echo -en "[\033[0;34mcompiling\033[0m] $*: "
 	$(compile) "$<" 2> result/$*.err 1> result/$*.out; echo $$? > result/$*.exit
@@ -67,7 +68,7 @@ result/%.test: result/%.err result/%.out result/%.exit expected/%.err expected/%
 	@diff -u {expected,result}/$*.err > /dev/null && diff -u {expected,result}/$*.out > /dev/null && diff -u {expected,result}/$*.exit > /dev/null
 	@echo -e "[\033[0;32mtest succeeded\033[0m] $*"
 
-result/%.debug: src/%.scala bin lib/dotty-spores.jar dotc
+result/%.debug: src/%.scala bin lib/dotty-spores.jar $(dotc)
 	@install -d $(@D)
 	@echo -en "[\033[0;34mcompiling\033[0m] $*: "
 	$(compile) -Ylog:sporesChecker+ -Yshow-suppressed-errors -Ydebug "$<" ; echo $$? > result/$*.debug
