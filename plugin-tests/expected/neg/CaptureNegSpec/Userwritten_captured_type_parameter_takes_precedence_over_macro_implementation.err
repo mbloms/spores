@@ -1,0 +1,23 @@
+[31m-- Spore Error: src/neg/CaptureNegSpec/Userwritten_captured_type_parameter_takes_precedence_over_macro_implementation.scala:8:8 [0m
+[31m8 |[0m    [33mval[0m [36mthisRef[0m = [33mthis[0m
+  |        [31m^[0m
+  |        OuterReference is excluded
+  | This location contains code that was inlined from Userwritten_captured_type_parameter_takes_precedence_over_macro_implementation.scala:8
+  | This location contains code that was inlined from SporeImpl.scala:0
+
+longer explanation available when compiling with `-explain`
+[33m-- Warning: src/neg/CaptureNegSpec/Userwritten_captured_type_parameter_takes_precedence_over_macro_implementation.scala:10:6 [0m
+[33m10 |[0m      t.trim
+   |      [33m^[0m
+   |      Capturing static variable scala.collection.ArrayOps.map$extension.
+[33m-- Warning: src/neg/CaptureNegSpec/Userwritten_captured_type_parameter_takes_precedence_over_macro_implementation.scala:12:22 [0m
+[33m12 |[0m        .map(word => (word, [31m""[0m))
+   |                      [33m^[0m
+   |                      Capturing static variable scala.Tuple2.
+[33m-- Warning: src/neg/CaptureNegSpec/Userwritten_captured_type_parameter_takes_precedence_over_macro_implementation.scala:12:32 [0m
+[33m12 |[0m        .map(word => (word, [31m""[0m))
+   |                                [33m^[0m
+   |                       Capturing static variable scala.reflect.ClassTag.
+3 warnings found
+1 error found
+there were 1 deprecation warning(s); re-run with -deprecation for details

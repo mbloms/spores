@@ -1,0 +1,19 @@
+[31m-- Error: src/neg/CaptureNegSpec/reference_to_outer_class_member_is_catched.scala:12:17 [0m
+[31m12 |[0m    t.trim.split(ps.alphabeticPattern).map([36mword[0m => (word, [31m""[0m)).toTraversable
+   |                 [31m^[0m
+   |                Capturing [33mthis[0m from class OuterReference is not allowed.
+[33m-- Warning: src/neg/CaptureNegSpec/reference_to_outer_class_member_is_catched.scala:12:4 [0m
+[33m12 |[0m    t.trim.split(ps.alphabeticPattern).map([36mword[0m => (word, [31m""[0m)).toTraversable
+   |    [33m^[0m
+   |    Capturing static variable scala.collection.ArrayOps.map$extension.
+[33m-- Warning: src/neg/CaptureNegSpec/reference_to_outer_class_member_is_catched.scala:12:52 [0m
+[33m12 |[0m    t.trim.split(ps.alphabeticPattern).map([36mword[0m => (word, [31m""[0m)).toTraversable
+   |                                                    [33m^[0m
+   |                                 Capturing static variable scala.Tuple2.
+[33m-- Warning: src/neg/CaptureNegSpec/reference_to_outer_class_member_is_catched.scala:12:62 [0m
+[33m12 |[0m    t.trim.split(ps.alphabeticPattern).map([36mword[0m => (word, [31m""[0m)).toTraversable
+   |                                                              [33m^[0m
+   |                       Capturing static variable scala.reflect.ClassTag.
+3 warnings found
+1 error found
+there were 1 deprecation warning(s); re-run with -deprecation for details

@@ -1,0 +1,18 @@
+[31m-- [E007] Type Mismatch Error: src/neg/CaptureNegSpec/Userwritten_captured_type_parameter_takes_precedence_over_macro_implementation_II.scala:7:18 [0m
+[31m7 |[0m  text.map((spore {
+   |            [31m^[0m
+   |   Found:    spores.Spore[String, Iterable[(String, String)]]{
+   |     Captured = [1m[31m([0m[1m[31mOuterReference[0m[1m[31m.[0m[1m[31mthis[0m[1m[31m [0m[1m[31m:[0m[1m[31m [0m[1m[31mOuterReference[0m[1m[31m)[0m; Excluded = [1m[31mAny[0m[1m[31m;[0m[1m[31m [0m
+   |   [1m[31m [0m[1m[31m [0m[1m[31m [0m[1m[31m [0m[1m[31mCapturingWitness[0m[1m[31m[[0m[1m[31mT[0m[1m[31m][0m[1m[31m [0m[1m[31m=[0m[1m[31m [0m[1m[31mAny[0m
+   |   }
+   |   Required: spores.Spore[String, Iterable[(String, String)]]{
+   |     Captured = [1m[32mNothing[0m; Excluded = [1m[32mNothing[0m
+   |   }
+[31m8 |[0m    [33mval[0m [36mthisRef[0m = [33mthis[0m
+[31m9 |[0m    ([36mt[0m: [35mString[0m) =>
+[31m10 |[0m      t.trim
+[31m11 |[0m        .split(thisRef.alphabeticPattern)
+[31m12 |[0m        .map([36mword[0m => (word, [31m""[0m))
+[31m13 |[0m        .toTraversable
+[31m14 |[0m  }): [35mSpore[String, Traversable[(String, String)]] { type Captured = Nothing; type Excluded = Nothing }[0m)
+1 error found

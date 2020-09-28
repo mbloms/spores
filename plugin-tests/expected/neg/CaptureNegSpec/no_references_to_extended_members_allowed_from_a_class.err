@@ -1,0 +1,5 @@
+[31m-- Error: src/neg/CaptureNegSpec/no_references_to_extended_members_allowed_from_a_class.scala:11:23 [0m
+[31m11 |[0m              [33mval[0m [36ms1[0m = f.toString
+   |                       [31m^[0m
+   |                       Capturing [33mthis[0m from class D is not allowed.
+1 error found

@@ -1,0 +1,16 @@
+[31m-- [E007] Type Mismatch Error: src/neg/CaptureNegSpec/Explicit_and_wrong_captured_type_member_in_lhs_of_ValDef_produces_type_mismatch.scala:9:12 [0m
+[31m9 |[0m  } = spore {
+   |      [31m^[0m
+   |Found:    spores.Spore[String, Iterable[(String, String)]]{
+   |  Captured = (OuterReference.this : OuterReference); Excluded = Any; 
+   |    CapturingWitness[T] = Any
+   |}
+   |Required: spores.Spore[String, ?]{Captured = Nothing; Excluded = Nothing}
+[31m10 |[0m    [33mval[0m thisRef = [33mthis[0m
+[31m11 |[0m    (t: String) =>
+[31m12 |[0m      t.trim
+[31m13 |[0m        .split(thisRef.alphabeticPattern)
+[31m14 |[0m        .map(word => (word, [31m""[0m))
+[31m15 |[0m        .toTraversable
+[31m16 |[0m  }
+1 error found

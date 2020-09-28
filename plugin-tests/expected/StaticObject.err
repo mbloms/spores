@@ -1,0 +1,9 @@
+[33m-- Warning: src/StaticObject.scala:9:4 -----------------------------------------[0m
+[33m9 |[0m    m(str)
+  |    [33m^[0m
+  |    Capturing static variable Data.m.
+[33m-- Warning: src/StaticObject.scala:9:6 -----------------------------------------[0m
+[33m9 |[0m    m(str)
+  |      [33m^^^[0m
+  |      Capturing static variable Data.str.
+2 warnings found

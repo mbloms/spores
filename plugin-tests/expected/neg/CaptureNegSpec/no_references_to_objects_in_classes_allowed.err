@@ -1,0 +1,5 @@
+[31m-- Error: src/neg/CaptureNegSpec/no_references_to_objects_in_classes_allowed.scala:11:26 [0m
+[31m11 |[0m              ([36mx[0m: [35mInt[0m) => A.foo(x, y)
+   |                          [31m^[0m
+   |                          Capturing [33mthis[0m from class C is not allowed.
+1 error found

@@ -1,0 +1,5 @@
+[33m-- Warning: src/pos/Example_in_getting_started.scala:14:39 ---------------------[0m
+[33m14 |[0m    [31ms"The result is: [0m${x + inner.age + outer1}[31m"[0m
+   |                                       [33m^^^^^^[0m
+   |                               Capturing static variable <empty>.outer1.
+1 warning found

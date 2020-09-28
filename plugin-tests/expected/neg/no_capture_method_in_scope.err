@@ -1,0 +1,9 @@
+[31m-- Error: src/neg/no_capture_method_in_scope.scala:7:4 -------------------------[0m
+[31m7 |[0m    m(str)
+  |    [31m^[0m
+  |    Capturing [33mthis[0m from class Data is not allowed.
+[31m-- Error: src/neg/no_capture_method_in_scope.scala:7:6 -------------------------[0m
+[31m7 |[0m    m(str)
+  |      [31m^[0m
+  |      Capturing [33mthis[0m from class Data is not allowed.
+2 errors found

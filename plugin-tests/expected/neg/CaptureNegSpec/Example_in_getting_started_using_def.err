@@ -1,0 +1,5 @@
+[31m-- Error: src/neg/CaptureNegSpec/Example_in_getting_started_using_def.scala:11:41 [0m
+[31m11 |[0m      [31ms"The result is: [0m${x + inner.age + outer1}[31m"[0m
+   |                                         [31m^[0m
+   |                       Capturing [33mthis[0m from class Example is not allowed.
+1 error found

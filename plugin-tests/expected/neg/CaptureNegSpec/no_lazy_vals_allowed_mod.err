@@ -1,0 +1,11 @@
+[31m-- Error: src/neg/CaptureNegSpec/no_lazy_vals_allowed_mod.scala:4:11 -----------[0m
+[31m4 |[0m  [33mlazy[0m [33mval[0m [36mv1[0m = [31m10[0m
+  |  [31m^^^^^^^^^^^^^^^^[0m
+  |  Incorrect spore header: Only val defs allowed at this position.
+  | This location contains code that was inlined from no_lazy_vals_allowed_mod.scala:4
+  | This location contains code that was inlined from SporeImpl.scala:0
+[31m-- Spore Error: src/neg/CaptureNegSpec/no_lazy_vals_allowed_mod.scala:5:47 -----[0m
+[31m5 |[0m  ([36mx[0m: [35mInt[0m) => println([31m"arg: "[0m + x + [31m", c1: "[0m + v1)
+  |                                               [31m^^[0m
+  |                    v1 owned by <empty>.s is not accessible in spore body.
+2 errors found

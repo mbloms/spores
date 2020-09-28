@@ -1,0 +1,5 @@
+[31m-- Error: src/neg/CaptureNegSpec/no_indirect_references_to_outer_objects_allowed_mod.scala:15:15 [0m
+[31m15 |[0m      [33mval[0m [36ms1[0m = outerObject.m(x).asInstanceOf[[35mString[0m]
+   |               [31m^[0m
+   |               Capturing [33mthis[0m from class Stuff is not allowed.
+1 error found

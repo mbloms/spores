@@ -214,7 +214,8 @@ class SporesChecker extends PluginPhase with StandardPlugin {
   override def initContext(ctx: FreshContext) = {
     sporectxloc = ctx.addLocation[SporeContext](SporeContext.empty)
   }
-
+  
+  val capturingStaticIsAllowed = true
 
   override def prepareForApply(tree: Apply)(implicit ctx: Context): Context = {
     tree match {
@@ -297,7 +298,9 @@ class SporesChecker extends PluginPhase with StandardPlugin {
 
           val current = capturedType.widenTermRefExpr
 
-          if (!(current.typeConstructor <:< res.typeConstructor)) {
+          if (res.typeConstructor =:= requiredModule("scala").requiredType("Nothing").typeRef)
+            then report.log("No CapturingWitness.",tree.sourcePos)
+          else if (!(current.typeConstructor <:< res.typeConstructor)) {
           report.error("This spore only allows capturing values wrapped in a " + res.typeConstructor.show + ". "
                       + "Consider capturing it as a " + AppliedType(lambda, List(tree.typeOpt.widen)).show + " instead.", tree.sourcePos)
           }
@@ -320,14 +323,19 @@ class SporesChecker extends PluginPhase with StandardPlugin {
     SporeContext.update(_.enter(tree))
 
   override def prepareForIdent(tree: Ident)(implicit ctx: Context): Context = {
+    //report.log(s"Enclosing Class: ${tree.denot.symbol.enclosingClass.show}, it is a ${if tree.denot.symbol.enclosingClass.isStaticOwner then "static object" else "normal class"}.", tree.sourcePos)
+    //report.log(s"Owners: ${tree.symbol.ownersIterator.map(_.showFullName).toList.toString}",tree.sourcePos)
     if (SporeContext().inSpore) {
-      if tree.symbol.owner.denot == scalaPredefSymbol.denot
+      if tree.symbol.isContainedIn(requiredPackage("scala").requiredClass("LowPriorityImplicits"))
+        then report.log("Capturing scala.LowPriorityImplicits is currently allowed.", tree.sourcePos)
+      else if tree.symbol.owner.denot == scalaPredefSymbol.denot
         then report.log("Capturing scala.Predef is currently allowed.", tree.sourcePos)
-      else if tree.symbol.ownersIterator.contains(SporeContext().entryPoint.get.current.symbol)
+      else if tree.symbol.isProperlyContainedIn(SporeContext().entryPoint.get.current.symbol)
         then report.log(s"Owned by spore body.",tree.sourcePos)
       else if SporeContext().captured.map(_.denot.current).contains(tree.symbol.denot.current)
         then report.log(s"Defined in header.",tree.sourcePos)
-      else if tree.denot.symbol.isStatic
+      // TODO: Do we want to use isStatic or enclosingClass.isStaticOwner?
+      else if capturingStaticIsAllowed && tree.denot.symbol.isStatic
         then report.warning(s"Capturing static variable ${tree.denot.symbol.showFullName}.",tree.sourcePos)
       else {
         report.error(IllegalReference(tree),tree.sourcePos)
@@ -336,19 +344,22 @@ class SporesChecker extends PluginPhase with StandardPlugin {
     ctx
   }
 
+  // TODO: Do we want to allow global objects using enclosingClass.isStaticOwner?
   override def prepareForThis(tree: This)(using ctx: Context): Context = {
+    //report.log(s"Enclosing Class: ${tree.denot.symbol.enclosingClass.show}, it is a ${if tree.denot.symbol.enclosingClass.isStaticOwner then "static object" else "normal class"}.", tree.sourcePos)
     if SporeContext().inSpore then
-      if tree.symbol.ownersIterator.contains(SporeContext().entryPoint.get.current.symbol)
+      if tree.symbol.isProperlyContainedIn(SporeContext().entryPoint.get.current.symbol)
         then report.log(s"Owned by spore body.",tree.sourcePos)
-        else report.error(s"Capturing ${tree.show} is not allowed.",tree.sourcePos)
+        else report.error(s"Capturing ${tree.show} from ${tree.denot.symbol.enclosingClass} is not allowed.",tree.sourcePos)
     ctx
   }
 
   override def prepareForSuper(tree: Super)(using ctx: Context): Context = {
+    //report.log(s"Enclosing Class: ${tree.denot.symbol.enclosingClass.show}, it is a ${if tree.denot.symbol.enclosingClass.isStaticOwner then "static object" else "normal class"}.", tree.sourcePos)
     if SporeContext().inSpore then
-      if tree.symbol.ownersIterator.contains(SporeContext().entryPoint.get.current.symbol)
+      if tree.symbol.isProperlyContainedIn(SporeContext().entryPoint.get.current.symbol)
       then report.log(s"Owned by spore body.",tree.sourcePos)
-      else report.error(s"Capturing ${tree.show} is not allowed.",tree.sourcePos)
+      else report.error(s"Capturing ${tree.show} from ${tree.denot.symbol.enclosingClass} is not allowed.",tree.sourcePos)
     ctx
   }
 }

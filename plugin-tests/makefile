@@ -3,6 +3,7 @@ TESTS := $(shell find expected -name "*.exit" | sed 's/expected/result/g' | sed 
 DEBUG := $(shell find expected -name "*.exit" | sed 's/expected/result/g' | sed 's/exit/debug/g')
 
 test-all: $(TESTS)
+test-git: $(shell git ls-tree -r HEAD expected/ --name-only | grep ".exit" | sed 's/expected/result/g' | sed 's/exit/test/g')
 debug-all: $(DEBUG)
 
 dotty.mk: ../build.sbt
@@ -14,7 +15,7 @@ include dotty.mk
 list-tests:
 	@ls expected/*.exit | sed 's/expected\///g' | sed 's/exit/test/g'
 
-.SECONDARY: dotty-$(dottyVersion) dotty-$(dottyVersion).tar.gz
+.SECONDARY: dotc dotty-$(dottyVersion) dotty-$(dottyVersion).tar.gz
 
 dotty-%.tar.gz:
 	@echo -en "[\033[0;34mdownloading\033[0m] dotty $*: "
@@ -52,15 +53,33 @@ prepare-result: $(RESULT)
 compile := dotc -Xplugin:lib/dotty-spores.jar -classpath lib/dotty-spores.jar -sourcepath src -d bin
 
 bin/%.class: src/%.scala lib/dotty-spores.jar dotc
-	@echo -en "[\033[0;34mcompiling\033[0m] $*: "
+	@echo -e "[\033[0;34mcompiling\033[0m] $<"
 	$(compile) -Yshow-suppressed-errors "$<"
+
+expected/neg/%.exit:
+	echo 1 > $@
+
+expected/pos/%.exit:
+	echo 0 > $@
+
+expected/neg/%.out:
+	touch $@
+
+expected/%.test: src/%.scala result/%.exit result/%.err result/%.out
+	install -D result/$*.exit expected/$*.exit
+	@cat expected/$*.exit
+	install -D result/$*.err expected/$*.err
+	@cat expected/$*.err
+	install -D result/$*.out expected/$*.out
+	@cat expected/$*.out
+	git add src/$*.scala expected/$*.{exit,err,out}
 
 result/%.err result/%.out result/%.exit: src/%.scala lib/dotty-spores.jar dotc
 	@install -d $(@D)
-	@echo -en "[\033[0;34mcompiling\033[0m] $*: "
+	@echo -e "[\033[0;34mcompiling\033[0m] $<"
 	$(compile) "$<" 2> result/$*.err 1> result/$*.out; echo $$? > result/$*.exit
 
-result/%.test: result/%.err result/%.out result/%.exit expected/%.err expected/%.out expected/%.exit
+result/%.test: result/%.exit result/%.err result/%.out expected/%.err expected/%.out expected/%.exit
 	@diff -u {expected,result}/$*.exit || echo -e "[\033[0;31mtest failed\033[0m] $*: Exited with code $$(< result/$*.exit), but expected $$(< expected/$*.exit)"
 	@diff -u {expected,result}/$*.err  || echo -e "[\033[0;31mtest failed\033[0m] $*: stderr did not match"
 	@diff -u {expected,result}/$*.out  || echo -e "[\033[0;31mtest failed\033[0m] $*: stdout did not match"
@@ -69,7 +88,8 @@ result/%.test: result/%.err result/%.out result/%.exit expected/%.err expected/%
 
 result/%.debug: src/%.scala lib/dotty-spores.jar dotc
 	@install -d $(@D)
-	@echo -en "[\033[0;34mcompiling\033[0m] $*: "
-	$(compile) -Ylog:sporesChecker+ -Yshow-suppressed-errors -Ydebug "$<" ; echo $$? > result/$*.debug
-	@diff -u expected/$*.exit result/$*.debug > /dev/null || (echo -e "[\033[0;31mtest failed\033[0m] $*: Exited with code $$(< result/$*.debug), but expected $$(< expected/$*.exit)"; false)
-	@rm $@
+	@echo -e "[\033[0;34mcompiling\033[0m] $<"
+	$(compile) -Ylog:sporesChecker+ -Yshow-suppressed-errors -Ydebug "$<" ; echo $$? > result/$*.debugexit
+	@if test -f expected/$*.exit; then diff -u expected/$*.exit result/$*.debugexit > /dev/null || (echo -e "[\033[0;31mbad exit code\033[0m] $*: Exited with code $$(< result/$*.debugexit), but expected $$(< expected/$*.exit)"; false) && echo -e "[\033[0;32mcorrect exit code\033[0m]"; fi
+	@echo -e "[\033[0;32mdebug ok\033[0m] $<"
+	@rm result/$*.debugexit

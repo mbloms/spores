@@ -1,0 +1,14 @@
+[31m-- Error: src/neg/CaptureNegSpec/Ensure_that_calling_methods_defined_in_classes_is_prohibited.scala:8:12 [0m
+[31m8 |[0m      () => defWithSeveralArgs([31m"Hello"[0m, [31m"World"[0m, trap, [31m"END."[0m)
+  |            [31m^[0m
+  |            Capturing [33mthis[0m from class TrapUtil is not allowed.
+[33m-- Warning: src/neg/CaptureNegSpec/Ensure_that_calling_methods_defined_in_classes_is_prohibited.scala:8:31 [0m
+[33m8 |[0m      () => defWithSeveralArgs([31m"Hello"[0m, [31m"World"[0m, trap, [31m"END."[0m)
+  |                               [33m^[0m
+  |                     Capturing static variable scala.runtime.ScalaRunTime.
+[31m-- Spore Error: src/neg/CaptureNegSpec/Ensure_that_calling_methods_defined_in_classes_is_prohibited.scala:8:49 [0m
+[31m8 |[0m      () => defWithSeveralArgs([31m"Hello"[0m, [31m"World"[0m, trap, [31m"END."[0m)
+  |                                                 [31m^^^^[0m
+  |              trap owned by TrapUtil.hehe is not accessible in spore body.
+1 warning found
+2 errors found

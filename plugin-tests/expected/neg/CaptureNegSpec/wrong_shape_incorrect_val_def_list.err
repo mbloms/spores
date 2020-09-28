@@ -1,0 +1,7 @@
+[31m-- Error: src/neg/CaptureNegSpec/wrong_shape_incorrect_val_def_list.scala:6:17 -[0m
+[31m6 |[0m          println([31m"hi"[0m)
+  |          [31m^^^^^^^^^^^^^[0m
+  |          Incorrect spore header: Only val defs allowed at this position.
+  | This location contains code that was inlined from wrong_shape_incorrect_val_def_list.scala:6
+  | This location contains code that was inlined from SporeImpl.scala:0
+1 error found

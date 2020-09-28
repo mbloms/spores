@@ -1,0 +1,5 @@
+[31m-- Error: src/neg/no_capture_val_field.scala:5:51 ------------------------------[0m
+[31m5 |[0m  [33mval[0m [36ms[0m = spore {([36mx[0m: [35mInt[0m) => println([31ms"[0m${x}[31m blah [0m${id(x)}[31m"[0m)}
+  |                                                   [31m^[0m
+  |                            Capturing [33mthis[0m from class Data is not allowed.
+1 error found

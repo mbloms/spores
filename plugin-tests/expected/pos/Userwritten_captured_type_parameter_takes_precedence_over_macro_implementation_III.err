@@ -1,0 +1,14 @@
+[33m-- Warning: src/pos/Userwritten_captured_type_parameter_takes_precedence_over_macro_implementation_III.scala:11:8 [0m
+[33m11 |[0m        t.trim
+   |        [33m^[0m
+   |      Capturing static variable scala.collection.ArrayOps.map$extension.
+[33m-- Warning: src/pos/Userwritten_captured_type_parameter_takes_precedence_over_macro_implementation_III.scala:13:24 [0m
+[33m13 |[0m          .map(word => (word, [31m""[0m))
+   |                        [33m^[0m
+   |                        Capturing static variable scala.Tuple2.
+[33m-- Warning: src/pos/Userwritten_captured_type_parameter_takes_precedence_over_macro_implementation_III.scala:13:34 [0m
+[33m13 |[0m          .map(word => (word, [31m""[0m))
+   |                                  [33m^[0m
+   |                       Capturing static variable scala.reflect.ClassTag.
+3 warnings found
+there were 1 deprecation warning(s); re-run with -deprecation for details

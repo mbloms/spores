@@ -1,0 +1,17 @@
+[33m-- Warning: src/IndirectSuper_II.scala:12:4 ------------------------------------[0m
+[33m12 |[0m    Data.str = [31ms"[0m${Data.str}[31m ([0m${x}[31m)"[0m
+   |    [33m^^^^[0m
+   |    Capturing static variable Data.
+[33m-- Warning: src/IndirectSuper_II.scala:12:19 -----------------------------------[0m
+[33m12 |[0m    Data.str = [31ms"[0m${Data.str}[31m ([0m${x}[31m)"[0m
+   |                   [33m^^^^[0m
+   |                   Capturing static variable Data.
+[33m-- Warning: src/IndirectSuper_II.scala:13:4 ------------------------------------[0m
+[33m13 |[0m    Data.m(str)
+   |    [33m^^^^[0m
+   |    Capturing static variable Data.
+[33m-- Warning: src/IndirectSuper_II.scala:13:11 -----------------------------------[0m
+[33m13 |[0m    Data.m(str)
+   |           [33m^^^[0m
+   |           Capturing static variable Data.str.
+4 warnings found
