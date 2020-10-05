@@ -15,7 +15,7 @@ include dotty.mk
 list-tests:
 	@ls expected/*.exit | sed 's/expected\///g' | sed 's/exit/test/g'
 
-.SECONDARY: dotc dotty-$(dottyVersion) dotty-$(dottyVersion).tar.gz
+.SECONDARY: dotc dotty-$(dottyVersion) dotty-$(dottyVersion).tar.gz $(JAR)
 
 dotty-%.tar.gz:
 	@echo -en "[\033[0;34mdownloading\033[0m] dotty $*: "
