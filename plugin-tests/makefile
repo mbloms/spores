@@ -31,8 +31,11 @@ export PATH := dotty-$(dottyVersion)/bin:$(PATH)
 $(JAR): $(shell find ../src -type f)
 	cd .. && sbt package
 
-lib/dotty-spores.jar: $(JAR)
-	install -D $(JAR) lib/dotty-spores.jar
+lib:
+	install -d lib
+
+lib/dotty-spores.jar: lib $(JAR)
+	install $(JAR) lib/dotty-spores.jar
 
 #lib/dotty-spores.jar: $(shell find ../src/main -type f)
 #	mkdir lib/tmp
@@ -66,11 +69,12 @@ expected/neg/%.out:
 	touch $@
 
 expected/%.test: src/%.scala result/%.exit result/%.err result/%.out
-	install -D result/$*.exit expected/$*.exit
+	install -d $(@D)
+	install result/$*.exit expected/$*.exit
 	@cat expected/$*.exit
-	install -D result/$*.err expected/$*.err
+	install result/$*.err expected/$*.err
 	@cat expected/$*.err
-	install -D result/$*.out expected/$*.out
+	install result/$*.out expected/$*.out
 	@cat expected/$*.out
 	git add src/$*.scala expected/$*.{exit,err,out}
 
